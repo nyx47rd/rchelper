@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { width:280px; padding:15px; font-family:Arial; background:#1a1a2e; color:#fff; margin:0; }
+    h3 { color:#e94560; margin:0 0 10px 0; font-size:14px; }
+    .section { background:#0f3460; padding:8px; border-radius:6px; margin-bottom:8px; font-size:11px; }
+    .btn { width:100%; padding:8px; margin:4px 0; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px; }
+    .btn-green { background:#00aa44; color:#fff; }
+    .btn-red { background:#e94560; color:#fff; }
+    .btn-blue { background:#2196F3; color:#fff; }
+    label { font-size:11px; color:#aaa; display:block; margin-top:4px; }
+    .stat { display:flex; justify-content:space-between; margin:2px 0; }
+    .check-row { display:flex; align-items:center; gap:6px; margin:4px 0; font-size:11px; color:#aaa; }
+    .check-row input { width:auto; margin:0; }
+  </style>
+</head>
+<body>
+  <h3>RollerCoin Helper</h3>
+  
+  <div class="section">
+    <div class="stat"><span>Oynanan:</span><span id="stat-played">0</span></div>
+    <div class="stat"><span>Kazanılan Enerji:</span><span id="stat-reward">0</span></div>
+  </div>
+
+  <div class="section">
+    <div class="check-row">
+      <input type="checkbox" id="chk-choose">
+      <label for="chk-choose" style="margin:0;">CHOOSE GAME otomatik tıkla</label>
+    </div>
+  </div>
+
+  <button class="btn btn-green" id="btn-once">Akıllı Oyun Başlat</button>
+  <button class="btn btn-blue" id="btn-auto">Auto-Play: KAPALI</button>
+
+  <div id="status" style="margin-top:8px; font-size:11px; color:#aaa;"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
