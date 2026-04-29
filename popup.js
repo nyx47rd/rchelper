@@ -16,6 +16,24 @@ function sendMessage(msg, cb) {
   });
 }
 
+var gameList = [
+  'Crypto Hex',
+  'Coinclick',
+  'Dr.Hamster',
+  'Coin-match',
+  'Token Surfer: Snow Ride',
+  'Token Blaster',
+  'Coin Fisher',
+  'Hamster Climber',
+  'Flappy Rocket',
+  'Mission Hamspossible',
+  'Crypto Hamster',
+  '2048 Coins',
+  'Cryptonoid',
+  'Coin-Flip',
+  'Lambo Rider'
+];
+
 function getExcludedGames() {
   return JSON.parse(localStorage.getItem('excludeGames') || '[]');
 }
@@ -24,16 +42,12 @@ function saveExcludedGames(list) {
   localStorage.setItem('excludeGames', JSON.stringify(list));
 }
 
-function renderGameList(games) {
+function renderGameList() {
   var container = document.getElementById('game-list');
   if (!container) return;
   var excluded = getExcludedGames();
   container.innerHTML = '';
-  if (!games || !games.length) {
-    container.innerHTML = '<div style="color:#aaa; font-size:10px;">Oyun bulunamadı</div>';
-    return;
-  }
-  games.forEach(function(name) {
+  gameList.forEach(function(name) {
     var div = document.createElement('div');
     div.className = 'game-item';
     var cb = document.createElement('input');
@@ -74,9 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btnAuto.className = autoPlayState ? 'btn btn-red' : 'btn btn-blue';
   }
 
-  sendMessage({action: 'getGames'}, function(r) {
-    if (r && r.games) renderGameList(r.games);
-  });
+  renderGameList();
 
   if(btnOnce) {
     btnOnce.onclick = function() {
