@@ -130,6 +130,7 @@ function stopAutoChoose() {
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
   try {
     if(msg.action==='playSmart') {
+      if(msg.exclude) window.excludeGames = msg.exclude;
       playGameSmart(window.failedGames);
       sendResponse({ok:true});
     } else if(msg.action==='play') {
@@ -153,6 +154,9 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
       if(msg.on !== undefined) window.autoCollect = msg.on;
       else window.autoCollect = !window.autoCollect;
       sendResponse({on: window.autoCollect});
+    } else if(msg.action==='getGames') {
+      var games = getAllGames();
+      sendResponse({games: games.map(function(g){ return g.name; })});
     } else if(msg.action==='stats') {
       sendResponse({c:window.playedCount||0, r:window.totalReward||0, a:window.autoPlayActive});
     }

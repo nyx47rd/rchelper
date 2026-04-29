@@ -13,7 +13,10 @@
     label { font-size:11px; color:#aaa; display:block; margin-top:4px; }
     .check-row { display:flex; align-items:center; gap:6px; margin:4px 0; font-size:11px; color:#aaa; }
     .check-row input { width:auto; margin:0; }
-    textarea { width:100%; padding:4px; margin:4px 0; background:#16213e; border:1px solid #0f3460; color:#fff; border-radius:4px; box-sizing:border-box; font-size:11px; }
+    .game-list { max-height:150px; overflow-y:auto; margin-top:4px; }
+    .game-item { display:flex; align-items:center; gap:6px; padding:2px 0; }
+    .game-item input { width:auto; margin:0; }
+    .game-item label { margin:0; cursor:pointer; }
   </style>
 </head>
 <body>
@@ -32,7 +35,9 @@
 
   <div class="section">
     <label>Auto-Play'e Dahil Olmayan Oyunlar:</label>
-    <textarea id="exclude-games" rows="3" placeholder="Oyun isimlerini virgülle ayırın"></textarea>
+    <div class="game-list" id="game-list">
+      <div style="color:#aaa; font-size:10px;">Oyunlar yükleniyor...</div>
+    </div>
   </div>
 
   <button class="btn btn-green" id="btn-once">Akıllı Oyun Başlat</button>
