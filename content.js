@@ -4,10 +4,13 @@ window.playedCount = 0;
 window.totalReward = 0;
 window.autoPlayActive = false;
 window.autoChoose = false;
+window.autoCollect = true;
 window.failedGames = [];
+window.excludeGames = [];
 var autoPlayTimer = null;
 var chooseTimer = null;
 var waitTimer = null;
+var collectTimer = null;
 
 function getAllGames() {
   var items = document.querySelectorAll('.choose-game-item-container');
@@ -31,7 +34,8 @@ function playGameSmart(exclude) {
   var games = getAllGames();
   if (!games.length) return;
   var filtered = games;
-  if (exclude && exclude.length) filtered = filtered.filter(function(g){ return exclude.indexOf(g.name)===-1; });
+  var allExcluded = (exclude || []).concat(window.excludeGames || []);
+  if (allExcluded.length) filtered = filtered.filter(function(g){ return allExcluded.indexOf(g.name)===-1; });
   if (!filtered.length) filtered = games;
   if (!filtered.length) return;
   var selected = filtered.reduce(function(best, g) {
@@ -53,7 +57,7 @@ function playGameSmart(exclude) {
       window.playedCount = Math.max(0, window.playedCount-1);
       window.totalReward = Math.max(0, window.totalReward-selected.reward);
       window.failedGames.push(selected.name);
-      setTimeout(function(){ playGameSmart(window.failedGames); }, 1000);
+      setTimeout(function(){ playGameSmart(exclude); }, 1000);
     }
     if(location.href.indexOf('/game/play_game')===-1) clearInterval(waitTimer);
   }, 500);
@@ -133,7 +137,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
       sendResponse({ok:true});
     } else if(msg.action==='toggleAuto') {
       if(msg.on !== undefined) {
-        if(msg.on) startAutoPlay(); else stopAutoPlay();
+        if(msg.on) { window.excludeGames = msg.exclude || []; startAutoPlay(); } else stopAutoPlay();
       } else {
         if(window.autoPlayActive) stopAutoPlay(); else startAutoPlay();
       }
@@ -145,6 +149,10 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
         if(window.autoChoose) stopAutoChoose(); else startAutoChoose();
       }
       sendResponse({on: window.autoChoose});
+    } else if(msg.action==='toggleCollect') {
+      if(msg.on !== undefined) window.autoCollect = msg.on;
+      else window.autoCollect = !window.autoCollect;
+      sendResponse({on: window.autoCollect});
     } else if(msg.action==='stats') {
       sendResponse({c:window.playedCount||0, r:window.totalReward||0, a:window.autoPlayActive});
     }
@@ -153,6 +161,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 });
 
 setInterval(function() {
+  if(!window.autoCollect) return;
   var c = document.querySelector('.complete-game-button-wrapper button.accept-button');
   var l = document.querySelector('.collect-button button.tree-dimensional-button');
   if(c && c.offsetParent!==null && !c.dataset.c) { c.dataset.c='1'; setTimeout(function(){c.click();},100); }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <style>
-    body { width:280px; padding:15px; font-family:Arial; background:#1a1a2e; color:#fff; margin:0; }
+    body { width:300px; padding:15px; font-family:Arial; background:#1a1a2e; color:#fff; margin:0; }
     h3 { color:#e94560; margin:0 0 10px 0; font-size:14px; }
     .section { background:#0f3460; padding:8px; border-radius:6px; margin-bottom:8px; font-size:11px; }
     .btn { width:100%; padding:8px; margin:4px 0; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px; }
@@ -11,24 +11,28 @@
     .btn-red { background:#e94560; color:#fff; }
     .btn-blue { background:#2196F3; color:#fff; }
     label { font-size:11px; color:#aaa; display:block; margin-top:4px; }
-    .stat { display:flex; justify-content:space-between; margin:2px 0; }
     .check-row { display:flex; align-items:center; gap:6px; margin:4px 0; font-size:11px; color:#aaa; }
     .check-row input { width:auto; margin:0; }
+    textarea { width:100%; padding:4px; margin:4px 0; background:#16213e; border:1px solid #0f3460; color:#fff; border-radius:4px; box-sizing:border-box; font-size:11px; }
   </style>
 </head>
 <body>
   <h3>RollerCoin Helper</h3>
-  
-  <div class="section">
-    <div class="stat"><span>Oynanan:</span><span id="stat-played">0</span></div>
-    <div class="stat"><span>Kazanılan Enerji:</span><span id="stat-reward">0</span></div>
-  </div>
 
   <div class="section">
     <div class="check-row">
       <input type="checkbox" id="chk-choose">
-      <label for="chk-choose" style="margin:0;">CHOOSE GAME otomatik tıkla</label>
+      <label for="chk-choose" style="margin:0;">CHOOSE GAME</label>
     </div>
+    <div class="check-row">
+      <input type="checkbox" id="chk-collect" checked>
+      <label for="chk-collect" style="margin:0;">Collect/Complete</label>
+    </div>
+  </div>
+
+  <div class="section">
+    <label>Auto-Play'e Dahil Olmayan Oyunlar:</label>
+    <textarea id="exclude-games" rows="3" placeholder="Oyun isimlerini virgülle ayırın"></textarea>
   </div>
 
   <button class="btn btn-green" id="btn-once">Akıllı Oyun Başlat</button>

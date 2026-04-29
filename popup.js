@@ -20,9 +20,13 @@ document.addEventListener('DOMContentLoaded', function() {
   var btnOnce = document.getElementById('btn-once');
   var btnAuto = document.getElementById('btn-auto');
   var chkChoose = document.getElementById('chk-choose');
+  var chkCollect = document.getElementById('chk-collect');
+  var txtExclude = document.getElementById('exclude-games');
   var statusEl = document.getElementById('status');
 
   chkChoose.checked = localStorage.getItem('autoChoose') === 'true';
+  chkCollect.checked = localStorage.getItem('autoCollect') !== 'false';
+  txtExclude.value = localStorage.getItem('excludeGames') || '';
   var autoPlayState = localStorage.getItem('autoPlay') === 'true';
   if(btnAuto) {
     btnAuto.innerText = autoPlayState ? 'Auto-Play: AÇIK' : 'Auto-Play: KAPALI';
@@ -44,7 +48,8 @@ document.addEventListener('DOMContentLoaded', function() {
       var newState = !autoPlayState;
       autoPlayState = newState;
       localStorage.setItem('autoPlay', newState);
-      sendMessage({action: 'toggleAuto', on: newState}, function(r) {
+      var excludeList = txtExclude.value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+      sendMessage({action: 'toggleAuto', on: newState, exclude: excludeList}, function(r) {
         if(r) {
           btnAuto.innerText = r.on ? 'Auto-Play: AÇIK' : 'Auto-Play: KAPALI';
           btnAuto.className = r.on ? 'btn btn-red' : 'btn btn-blue';
@@ -68,19 +73,17 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   }
 
-  setInterval(function() {
-    sendMessage({action: 'stats'}, function(r) {
-      if(!r) return;
-      var el1 = document.getElementById('stat-played');
-      var el2 = document.getElementById('stat-reward');
-      if(el1) el1.innerText = r.c || 0;
-      if(el2) el2.innerText = r.r || 0;
-      if(r.a !== undefined) {
-        autoPlayState = r.a;
-        localStorage.setItem('autoPlay', r.a);
-        if(btnAuto) btnAuto.innerText = r.a ? 'Auto-Play: AÇIK' : 'Auto-Play: KAPALI';
-        if(btnAuto) btnAuto.className = r.a ? 'btn btn-red' : 'btn btn-blue';
-      }
-    });
-  }, 2000);
+  if(chkCollect) {
+    chkCollect.onchange = function() {
+      var isChecked = chkCollect.checked;
+      localStorage.setItem('autoCollect', isChecked);
+      sendMessage({action: 'toggleCollect', on: isChecked});
+    };
+  }
+
+  if(txtExclude) {
+    txtExclude.onchange = function() {
+      localStorage.setItem('excludeGames', txtExclude.value);
+    };
+  }
 });
