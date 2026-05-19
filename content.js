@@ -771,12 +771,12 @@ function updateSkippedDisplay() {
 
   const now = Date.now();
   const skipDuration = 10 * 60 * 1000;
-  let htmlParts = [];
+  const items = [];
 
   for (const key in window.skippedGames) {
     const remaining = Math.ceil((skipDuration - (now - window.skippedGames[key])) / 60000);
     if (remaining > 0) {
-      htmlParts.push('<div>' + key + ' (' + remaining + 'dk)</div>');
+      items.push({ name: key, label: key + ' (' + remaining + 'dk)' });
     } else {
       delete window.skippedGames[key];
     }
@@ -784,12 +784,22 @@ function updateSkippedDisplay() {
 
   const permanentGames = Object.keys(window.permanentSkippedGames);
   if (permanentGames.length > 0) {
-    htmlParts.push('<div>♾️ ' + permanentGames.join(', ') + '</div>');
+    items.push({ name: null, label: '\u267e\ufe0f ' + permanentGames.join(', ') });
   }
 
-  if (htmlParts.length > 0) {
+  if (items.length > 0) {
     infoEl.style.display = 'block';
-    infoEl.innerHTML = '⏸ Pas<div style="margin-top:4px;">' + htmlParts.join('') + '</div>';
+    while (infoEl.firstChild) infoEl.removeChild(infoEl.firstChild);
+    const header = document.createTextNode('\u23f8 Pas');
+    infoEl.appendChild(header);
+    const wrap = document.createElement('div');
+    wrap.style.marginTop = '4px';
+    items.forEach(item => {
+      const d = document.createElement('div');
+      d.textContent = item.label;
+      wrap.appendChild(d);
+    });
+    infoEl.appendChild(wrap);
   } else {
     infoEl.style.display = 'none';
   }
@@ -1067,6 +1077,7 @@ function stopAutoPlay() {
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (sender.id !== chrome.runtime.id) return;
   if (msg.action === 'toggleAuto') {
     window.autoPlayActive = msg.on;
     saveState();
