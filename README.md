@@ -2,6 +2,8 @@
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=FF3D6B&height=200&section=header&text=RC%20Helper&fontSize=72&fontColor=ffffff&fontAlignY=45&animation=fadeIn" width="100%"/>
 
+<img src="favicon.ico" width="48" height="48" alt="RC Helper Icon"/>
+
 </div>
 
 <div align="center">
