@@ -1,39 +1,53 @@
 console.log('RollerCoin Helper Aktif!');
 
+let _rcAudioCtx = null;
+function _getRCAudioCtx() {
+  if (!_rcAudioCtx || _rcAudioCtx.state === 'closed') {
+    _rcAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return _rcAudioCtx;
+}
+['click', 'keydown', 'mousedown', 'touchstart'].forEach(evt => {
+  document.addEventListener(evt, () => {
+    const ctx = _getRCAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+  }, { once: false, passive: true, capture: true });
+});
+
 function playSound(type) {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const g = ctx.createGain();
-    g.connect(ctx.destination);
-    const o = ctx.createOscillator();
-    o.connect(g);
+    const ctx = _getRCAudioCtx();
+    const resume = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
+    resume.then(() => {
+      const sounds = {
+        select:   { type: 'sine',     freq: [520, 660],      dur: [0, 0.06, 0.12],      vol: 0.2  },
+        skip:     { type: 'triangle', freq: [400, 300],      dur: [0, 0.08, 0.18],      vol: 0.18 },
+        permSkip: { type: 'sawtooth', freq: [350, 200],      dur: [0, 0.1, 0.25],       vol: 0.15 },
+        breakOn:  { type: 'sine',     freq: [440, 550, 440], dur: [0, 0.15, 0.3, 0.45], vol: 0.22 },
+        breakOff: { type: 'sine',     freq: [550, 660, 770], dur: [0, 0.12, 0.24, 0.36],vol: 0.22 },
+        autoOn:   { type: 'sine',     freq: [440, 554, 659], dur: [0, 0.1, 0.2, 0.3],   vol: 0.18 },
+        autoOff:  { type: 'sine',     freq: [659, 554, 440], dur: [0, 0.1, 0.2, 0.3],   vol: 0.18 },
+      };
+      const s = sounds[type];
+      if (!s) return;
 
-    const sounds = {
-      select:   { type: 'sine',     freq: [520, 660],       dur: [0, 0.06, 0.12], vol: 0.18 },
-      skip:     { type: 'triangle', freq: [400, 300],       dur: [0, 0.08, 0.18], vol: 0.15 },
-      permSkip: { type: 'sawtooth', freq: [350, 200],       dur: [0, 0.1, 0.25],  vol: 0.12 },
-      breakOn:  { type: 'sine',     freq: [440, 550, 440],  dur: [0, 0.15, 0.3, 0.45], vol: 0.2  },
-      breakOff: { type: 'sine',     freq: [550, 660, 770],  dur: [0, 0.12, 0.24, 0.36], vol: 0.2  },
-      autoOn:   { type: 'sine',     freq: [440, 554, 659],  dur: [0, 0.1, 0.2, 0.3],   vol: 0.15 },
-      autoOff:  { type: 'sine',     freq: [659, 554, 440],  dur: [0, 0.1, 0.2, 0.3],   vol: 0.15 },
-    };
+      const g = ctx.createGain();
+      g.connect(ctx.destination);
+      const o = ctx.createOscillator();
+      o.connect(g);
+      o.type = s.type;
 
-    const s = sounds[type];
-    if (!s) return;
+      const t = ctx.currentTime;
+      g.gain.setValueAtTime(s.vol, t);
+      s.freq.forEach((f, i) => o.frequency.setValueAtTime(f, t + s.dur[i]));
 
-    o.type = s.type;
-    g.gain.setValueAtTime(s.vol, ctx.currentTime);
-
-    s.freq.forEach((f, i) => {
-      o.frequency.setValueAtTime(f, ctx.currentTime + s.dur[i]);
+      const end = s.dur[s.dur.length - 1];
+      g.gain.setValueAtTime(s.vol, t + end - 0.04);
+      g.gain.linearRampToValueAtTime(0, t + end + 0.06);
+      o.start(t);
+      o.stop(t + end + 0.1);
+      o.onended = () => { try { g.disconnect(); } catch(e) {} };
     });
-
-    const end = s.dur[s.dur.length - 1];
-    g.gain.setValueAtTime(s.vol, ctx.currentTime + end - 0.05);
-    g.gain.linearRampToValueAtTime(0, ctx.currentTime + end + 0.05);
-    o.start(ctx.currentTime);
-    o.stop(ctx.currentTime + end + 0.1);
-    o.onended = () => ctx.close();
   } catch(e) {}
 }
 
