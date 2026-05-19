@@ -24,7 +24,7 @@
 
 ## 🚀 Nedir?
 
-**RC Helper**, [RollerCoin](https://rollercoin.com) platformu için geliştirilmiş bir Chrome eklentisidir. Oyun seçimini, coin toplamayı ve mola yönetimini tamamen otomatikleştirir. Siz izlerken o oynar.
+**RC Helper**, [RollerCoin](https://rollercoin.com) platformu için geliştirilmiş bir Chrome eklentisidir. Oyunları sizin yerinize **oynamaz** — oyun seçim ekranında uygun oyunu otomatik seçer ve başlatır, geri kalanını siz yaparsınız. Coin toplamayı ve mola yönetimini de otomatikleştirir.
 
 <br/>
 
@@ -39,6 +39,7 @@
 | ☕ **Mola Hatırlatıcısı** | 10 dakika sonra tam ekran mola sayacı açar (2.5dk dinlen) |
 | 📊 **Canlı İstatistik** | Oyun sayısı, süre ve saatlik tahmin widget'ı |
 | ⌨️ **Klavye Kısayolları** | `S` pas geç · `P` daima atla |
+| 🔊 **Ses Efektleri** | Oyun seçimi, pas geçme, mola başlangıcı/bitişi, otomasyon açma/kapama için farklı tonlar |
 
 </div>
 

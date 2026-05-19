@@ -1,5 +1,42 @@
 console.log('RollerCoin Helper Aktif!');
 
+function playSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const g = ctx.createGain();
+    g.connect(ctx.destination);
+    const o = ctx.createOscillator();
+    o.connect(g);
+
+    const sounds = {
+      select:   { type: 'sine',     freq: [520, 660],       dur: [0, 0.06, 0.12], vol: 0.18 },
+      skip:     { type: 'triangle', freq: [400, 300],       dur: [0, 0.08, 0.18], vol: 0.15 },
+      permSkip: { type: 'sawtooth', freq: [350, 200],       dur: [0, 0.1, 0.25],  vol: 0.12 },
+      breakOn:  { type: 'sine',     freq: [440, 550, 440],  dur: [0, 0.15, 0.3, 0.45], vol: 0.2  },
+      breakOff: { type: 'sine',     freq: [550, 660, 770],  dur: [0, 0.12, 0.24, 0.36], vol: 0.2  },
+      autoOn:   { type: 'sine',     freq: [440, 554, 659],  dur: [0, 0.1, 0.2, 0.3],   vol: 0.15 },
+      autoOff:  { type: 'sine',     freq: [659, 554, 440],  dur: [0, 0.1, 0.2, 0.3],   vol: 0.15 },
+    };
+
+    const s = sounds[type];
+    if (!s) return;
+
+    o.type = s.type;
+    g.gain.setValueAtTime(s.vol, ctx.currentTime);
+
+    s.freq.forEach((f, i) => {
+      o.frequency.setValueAtTime(f, ctx.currentTime + s.dur[i]);
+    });
+
+    const end = s.dur[s.dur.length - 1];
+    g.gain.setValueAtTime(s.vol, ctx.currentTime + end - 0.05);
+    g.gain.linearRampToValueAtTime(0, ctx.currentTime + end + 0.05);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + end + 0.1);
+    o.onended = () => ctx.close();
+  } catch(e) {}
+}
+
 const originalLog = console.log;
 const importantKeywords = ['SEÇİLEN OYUN', 'Pas geçildi', 'Butona tıklanıyor', 'Oyun seçimi', 'OYNANAN', 'START', 'Oyun beklemede', 'Tüm oyunlar atlandı', 'OYNANIYOR'];
 console.log = function(...args) {
@@ -265,6 +302,7 @@ function startBreakChecker() {
 }
 
 function showBreakBanner() {
+  playSound('breakOn');
   updateBreakStatusDisplay();
   
   const banner = document.createElement('div');
@@ -336,6 +374,7 @@ function showBreakBanner() {
 }
 
 function endBreak() {
+  playSound('breakOff');
   window.isOnBreak = false;
   const banner = document.getElementById('rc-break-banner');
   if (banner) banner.remove();
@@ -687,6 +726,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 function skipToChooseGame() {
+  playSound('skip');
   console.log('[RC] === PAS GEÇME BAŞLADI ===');
   console.log('[RC] lastSelectedGame:', window.lastSelectedGame);
   console.log('[RC] skippedGames:', window.skippedGames);
@@ -713,6 +753,7 @@ function skipToChooseGame() {
 }
 
 function skipGamePermanent() {
+  playSound('permSkip');
   console.log('[RC] === SONSUZ PAS GEÇME BAŞLADI ===');
   console.log('[RC] lastSelectedGame:', window.lastSelectedGame);
   
@@ -894,6 +935,7 @@ function pickAndPlay() {
   const btnText = btn?.innerText || btn?.textContent || '';
   
   window.lastSelectedGame = selectedGameName;
+  playSound('select');
   console.log('[RC] === SEÇİLEN OYUN:', selectedGameName, '===');
   if (window.updateRCStatus) window.updateRCStatus('[RC] === SEÇİLEN OYUN: ' + selectedGameName + ' ===');
   
@@ -917,6 +959,7 @@ function pickAndPlay() {
 }
 
 function startAutoPlay() {
+  playSound('autoOn');
   console.log('[RC] startAutoPlay çağrıldı!');
   window.autoPlayActive = true;
   window.lastGameStartTime = null;
@@ -939,6 +982,7 @@ function startAutoPlay() {
 }
 
 function stopAutoPlay() {
+  playSound('autoOff');
   window.autoPlayActive = false;
   if (mainTimer) { clearInterval(mainTimer); mainTimer = null; }
 }
