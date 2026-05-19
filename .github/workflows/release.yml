@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get previous tag
+        id: prev_tag
+        run: |
+          PREV=$(git tag --sort=-version:refname | sed -n '2p')
+          echo "prev=$PREV" >> $GITHUB_OUTPUT
+
+      - name: Build changelog from commits
+        id: changelog
+        run: |
+          PREV="${{ steps.prev_tag.outputs.prev }}"
+          if [ -z "$PREV" ]; then
+            LOGS=$(git log --pretty=format:"- %s" HEAD)
+          else
+            LOGS=$(git log --pretty=format:"- %s" "$PREV"..HEAD)
+          fi
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$LOGS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create ZIP
+        run: |
+          zip -r rchelper.zip \
+            manifest.json \
+            content.js \
+            popup.html \
+            popup.js \
+            background.js \
+            icon16.png \
+            icon48.png \
+            icon128.png \
+            favicon.ico \
+            README.md \
+            LICENSE
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: RC Helper ${{ github.ref_name }}
+          body: |
+            ## 🚀 RC Helper ${{ github.ref_name }}
+
+            ### Değişiklikler
+            ${{ steps.changelog.outputs.notes }}
+
+            ---
+            > Chrome'a yüklemek için `rchelper.zip` dosyasını indirip `chrome://extensions` → **Paketlenmemiş öğe yükle** ile kurun.
+          files: rchelper.zip
+          draft: false
+          prerelease: false
