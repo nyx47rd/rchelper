@@ -474,11 +474,6 @@ function createFloatButton() {
   headerBtns.style.cssText = 'display:flex; align-items:center; gap:4px; flex-shrink:0;';
 
   let soundEnabled = true;
-  chrome.storage.local.get(['rcSoundEnabled'], (d) => {
-    soundEnabled = d.rcSoundEnabled !== false;
-    soundBtn.innerHTML = soundEnabled ? ICON.vol : ICON.mute;
-    soundBtn.style.color = soundEnabled ? '#34D399' : '#4A5568';
-  });
 
   const soundBtn = document.createElement('button');
   soundBtn.className = 'rc-btn';
@@ -495,7 +490,13 @@ function createFloatButton() {
     soundBtn.style.color = soundEnabled ? '#34D399' : '#4A5568';
     if (soundEnabled) playSound('autoOn');
   };
-  window._rcSoundEnabled = soundEnabled;
+
+  chrome.storage.local.get(['rcSoundEnabled'], (d) => {
+    soundEnabled = d.rcSoundEnabled !== false;
+    window._rcSoundEnabled = soundEnabled;
+    soundBtn.innerHTML = soundEnabled ? ICON.vol : ICON.mute;
+    soundBtn.style.color = soundEnabled ? '#34D399' : '#4A5568';
+  });
 
   const hideBtn = document.createElement('button');
   hideBtn.className = 'rc-btn';
