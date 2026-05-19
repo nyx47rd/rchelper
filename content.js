@@ -1,4 +1,4 @@
-console.log('RollerCoin Helper Aktif! v2.1');
+const RC_VERSION = '2.1.7';
 
 let _rcAudioCtx = null;
 function _getRCAudioCtx() {
@@ -142,8 +142,28 @@ chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames
     console.log('[RC] Yüklenen permanentSkippedGames:', window.permanentSkippedGames);
   }
   if (data.autoPlay) {
-    window.autoPlayActive = true;
-    startAutoPlay();
+    fetch('https://api.github.com/repos/nyx47rd/rchelper/releases/latest', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(d => {
+        const latest = (d.tag_name || '').replace('v', '');
+        if (!latest) { window.autoPlayActive = true; startAutoPlay(); return; }
+        const cur = RC_VERSION.split('.').map(Number);
+        const lat = latest.split('.').map(Number);
+        let isOld = false;
+        for (let i = 0; i < Math.max(cur.length, lat.length); i++) {
+          if ((lat[i]||0) > (cur[i]||0)) { isOld = true; break; }
+          if ((cur[i]||0) > (lat[i]||0)) break;
+        }
+        if (isOld) {
+          console.warn('[RC] Eski sürüm! Auto-Play engellendi. Güncel sürüm: v' + latest);
+          if (window.updateRCStatus) window.updateRCStatus('\u26a0\ufe0f Güncelleme gerekli! v' + latest + ' müevcut');
+          chrome.storage.local.set({ autoPlay: false });
+        } else {
+          window.autoPlayActive = true;
+          startAutoPlay();
+        }
+      })
+      .catch(() => { window.autoPlayActive = true; startAutoPlay(); });
   }
   
   setTimeout(() => {
