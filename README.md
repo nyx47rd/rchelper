@@ -1,175 +1,239 @@
 <div align="center">
 
-<img src="icon128.png" width="96" height="96" alt="RC Helper Logo" style="border-radius:20px"/>
-
-<h1>
-  <img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=32&pause=1000&color=FF3D6B&center=true&vCenter=true&width=500&lines=RC+Helper;RollerCoin+Auto+Assistant" alt="RC Helper" />
-</h1>
-
-<p>
-  <img alt="Manifest v3" src="https://img.shields.io/badge/Manifest-v3-FF3D6B?style=for-the-badge&logo=googlechrome&logoColor=white"/>
-  <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-ES2020+-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"/>
-  <img alt="Chrome Extension" src="https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white"/>
-  <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-34D399?style=for-the-badge"/>
-</p>
-
-<p><b>RollerCoin için otomatik oyun seçici, coin toplayıcı ve mola yöneticisi Chrome eklentisi.</b></p>
-
----
+<img src="https://capsule-render.vercel.app/api?type=waving&color=FF3D6B&height=200&section=header&text=RC%20Helper&fontSize=72&fontColor=ffffff&fontAlignY=38&desc=RollerCoin%20Auto%20Assistant&descAlignY=58&descSize=20&animation=fadeIn" width="100%"/>
 
 </div>
 
-## ✦ Özellikler
+<div align="center">
 
-| Özellik | Açıklama |
-|---|---|
-| **Otomatik Seç** | Oyun seçim ekranında uygun bir oyunu otomatik seçer |
-| **Otomatik Topla** | Gain Power ve Collect butonlarına otomatik basar |
-| **Pas Geç (10dk)** | Seçili oyunu 10 dakika boyunca atlar |
-| **Daima Atla** | Seçili oyunu kalıcı olarak engeller |
-| **Mola Hatırlatıcısı** | 10 dakika oynadıktan sonra 2.5 dakika mola hatırlatır |
-| **Canlı İstatistik** | Oynanan oyun sayısı, süre ve saatlik tahmin gösterir |
-| **Klavye Kısayolları** | `S` → Pas geç, `P` → Daima atla |
+<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Otomatik+oyun+seçici+%E2%86%92+daha+fazla+güç;Coin+toplama+otomasyonu;Mola+hatırlatıcısı+ile+sağlıklı+oyun;Klavye+kısayolları+ile+tam+kontrol" alt="Typing SVG" />
+
+<br/><br/>
+
+[![Manifest](https://img.shields.io/badge/Manifest-v3-FF3D6B?style=for-the-badge&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/)
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![Chrome](https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chrome.google.com/webstore)
+[![License](https://img.shields.io/badge/License-MIT-34D399?style=for-the-badge&logoColor=white)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/nyx47rd/rchelper?style=for-the-badge&color=FF3D6B&logo=github)](https://github.com/nyx47rd/rchelper/stargazers)
+
+</div>
 
 ---
 
-## ✦ Kurulum
+## 🚀 Nedir?
 
-> Eklenti henüz Chrome Web Store'da yayınlanmamıştır. Manuel kurulum gereklidir.
+**RC Helper**, [RollerCoin](https://rollercoin.com) platformu için geliştirilmiş bir Chrome eklentisidir. Oyun seçimini, coin toplamayı ve mola yönetimini tamamen otomatikleştirir. Siz izlerken o oynar.
 
-### Adım 1 — Dosyaları İndirin
+<br/>
 
-**Seçenek A — ZIP olarak:**
+<div align="center">
 
-1. Bu sayfada sağ üstteki **`<> Code`** butonuna tıklayın
-2. **Download ZIP** seçeneğini seçin
-3. ZIP dosyasını bir klasöre çıkartın
+| ⚡ Özellik | 📖 Açıklama |
+|:---:|:---|
+| 🎮 **Otomatik Oyun Seç** | Pas geçilmeyenler arasından rastgele oyun seçer ve başlatır |
+| 💰 **Otomatik Topla** | *Gain Power* ve *Collect* butonlarına otomatik basar |
+| ⏸ **Pas Geç · 10dk** | Seçili oyunu 10 dakika boyunca atlar, süre dolunca geri gelir |
+| 🚫 **Daima Atla** | Oyunu kalıcı olarak engeller, hiç seçilmez |
+| ☕ **Mola Hatırlatıcısı** | 10 dakika sonra tam ekran mola sayacı açar (2.5dk dinlen) |
+| 📊 **Canlı İstatistik** | Oyun sayısı, süre ve saatlik tahmin widget'ı |
+| ⌨️ **Klavye Kısayolları** | `S` pas geç · `P` daima atla |
 
-**Seçenek B — Git ile:**
+</div>
+
+<br/>
+
+---
+
+## 📦 Kurulum
+
+<details>
+<summary><b>▶ Adım 1 — Dosyaları İndirin</b></summary>
+
+<br/>
+
+**Yöntem A — Hazır ZIP (Önerilen):**
+
+1. Aşağıdaki butona tıklayın:
+
+   [![Download ZIP](https://img.shields.io/badge/⬇_rchelper.zip-İndir-FF3D6B?style=for-the-badge)](https://github.com/nyx47rd/rchelper/raw/master/rchelper.zip)
+
+2. ZIP dosyasını masaüstüne çıkartın
+
+**Yöntem B — Git ile:**
 
 ```bash
 git clone https://github.com/nyx47rd/rchelper.git
 ```
 
----
+</details>
 
-### Adım 2 — Chrome'a Yükleyin
+<details>
+<summary><b>▶ Adım 2 — Chrome'a Yükleyin</b></summary>
 
-1. Chrome tarayıcısında adres çubuğuna yazın:
+<br/>
+
+1. Chrome adres çubuğuna yazın:
    ```
    chrome://extensions
    ```
 
-2. Sağ üst köşeden **"Geliştirici Modu"**nu açın
+2. Sağ üst köşedeki **Geliştirici Modu** toggle'ını açın
 
-   ![Developer Mode](https://img.shields.io/badge/Geliştirici_Modu-Açık-FF3D6B?style=flat-square)
+3. **"Paketlenmemiş öğe yükle"** butonuna basın
 
-3. **"Paketlenmemiş öğe yükle"** butonuna tıklayın
+4. ZIP'ten çıkardığınız klasörü seçin
 
-4. ZIP'ten çıkardığınız **`rchelper`** klasörünü seçin
+5. ✅ Listede **RC Helper** gözükürse kurulum tamamdır!
 
-5. Eklenti listesinde **RC Helper** göründüğünde kurulum tamamdır ✓
+</details>
 
----
+<details>
+<summary><b>▶ Adım 3 — Kullanmaya Başlayın</b></summary>
 
-### Adım 3 — Kullanmaya Başlayın
+<br/>
 
 1. [rollercoin.com](https://rollercoin.com) adresine gidin
-2. Sağ üst köşedeki eklenti ikonuna tıklayın
-3. **Auto-Play: KAPALI** butonuna basarak otomasyonu başlatın
+2. Tarayıcı araç çubuğundaki ⚡ ikonuna tıklayın
+3. **Auto-Play: KAPALI** butonuna basın → **Auto-Play: AÇIK** 🟢
+
+> Sayfa içinde sol üstte canlı istatistik widget'ı belirir.
+
+</details>
+
+<br/>
 
 ---
 
-## ✦ Arayüz
+## 🖥️ Arayüz Önizlemesi
 
 <div align="center">
 
-### Popup (Eklenti Paneli)
-Eklenti ikonuna tıklayarak açılır. Ayarları buradan yönetebilirsiniz.
-
 ```
-┌─────────────────────────────┐
-│  ⚡ RC Helper                │
-│     rollercoin.com          │
-├─────────────────────────────┤
-│  AYARLAR                    │
-│  Otomatik Seç       ●──○    │
-│  Otomatik Topla     ●──○    │
-│  Mola Hatırlatıcısı ●──○    │
-├─────────────────────────────┤
-│  [▶ Pas Geç]  [⊘ Daima]    │
-│  [▶ Auto-Play: KAPALI     ] │
-├─────────────────────────────┤
-│  PAS GEÇİLEN · 10DK         │
-│  DAIMA ATLANAN              │
-│  [🗑 Hafızayı Temizle     ]  │
-└─────────────────────────────┘
-```
-
-### Float Widget (Sayfa İçi)
-Sayfanın sol üstünde her zaman görünür.
-
-```
-┌────────────────────┐
-│  ⚡ RC Helper       │
-│     rollercoin.com │
-├────────────────────┤
-│  OYUN      SÜRE    │
-│   24       12:34   │
-├────────────────────┤
-│  1 SAATTE: ~80 oyun│
-├────────────────────┤
-│ [▶ Pas Geç][⊘ Da.] │
-└────────────────────┘
+╔══════════════════════════════╗       ╔════════════════════╗
+║  ⚡ RC Helper                ║       ║  ⚡ RC Helper       ║
+║     rollercoin.com           ║       ║     rollercoin.com  ║
+╠══════════════════════════════╣       ╠════════════════════╣
+║  ▶ AYARLAR                   ║       ║  ▶ OYUN    SÜRE    ║
+║  ▶ Otomatik Seç    [●]       ║       ║    42      18:27   ║
+║  ☕ Mola Hatırl.   [●]       ║       ╠════════════════════╣
+║  💰 Otomatik Topla [●]       ║       ║  1 SAATTE ~76 oyun ║
+╠══════════════════════════════╣       ╠════════════════════╣
+║  [▶ Pas Geç]  [⊘ Daima]     ║       ║ [▶ Pas Geç][⊘ Da.] ║
+║  [▶▶ Auto-Play: AÇIK      ]  ║       ╚════════════════════╝
+╠══════════════════════════════╣          Sayfa içi widget
+║  ⏸ Pas Geçilen · 10dk        ║          (sol üst köşe)
+║  ⊘ Daima Atlanan             ║
+║  [🗑 Hafızayı Temizle      ]  ║
+╚══════════════════════════════╝
+         Popup paneli
 ```
 
 </div>
 
----
-
-## ✦ Klavye Kısayolları
-
-| Tuş | Eylem |
-|-----|-------|
-| `S` | Mevcut oyunu 10 dakika pas geç |
-| `P` | Mevcut oyunu daima atla (kalıcı) |
-
-> **Not:** Kısayollar yalnızca `rollercoin.com` üzerinde ve metin alanı odakta değilken çalışır.
+<br/>
 
 ---
 
-## ✦ İzinler
-
-| İzin | Neden Gerekli |
-|---|---|
-| `activeTab` | Aktif sekmedeki sayfayla etkileşim için |
-| `scripting` | İçerik scriptini çalıştırmak için |
-| `tabs` | Popup'tan sekmeye mesaj göndermek için |
-| `storage` | Ayarları ve pas geçilen oyunları kaydetmek için |
-
----
-
-## ✦ Teknik Notlar
-
-- **Manifest v3** ile geliştirilmiştir
-- Service Worker tabanlı arka plan (`background.js`)
-- `chrome.storage.local` ile kalıcı durum yönetimi
-- Tüm UI bileşenleri vanilla JS ile DOM'a enjekte edilir (framework yok)
-- EMA (Exponential Moving Average) tabanlı saatlik oyun tahmini
-- Break checker 1 saniyelik tick ile çalışır, geri sayım doğruluğu yüksektir
-
----
-
-## ✦ Lisans
-
-```
-MIT License — © 2025 nyx47rd
-```
+## ⌨️ Klavye Kısayolları
 
 <div align="center">
 
+| Tuş | Eylem | Detay |
+|:---:|:---|:---|
+| `S` | **Pas Geç** | Mevcut oyunu 10 dakika atlar |
+| `P` | **Daima Atla** | Mevcut oyunu kalıcı olarak engeller |
+
+> Kısayollar yalnızca `rollercoin.com` üzerinde, input/textarea odakta değilken çalışır.
+
+</div>
+
+<br/>
+
 ---
 
-<sub>Made with ❤️ for RollerCoin players</sub>
+## 🔒 İzinler
+
+<div align="center">
+
+| İzin | Neden Gerekli |
+|:---:|:---|
+| `activeTab` | Aktif sekmede script çalıştırmak için |
+| `scripting` | Sayfaya content script enjekte etmek için |
+| `tabs` | Popup → sekme arası mesajlaşma için |
+| `storage` | Ayarları ve pas geçilen oyunları kaydetmek için |
+
+</div>
+
+<br/>
+
+---
+
+## 🛠️ Teknoloji
+
+<div align="center">
+
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Chrome](https://img.shields.io/badge/Chrome_API-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)
+
+</div>
+
+<br/>
+
+```
+📁 rchelper/
+├── 📄 manifest.json      ← Eklenti tanımı (Manifest v3)
+├── 📜 content.js         ← Sayfa içi otomasyon + widget UI
+├── 📜 popup.js           ← Popup panel mantığı
+├── 🎨 popup.html         ← Popup panel arayüzü
+├── ⚙️  background.js     ← Service worker
+└── 🖼️  icon*.png         ← Eklenti ikonları
+```
+
+**Öne çıkan teknik detaylar:**
+- `chrome.storage.local` ile kalıcı durum yönetimi
+- EMA (Exponential Moving Average) tabanlı saatlik tahmin algoritması
+- Break checker 1 saniyelik tick — geri sayım piksel-perfect doğru
+- Tüm UI vanilla JS + inline CSS (zero dependency)
+- Manifest v3 + Service Worker mimarisi
+
+<br/>
+
+---
+
+## 📈 Nasıl Çalışır?
+
+```mermaid
+graph TD
+    A([rollercoin.com yüklendi]) --> B{Sayfa türü?}
+    B -->|choose_game| C[Oyun listesini tara]
+    B -->|play_game| D[Sonucu bekle]
+    C --> E{Pas geçilenler var mı?}
+    E -->|Evet| F[Filtrele]
+    E -->|Hayır| G[Rastgele seç & başlat]
+    F --> G
+    D --> H[Gain Power / Collect tıkla]
+    H --> I{10dk doldu mu?}
+    I -->|Evet| J[☕ Mola Ekranı]
+    J --> K[2.5dk sonra devam]
+    K --> B
+    I -->|Hayır| B
+```
+
+<br/>
+
+---
+
+<div align="center">
+
+### ⭐ Beğendiyseniz yıldız atmayı unutmayın!
+
+[![Star](https://img.shields.io/github/stars/nyx47rd/rchelper?style=social)](https://github.com/nyx47rd/rchelper/stargazers)
+[![Fork](https://img.shields.io/github/forks/nyx47rd/rchelper?style=social)](https://github.com/nyx47rd/rchelper/network/members)
+
+<br/>
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=FF3D6B&height=100&section=footer" width="100%"/>
 
 </div>
