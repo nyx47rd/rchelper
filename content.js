@@ -460,15 +460,27 @@ function createFloatButton() {
   /* ── Header ── */
   const header = document.createElement('div');
   header.style.cssText = 'display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;';
-  header.innerHTML = `
-    <div style="display:flex; align-items:center; gap:7px;">
-      <div style="width:26px; height:26px; background:linear-gradient(135deg,#FF3D6B,#C42B52); border-radius:7px; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0;">${ICON.bolt}</div>
-      <div>
-        <div style="font-size:12px; font-weight:700; color:#fff; line-height:1.2;">RC Helper</div>
-        <div style="font-size:9px; color:#4A5568; line-height:1.2; letter-spacing:0.3px;">rollercoin.com</div>
-      </div>
-    </div>
-  `;
+
+  const headerLeft = document.createElement('div');
+  headerLeft.style.cssText = 'display:flex; align-items:center; gap:7px;';
+
+  const logoBox = document.createElement('div');
+  logoBox.style.cssText = 'width:26px; height:26px; background:linear-gradient(135deg,#FF3D6B,#C42B52); border-radius:7px; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0;';
+  logoBox.innerHTML = ICON.bolt;
+
+  const titleBox = document.createElement('div');
+  const titleEl = document.createElement('div');
+  titleEl.style.cssText = 'font-size:12px; font-weight:700; color:#fff; line-height:1.2;';
+  titleEl.textContent = 'RC Helper';
+  const subEl = document.createElement('div');
+  subEl.style.cssText = 'font-size:9px; color:#4A5568; line-height:1.2; letter-spacing:0.3px;';
+  subEl.textContent = 'rollercoin.com';
+  titleBox.appendChild(titleEl);
+  titleBox.appendChild(subEl);
+
+  headerLeft.appendChild(logoBox);
+  headerLeft.appendChild(titleBox);
+  header.appendChild(headerLeft);
 
   const headerBtns = document.createElement('div');
   headerBtns.style.cssText = 'display:flex; align-items:center; gap:4px; flex-shrink:0;';
