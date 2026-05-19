@@ -1,4 +1,42 @@
 var autoPlayState = false;
+var CURRENT_VERSION = '2.1.5';
+var updateAvailable = false;
+var latestReleaseUrl = 'https://github.com/nyx47rd/rchelper/releases/latest';
+
+function checkForUpdates() {
+  fetch('https://api.github.com/repos/nyx47rd/rchelper/releases/latest', { cache: 'no-store' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var latest = (data.tag_name || '').replace('v', '');
+      if (!latest) return;
+      latestReleaseUrl = data.html_url || latestReleaseUrl;
+      var cur = CURRENT_VERSION.split('.').map(Number);
+      var lat = latest.split('.').map(Number);
+      var isOld = false;
+      for (var i = 0; i < Math.max(cur.length, lat.length); i++) {
+        var c = cur[i] || 0, l = lat[i] || 0;
+        if (l > c) { isOld = true; break; }
+        if (c > l) break;
+      }
+      if (isOld) {
+        updateAvailable = true;
+        var banner = document.getElementById('update-banner');
+        var sub = document.getElementById('update-banner-sub');
+        var btnUpdate = document.getElementById('btn-update');
+        if (banner) banner.style.display = 'block';
+        if (sub) sub.textContent = 'v' + latest + ' mevcut. Auto-Play kullanmak için güncellemeniz gerekiyor.';
+        if (btnUpdate) btnUpdate.onclick = function() { chrome.tabs.create({ url: latestReleaseUrl }); };
+        var btnAuto = document.getElementById('btn-auto');
+        if (btnAuto) {
+          btnAuto.disabled = true;
+          btnAuto.style.opacity = '0.4';
+          btnAuto.style.cursor = 'not-allowed';
+          btnAuto.title = 'Güncelleme gerekiyor';
+        }
+      }
+    })
+    .catch(function() {});
+}
 
 function sendMessage(msg) {
   chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
@@ -10,6 +48,7 @@ function sendMessage(msg) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  checkForUpdates();
   var btnAuto      = document.getElementById('btn-auto');
   var btnSkip      = document.getElementById('btn-skip');
   var btnSkipPerm  = document.getElementById('btn-skip-perm');
