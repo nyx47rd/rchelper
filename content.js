@@ -129,7 +129,7 @@ window.nextBreakTime = null;
 var mainTimer = null;
 var breakCheckTimer = null;
 
-chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'sessionGamesPlayed', 'sessionStartTime'], (data) => {
+chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak'], (data) => {
   window.autoCollect = data.autoCollect !== false;
   window.autoChoose  = data.autoChoose  !== false;
   window.breakReminderEnabled = data.breakReminder !== false;
@@ -141,12 +141,12 @@ chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames
     window.permanentSkippedGames = data.permanentSkippedGames;
     console.log('[RC] Yüklenen permanentSkippedGames:', window.permanentSkippedGames);
   }
-  if (data.sessionGamesPlayed) {
-    window.gamesPlayedThisSession = data.sessionGamesPlayed;
-  }
-  if (data.sessionStartTime) {
-    window.sessionStartTime = data.sessionStartTime;
-  }
+  if (data.sessionGamesPlayed) window.gamesPlayedThisSession = data.sessionGamesPlayed;
+  if (data.sessionStartTime)   window.sessionStartTime = data.sessionStartTime;
+  if (data.sessionGameTimes)   window.gameTimes = data.sessionGameTimes;
+  if (data.sessionBreakCycle)  window.breakCycleStartTime = data.sessionBreakCycle;
+  if (data.sessionIsOnBreak)   window.isOnBreak = data.sessionIsOnBreak;
+  if (data.sessionNextBreak)   window.nextBreakTime = data.sessionNextBreak;
   if (data.autoPlay) {
     window.autoPlayActive = true;
     startAutoPlay();
@@ -168,8 +168,12 @@ function saveState() {
 
 function saveSessionState() {
   chrome.storage.local.set({
-    sessionGamesPlayed: window.gamesPlayedThisSession,
-    sessionStartTime:   window.sessionStartTime,
+    sessionGamesPlayed:   window.gamesPlayedThisSession,
+    sessionStartTime:     window.sessionStartTime,
+    sessionGameTimes:     window.gameTimes,
+    sessionBreakCycle:    window.breakCycleStartTime,
+    sessionIsOnBreak:     window.isOnBreak,
+    sessionNextBreak:     window.nextBreakTime,
   });
 }
 
@@ -309,6 +313,7 @@ function startBreakChecker() {
   if (breakCheckTimer) clearInterval(breakCheckTimer);
   if (!window.breakCycleStartTime) {
     window.breakCycleStartTime = Date.now();
+    saveSessionState();
   }
   breakCheckTimer = setInterval(() => {
     if (!window.breakReminderEnabled || !window.breakCycleStartTime) return;
@@ -328,6 +333,7 @@ function startBreakChecker() {
     if (!window.nextBreakTime && elapsedMinutes >= window.breakSessionMinutes) {
       window.isOnBreak = true;
       window.nextBreakTime = Date.now() + breakDuration;
+      saveSessionState();
       showBreakBanner();
     }
   }, 1000);
@@ -416,6 +422,7 @@ function endBreak() {
   if (breakCheckTimer) clearInterval(breakCheckTimer);
   breakCheckTimer = null;
   window.breakCycleStartTime = Date.now();
+  saveSessionState();
   if (window.autoPlayActive) {
     startBreakChecker();
   }
