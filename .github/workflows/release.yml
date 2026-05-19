@@ -2,12 +2,13 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - master
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip release]')"
 
     steps:
       - name: Checkout
@@ -15,16 +16,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get previous tag
-        id: prev_tag
+      - name: Compute next version
+        id: version
         run: |
-          PREV=$(git tag --sort=-version:refname | sed -n '2p')
-          echo "prev=$PREV" >> $GITHUB_OUTPUT
+          LAST=$(git tag --sort=-version:refname | grep '^v' | head -1)
+          if [ -z "$LAST" ]; then
+            NEXT="v1.0.0"
+          else
+            MAJOR=$(echo $LAST | cut -d. -f1 | tr -d 'v')
+            MINOR=$(echo $LAST | cut -d. -f2)
+            PATCH=$(echo $LAST | cut -d. -f3)
+            NEXT="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+          echo "tag=$NEXT" >> $GITHUB_OUTPUT
+          echo "prev=$LAST" >> $GITHUB_OUTPUT
 
       - name: Build changelog from commits
         id: changelog
         run: |
-          PREV="${{ steps.prev_tag.outputs.prev }}"
+          PREV="${{ steps.version.outputs.prev }}"
           if [ -z "$PREV" ]; then
             LOGS=$(git log --pretty=format:"- %s" HEAD)
           else
@@ -45,10 +55,10 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: RC Helper ${{ github.ref_name }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: RC Helper ${{ steps.version.outputs.tag }}
           body: |
-            ## 🚀 RC Helper ${{ github.ref_name }}
+            ## 🚀 RC Helper ${{ steps.version.outputs.tag }}
 
             ### Değişiklikler
             ${{ steps.changelog.outputs.notes }}
@@ -58,3 +68,5 @@ jobs:
           files: rchelper.zip
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
