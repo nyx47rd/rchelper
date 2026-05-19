@@ -55,7 +55,7 @@
 
 1. Aşağıdaki butona tıklayın:
 
-   [![Download ZIP](https://img.shields.io/badge/⬇_rchelper.zip-İndir-FF3D6B?style=for-the-badge)](https://github.com/nyx47rd/rchelper/raw/master/rchelper.zip)
+   [![Download ZIP](https://img.shields.io/badge/⬇_Son_Sürümü_İndir-FF3D6B?style=for-the-badge)](https://github.com/nyx47rd/rchelper/releases/latest)
 
 2. ZIP dosyasını masaüstüne çıkartın
 
