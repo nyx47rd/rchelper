@@ -3,3 +3,11 @@
 node_modules/
 .DS_Store
 Thumbs.db
+release.sh
+LICENSE
+.github/
+.windsurf/
+README.md
+popup.png
+sayfaiciwidget.png
+suanoynanan.png
