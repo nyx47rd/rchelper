@@ -36,18 +36,11 @@ jobs:
 
       - name: Create ZIP
         run: |
-          zip -r rchelper.zip \
-            manifest.json \
-            content.js \
-            popup.html \
-            popup.js \
-            background.js \
-            icon16.png \
-            icon48.png \
-            icon128.png \
-            favicon.ico \
-            README.md \
-            LICENSE
+          mkdir rchelper
+          cp manifest.json content.js popup.html popup.js background.js \
+             icon16.png icon48.png icon128.png favicon.ico README.md LICENSE \
+             rchelper/
+          zip -r rchelper.zip rchelper/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
