@@ -48,10 +48,7 @@
 
 ## 📦 Kurulum
 
-<details>
-<summary><b>▶ Adım 1 — Dosyaları İndirin</b></summary>
-
-<br/>
+### Adım 1 — Dosyaları İndirin
 
 **Yöntem A — Hazır ZIP (Önerilen):**
 
@@ -67,12 +64,9 @@
 git clone https://github.com/nyx47rd/rchelper.git
 ```
 
-</details>
+---
 
-<details>
-<summary><b>▶ Adım 2 — Chrome'a Yükleyin</b></summary>
-
-<br/>
+### Adım 2 — Chrome'a Yükleyin
 
 1. Chrome adres çubuğuna yazın:
    ```
@@ -87,20 +81,15 @@ git clone https://github.com/nyx47rd/rchelper.git
 
 5. ✅ Listede **RC Helper** gözükürse kurulum tamamdır!
 
-</details>
+---
 
-<details>
-<summary><b>▶ Adım 3 — Kullanmaya Başlayın</b></summary>
-
-<br/>
+### Adım 3 — Kullanmaya Başlayın
 
 1. [rollercoin.com](https://rollercoin.com) adresine gidin
 2. Tarayıcı araç çubuğundaki ⚡ ikonuna tıklayın
 3. **Auto-Play: KAPALI** butonuna basın → **Auto-Play: AÇIK** 🟢
 
 > Sayfa içinde sol üstte canlı istatistik widget'ı belirir.
-
-</details>
 
 <br/>
 
