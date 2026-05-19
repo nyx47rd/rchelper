@@ -51,19 +51,11 @@
 
 ### Adım 1 — Dosyaları İndirin
 
-**Yöntem A — Hazır ZIP (Önerilen):**
-
 1. Aşağıdaki butona tıklayın:
 
    [![Download ZIP](https://img.shields.io/badge/⬇_Son_Sürümü_İndir-FF3D6B?style=for-the-badge)](https://github.com/nyx47rd/rchelper/releases/latest)
 
 2. ZIP dosyasını masaüstüne çıkartın
-
-**Yöntem B — Git ile:**
-
-```bash
-git clone https://github.com/nyx47rd/rchelper.git
-```
 
 ---
 
