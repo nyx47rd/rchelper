@@ -1,4 +1,4 @@
-console.log('RollerCoin Helper Aktif!');
+console.log('RollerCoin Helper Aktif! v2.1');
 
 let _rcAudioCtx = null;
 function _getRCAudioCtx() {
