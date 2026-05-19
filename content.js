@@ -15,6 +15,7 @@ function _getRCAudioCtx() {
 });
 
 function playSound(type) {
+  if (window._rcSoundEnabled === false) return;
   try {
     const ctx = _getRCAudioCtx();
     const resume = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
@@ -426,6 +427,8 @@ function createFloatButton() {
   document.head.appendChild(style);
 
   const ICON = {
+    vol:    `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`,
+    mute:   `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`,
     bolt:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
     skip:   `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>`,
     ban:    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`,
@@ -467,13 +470,43 @@ function createFloatButton() {
     </div>
   `;
 
+  const headerBtns = document.createElement('div');
+  headerBtns.style.cssText = 'display:flex; align-items:center; gap:4px; flex-shrink:0;';
+
+  let soundEnabled = true;
+  chrome.storage.local.get(['rcSoundEnabled'], (d) => {
+    soundEnabled = d.rcSoundEnabled !== false;
+    soundBtn.innerHTML = soundEnabled ? ICON.vol : ICON.mute;
+    soundBtn.style.color = soundEnabled ? '#34D399' : '#4A5568';
+  });
+
+  const soundBtn = document.createElement('button');
+  soundBtn.className = 'rc-btn';
+  soundBtn.title = 'Ses Aç/Kapat';
+  soundBtn.innerHTML = ICON.vol;
+  soundBtn.style.cssText = 'background:#141728; border:1px solid #1E2545; color:#34D399; border-radius:6px; padding:5px; display:flex; align-items:center; justify-content:center; flex-shrink:0;';
+  soundBtn.onclick = () => {
+    const ctx = _getRCAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    soundEnabled = !soundEnabled;
+    window._rcSoundEnabled = soundEnabled;
+    chrome.storage.local.set({ rcSoundEnabled: soundEnabled });
+    soundBtn.innerHTML = soundEnabled ? ICON.vol : ICON.mute;
+    soundBtn.style.color = soundEnabled ? '#34D399' : '#4A5568';
+    if (soundEnabled) playSound('autoOn');
+  };
+  window._rcSoundEnabled = soundEnabled;
+
   const hideBtn = document.createElement('button');
   hideBtn.className = 'rc-btn';
   hideBtn.title = 'Gizle';
   hideBtn.innerHTML = ICON.hide;
   hideBtn.style.cssText = 'background:#141728; border:1px solid #1E2545; color:#4A5568; border-radius:6px; padding:5px; display:flex; align-items:center; justify-content:center; flex-shrink:0;';
   hideBtn.onclick = () => { wrapper.style.display = 'none'; showBtn.style.display = 'flex'; };
-  header.appendChild(hideBtn);
+
+  headerBtns.appendChild(soundBtn);
+  headerBtns.appendChild(hideBtn);
+  header.appendChild(headerBtns);
   wrapper.appendChild(header);
 
   /* ── Divider ── */
