@@ -129,7 +129,7 @@ window.nextBreakTime = null;
 var mainTimer = null;
 var breakCheckTimer = null;
 
-chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder'], (data) => {
+chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'sessionGamesPlayed', 'sessionStartTime'], (data) => {
   window.autoCollect = data.autoCollect !== false;
   window.autoChoose  = data.autoChoose  !== false;
   window.breakReminderEnabled = data.breakReminder !== false;
@@ -140,6 +140,12 @@ chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames
   if (data.permanentSkippedGames) {
     window.permanentSkippedGames = data.permanentSkippedGames;
     console.log('[RC] Yüklenen permanentSkippedGames:', window.permanentSkippedGames);
+  }
+  if (data.sessionGamesPlayed) {
+    window.gamesPlayedThisSession = data.sessionGamesPlayed;
+  }
+  if (data.sessionStartTime) {
+    window.sessionStartTime = data.sessionStartTime;
   }
   if (data.autoPlay) {
     window.autoPlayActive = true;
@@ -160,9 +166,17 @@ function saveState() {
   });
 }
 
+function saveSessionState() {
+  chrome.storage.local.set({
+    sessionGamesPlayed: window.gamesPlayedThisSession,
+    sessionStartTime:   window.sessionStartTime,
+  });
+}
+
 function startGameTimer() {
   if (!window.sessionStartTime) {
     window.sessionStartTime = Date.now();
+    saveSessionState();
   }
   if (window.timerInterval) clearInterval(window.timerInterval);
   updateGameTimer();
@@ -217,6 +231,7 @@ function incrementGamesPlayed() {
   window.gamesPlayedThisSession++;
   const countEl = document.getElementById('rc-games-count');
   if (countEl) countEl.textContent = window.gamesPlayedThisSession;
+  saveSessionState();
 }
 
 function calculateAdvancedPrediction() {
@@ -629,8 +644,20 @@ function createFloatButton() {
   showBtn.onclick = () => { playSound('toggle'); setFloatVisible(true); };
   document.body.appendChild(showBtn);
 
-  chrome.storage.local.get(['skippedGames'], (data) => {
+  chrome.storage.local.get(['skippedGames', 'sessionGamesPlayed', 'sessionStartTime'], (data) => {
     if (data.skippedGames) window.skippedGames = data.skippedGames;
+    if (data.sessionGamesPlayed) {
+      window.gamesPlayedThisSession = data.sessionGamesPlayed;
+      const countEl = document.getElementById('rc-games-count');
+      if (countEl) countEl.textContent = window.gamesPlayedThisSession;
+    }
+    if (data.sessionStartTime) {
+      window.sessionStartTime = data.sessionStartTime;
+      updateGameTimer();
+      if (window.autoPlayActive && !window.timerInterval) {
+        window.timerInterval = setInterval(updateGameTimer, 1000);
+      }
+    }
     updateSkippedDisplay();
   });
 
