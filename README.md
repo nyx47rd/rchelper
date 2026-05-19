@@ -6,7 +6,7 @@
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Otomatik+oyun+seçici+%E2%86%92+daha+fazla+güç;Coin+toplama+otomasyonu;Mola+hatırlatıcısı+ile+sağlıklı+oyun;Klavye+kısayolları+ile+tam+kontrol" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Otomatik+oyun+secici+%E2%86%92+daha+fazla+guc;Coin+toplama+otomasyonu;Mola+hatirlaticisi+ile+saglikli+oyun;Klavye+kisayollari+ile+tam+kontrol" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -104,31 +104,9 @@ git clone https://github.com/nyx47rd/rchelper.git
 
 ---
 
-## 🖥️ Arayüz Önizlemesi
+## 🖥️ Ekran Görüntüleri
 
-<div align="center">
-
-```
-╔══════════════════════════════╗       ╔════════════════════╗
-║  ⚡ RC Helper                ║       ║  ⚡ RC Helper       ║
-║     rollercoin.com           ║       ║     rollercoin.com  ║
-╠══════════════════════════════╣       ╠════════════════════╣
-║  ▶ AYARLAR                   ║       ║  ▶ OYUN    SÜRE    ║
-║  ▶ Otomatik Seç    [●]       ║       ║    42      18:27   ║
-║  ☕ Mola Hatırl.   [●]       ║       ╠════════════════════╣
-║  💰 Otomatik Topla [●]       ║       ║  1 SAATTE ~76 oyun ║
-╠══════════════════════════════╣       ╠════════════════════╣
-║  [▶ Pas Geç]  [⊘ Daima]     ║       ║ [▶ Pas Geç][⊘ Da.] ║
-║  [▶▶ Auto-Play: AÇIK      ]  ║       ╚════════════════════╝
-╠══════════════════════════════╣          Sayfa içi widget
-║  ⏸ Pas Geçilen · 10dk        ║          (sol üst köşe)
-║  ⊘ Daima Atlanan             ║
-║  [🗑 Hafızayı Temizle      ]  ║
-╚══════════════════════════════╝
-         Popup paneli
-```
-
-</div>
+> *Yakında eklenecek.*
 
 <br/>
 
