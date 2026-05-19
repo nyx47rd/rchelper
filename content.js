@@ -141,15 +141,6 @@ chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames
     window.permanentSkippedGames = data.permanentSkippedGames;
     console.log('[RC] Yüklenen permanentSkippedGames:', window.permanentSkippedGames);
   }
-  if (data.sessionPersist) {
-    if (data.sessionGamesPlayed) window.gamesPlayedThisSession = data.sessionGamesPlayed;
-    if (data.sessionStartTime)   window.sessionStartTime = data.sessionStartTime;
-    if (data.sessionGameTimes)   window.gameTimes = data.sessionGameTimes;
-    if (data.sessionBreakCycle)  window.breakCycleStartTime = data.sessionBreakCycle;
-    if (data.sessionIsOnBreak)   window.isOnBreak = data.sessionIsOnBreak;
-    if (data.sessionNextBreak)   window.nextBreakTime = data.sessionNextBreak;
-    chrome.storage.local.remove('sessionPersist');
-  }
   if (data.autoPlay) {
     window.autoPlayActive = true;
     startAutoPlay();
@@ -169,18 +160,7 @@ function saveState() {
   });
 }
 
-function saveSessionState(persist) {
-  const payload = {
-    sessionGamesPlayed:   window.gamesPlayedThisSession,
-    sessionStartTime:     window.sessionStartTime,
-    sessionGameTimes:     window.gameTimes,
-    sessionBreakCycle:    window.breakCycleStartTime,
-    sessionIsOnBreak:     window.isOnBreak,
-    sessionNextBreak:     window.nextBreakTime,
-  };
-  if (persist) payload.sessionPersist = true;
-  chrome.storage.local.set(payload);
-}
+function saveSessionState() {}
 
 function startGameTimer() {
   if (!window.sessionStartTime) {
@@ -656,20 +636,8 @@ function createFloatButton() {
   showBtn.onclick = () => { playSound('toggle'); setFloatVisible(true); };
   document.body.appendChild(showBtn);
 
-  chrome.storage.local.get(['skippedGames', 'sessionGamesPlayed', 'sessionStartTime'], (data) => {
+  chrome.storage.local.get(['skippedGames'], (data) => {
     if (data.skippedGames) window.skippedGames = data.skippedGames;
-    if (data.sessionGamesPlayed) {
-      window.gamesPlayedThisSession = data.sessionGamesPlayed;
-      const countEl = document.getElementById('rc-games-count');
-      if (countEl) countEl.textContent = window.gamesPlayedThisSession;
-    }
-    if (data.sessionStartTime) {
-      window.sessionStartTime = data.sessionStartTime;
-      updateGameTimer();
-      if (window.autoPlayActive && !window.timerInterval) {
-        window.timerInterval = setInterval(updateGameTimer, 1000);
-      }
-    }
     updateSkippedDisplay();
   });
 
@@ -859,7 +827,6 @@ function skipToChooseGame() {
   setTimeout(() => {
     window.gameSelectionInProgress = false;
     console.log('[RC] Yönlendiriliyor...');
-    saveSessionState(true);
     window.location.assign('https://rollercoin.com/game/choose_game');
   }, 1500);
 }
@@ -886,7 +853,6 @@ function skipGamePermanent() {
   setTimeout(() => {
     window.gameSelectionInProgress = false;
     console.log('[RC] Yönlendiriliyor...');
-    saveSessionState(true);
     window.location.assign('https://rollercoin.com/game/choose_game');
   }, 2000);
 }
@@ -1057,7 +1023,6 @@ function pickAndPlay() {
     window.currentPlayingGame = selectedGameName;
     incrementGamesPlayed();
     startGameTimer();
-    saveSessionState(true);
     console.log('[RC] Butona tıklanıyor:', btnText);
     btn.click();
     window.pickAndPlayRunning = false;
