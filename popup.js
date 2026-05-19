@@ -4,11 +4,19 @@ var updateAvailable = false;
 var latestReleaseUrl = 'https://github.com/nyx47rd/rchelper/releases/latest';
 
 function checkForUpdates() {
+  var btnAuto = document.getElementById('btn-auto');
+  if (btnAuto) {
+    btnAuto.disabled = true;
+    btnAuto.style.opacity = '0.4';
+    btnAuto.style.cursor = 'not-allowed';
+    btnAuto.title = 'Kontrol ediliyor...';
+  }
+
   fetch('https://api.github.com/repos/nyx47rd/rchelper/releases/latest', { cache: 'no-store' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var latest = (data.tag_name || '').replace('v', '');
-      if (!latest) return;
+      if (!latest) { unlockAutoPlay(); return; }
       latestReleaseUrl = data.html_url || latestReleaseUrl;
       var cur = CURRENT_VERSION.split('.').map(Number);
       var lat = latest.split('.').map(Number);
@@ -26,16 +34,27 @@ function checkForUpdates() {
         if (banner) banner.style.display = 'block';
         if (sub) sub.textContent = 'v' + latest + ' mevcut. Auto-Play kullanmak için güncellemeniz gerekiyor.';
         if (btnUpdate) btnUpdate.onclick = function() { chrome.tabs.create({ url: latestReleaseUrl }); };
-        var btnAuto = document.getElementById('btn-auto');
         if (btnAuto) {
           btnAuto.disabled = true;
           btnAuto.style.opacity = '0.4';
           btnAuto.style.cursor = 'not-allowed';
           btnAuto.title = 'Güncelleme gerekiyor';
         }
+      } else {
+        unlockAutoPlay();
       }
     })
-    .catch(function() {});
+    .catch(function() { unlockAutoPlay(); });
+}
+
+function unlockAutoPlay() {
+  var btnAuto = document.getElementById('btn-auto');
+  if (btnAuto) {
+    btnAuto.disabled = false;
+    btnAuto.style.opacity = '';
+    btnAuto.style.cursor = '';
+    btnAuto.title = '';
+  }
 }
 
 function sendMessage(msg) {
