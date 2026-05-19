@@ -28,6 +28,8 @@ function playSound(type) {
         breakOff: { type: 'sine',     freq: [550, 660, 770], dur: [0, 0.12, 0.24, 0.36],vol: 0.22 },
         autoOn:   { type: 'sine',     freq: [440, 554, 659], dur: [0, 0.1, 0.2, 0.3],   vol: 0.18 },
         autoOff:  { type: 'sine',     freq: [659, 554, 440], dur: [0, 0.1, 0.2, 0.3],   vol: 0.18 },
+        click:    { type: 'sine',     freq: [600, 500],      dur: [0, 0.03, 0.07],      vol: 0.12 },
+        toggle:   { type: 'sine',     freq: [480, 560],      dur: [0, 0.04, 0.09],      vol: 0.12 },
       };
       const s = sounds[type];
       if (!s) return;
@@ -515,7 +517,7 @@ function createFloatButton() {
   hideBtn.title = 'Gizle';
   hideBtn.innerHTML = ICON.hide;
   hideBtn.style.cssText = 'background:#141728; border:1px solid #1E2545; color:#4A5568; border-radius:6px; padding:5px; display:flex; align-items:center; justify-content:center; flex-shrink:0;';
-  hideBtn.onclick = () => { wrapper.style.display = 'none'; showBtn.style.display = 'flex'; };
+  hideBtn.onclick = () => { playSound('toggle'); wrapper.style.display = 'none'; showBtn.style.display = 'flex'; };
 
   headerBtns.appendChild(soundBtn);
   headerBtns.appendChild(hideBtn);
@@ -598,6 +600,16 @@ function createFloatButton() {
   skippedInfo.style.cssText = 'display:none; font-size:10px; color:#4A5568; background:#141728; border-radius:8px; padding:7px 10px; max-height:72px; overflow-y:auto;';
   wrapper.appendChild(skippedInfo);
 
+  /* ── Global rc-btn click sound via delegation ── */
+  wrapper.addEventListener('click', (e) => {
+    const btn = e.target.closest('.rc-btn');
+    if (!btn) return;
+    const t = btn.title || '';
+    if (t === 'Pas Geç (S)' || t === 'Daima Atla (P)') return; // handled separately
+    if (t === 'Ses Aç/Kapat') return; // handled in soundBtn.onclick
+    playSound('click');
+  }, true);
+
   document.body.appendChild(wrapper);
 
   /* ── Collapsed button ── */
@@ -614,7 +626,7 @@ function createFloatButton() {
     cursor: pointer; opacity: 0.85;
     box-shadow: 0 4px 16px rgba(0,0,0,0.4);
   `;
-  showBtn.onclick = () => setFloatVisible(true);
+  showBtn.onclick = () => { playSound('toggle'); setFloatVisible(true); };
   document.body.appendChild(showBtn);
 
   chrome.storage.local.get(['skippedGames'], (data) => {
