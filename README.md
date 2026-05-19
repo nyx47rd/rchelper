@@ -106,7 +106,18 @@ git clone https://github.com/nyx47rd/rchelper.git
 
 ## 🖥️ Ekran Görüntüleri
 
-> *Yakında eklenecek.*
+<div align="center">
+
+| Popup Paneli | Sayfa İçi Widget |
+|:---:|:---:|
+| ![Popup](popup.png) | ![Widget](sayfaiciwidget.png) |
+| Eklenti ikonuna tıklayarak açılır | Sayfanın sol üstünde sabit durur |
+
+</div>
+
+### Sağ Alt — Oyun Konsolu
+
+Sayfanın sağ alt köşesinde küçük bir konsol widget'ı bulunur. Şu an oynanan oyunun adını gösterir. Kapatmak için sağ üst `✕` butonuna basılabilir, tekrar açmak için liste ikonuna tıklanır.
 
 <br/>
 

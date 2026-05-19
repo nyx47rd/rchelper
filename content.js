@@ -586,15 +586,9 @@ function createStatusWidget() {
 
   /* current game */
   const currentGameRow = document.createElement('div');
-  currentGameRow.style.cssText = 'padding:8px 12px 6px; border-bottom:1px solid #1E2545;';
+  currentGameRow.style.cssText = 'padding:8px 12px 10px;';
   currentGameRow.innerHTML = `<div id="rc-current-game" style="font-size:12px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>`;
   logContainer.appendChild(currentGameRow);
-
-  /* log list */
-  const logList = document.createElement('div');
-  logList.id = 'rc-log-list';
-  logList.style.cssText = 'padding:8px 12px; max-height:120px; overflow-y:auto; display:flex; flex-direction:column; gap:2px;';
-  logContainer.appendChild(logList);
 
   wrapper.appendChild(logContainer);
   document.body.appendChild(wrapper);
@@ -626,33 +620,22 @@ function createStatusWidget() {
   };
   document.body.appendChild(showBtnStatus);
 
-  window.rcStatusLogs = [];
-
   window.updateRCStatus = function(logMessage) {
     const gameEl = document.getElementById('rc-current-game');
-    const lastGameText = gameEl?.textContent || '';
+    if (!gameEl) return;
+    const lastGameText = gameEl.textContent || '';
 
     const match = logMessage.match(/SEÇİLEN OYUN:\s*(.+?)(?:\s*===)?$/);
-    if (gameEl && match) {
+    if (match) {
       const gameName = match[1].trim();
-      if (lastGameText === gameName) return;
-      gameEl.textContent = gameName;
+      if (lastGameText !== gameName) gameEl.textContent = gameName;
+      return;
     }
 
     const oynaniyorMatch = logMessage.match(/OYNANIYOR:\s*(.+?)$/);
-    if (gameEl && oynaniyorMatch) {
+    if (oynaniyorMatch) {
       const gameName = oynaniyorMatch[1].trim();
-      if (lastGameText === gameName) return;
-      gameEl.textContent = gameName;
-    }
-
-    const logEl = document.getElementById('rc-log-list');
-    if (logEl) {
-      const row = document.createElement('div');
-      row.style.cssText = 'font-size:10px; color:#4A5568; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; animation:rcFadeIn 0.25s ease-out;';
-      row.textContent = logMessage.replace(/^\[RC\]\s*/, '');
-      logEl.insertBefore(row, logEl.firstChild);
-      while (logEl.children.length > 10) logEl.removeChild(logEl.lastChild);
+      if (lastGameText !== gameName) gameEl.textContent = gameName;
     }
   };
 }
