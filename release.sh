@@ -20,11 +20,12 @@ fi
 
 echo "→ Versiyon: $NEXT"
 
-# Mevcut tag kontrolü
-if git ls-remote --tags origin | grep -q "refs/tags/$NEXT$"; then
-  echo "✗ $NEXT zaten mevcut! Önce yeni bir commit yapın."
-  exit 1
-fi
+# Mevcut tag kontrolü — aynıysa patch'i bir daha artır
+while git ls-remote --tags origin | grep -q "refs/tags/$NEXT$"; do
+  PATCH=$((PATCH + 1))
+  NEXT="v${MAJOR}.${MINOR}.${PATCH}"
+done
+echo "→ Versiyon (final): $NEXT"
 
 # Changelog
 CHANGELOG=$(git log --pretty=format:"- %s" "${LAST}..HEAD" 2>/dev/null | grep -v '\[skip release\]' | grep -v '^- test:' | grep -v '^- ci:' || true)
@@ -36,14 +37,15 @@ echo "→ Changelog:"
 echo "$CHANGELOG"
 
 # ZIP oluştur
-rm -f rchelper.zip
+ZIPNAME="rchelper-${NEXT}.zip"
+rm -f rchelper.zip "$ZIPNAME"
 mkdir -p _ziptmp/rchelper
 cp manifest.json content.js popup.html popup.js background.js \
-   icon16.png icon48.png icon128.png favicon.ico README.md LICENSE \
+   icon16.png icon48.png icon128.png favicon.ico LICENSE \
    _ziptmp/rchelper/
-cd _ziptmp && zip -r ../rchelper.zip rchelper/ -x "*.DS_Store"
+cd _ziptmp && zip -r "../$ZIPNAME" rchelper/ -x "*.DS_Store"
 cd "$DIR" && rm -rf _ziptmp
-echo "→ ZIP hazır"
+echo "→ ZIP hazır: $ZIPNAME"
 
 # Release oluştur
 RELEASE_ID=$(python3 -c "
@@ -71,8 +73,8 @@ STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
   -X POST \
   -H "Authorization: token $PAT" \
   -H "Content-Type: application/zip" \
-  --data-binary @rchelper.zip \
-  "https://uploads.github.com/repos/$REPO/releases/${RELEASE_ID}/assets?name=rchelper.zip")
+  --data-binary @"$ZIPNAME" \
+  "https://uploads.github.com/repos/$REPO/releases/${RELEASE_ID}/assets?name=${ZIPNAME}")
 
 echo "→ ZIP yükleme: HTTP $STATUS"
 
