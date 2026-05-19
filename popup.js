@@ -66,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   btnAuto.onclick = function() {
+    if (updateAvailable) return;
     autoPlayState = !autoPlayState;
     updateAutoBtn(autoPlayState);
     chrome.storage.local.set({ autoPlay: autoPlayState });
