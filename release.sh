@@ -20,6 +20,12 @@ fi
 
 echo "→ Versiyon: $NEXT"
 
+# Mevcut tag kontrolü
+if git ls-remote --tags origin | grep -q "refs/tags/$NEXT$"; then
+  echo "✗ $NEXT zaten mevcut! Önce yeni bir commit yapın."
+  exit 1
+fi
+
 # Changelog
 CHANGELOG=$(git log --pretty=format:"- %s" "${LAST}..HEAD" 2>/dev/null | grep -v '\[skip release\]' | grep -v '^- test:' | grep -v '^- ci:' || true)
 if [ -z "$CHANGELOG" ]; then
