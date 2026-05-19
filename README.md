@@ -6,8 +6,6 @@
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Otomatik+oyun+seçici+%E2%86%92+daha+fazla+güç;Coin+toplama+otomasyonu;Mola+hatırlatıcısı+ile+sağlıklı+oyun;Klavye+kısayolları+ile+tam+kontrol" alt="Typing SVG" />
-
 <br/><br/>
 
 [![Manifest](https://img.shields.io/badge/Manifest-v3-FF3D6B?style=for-the-badge&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/)
@@ -99,36 +97,6 @@ git clone https://github.com/nyx47rd/rchelper.git
 > Sayfa içinde sol üstte canlı istatistik widget'ı belirir.
 
 </details>
-
-<br/>
-
----
-
-## 🖥️ Arayüz Önizlemesi
-
-<div align="center">
-
-```
-╔══════════════════════════════╗       ╔════════════════════╗
-║  ⚡ RC Helper                ║       ║  ⚡ RC Helper       ║
-║     rollercoin.com           ║       ║     rollercoin.com  ║
-╠══════════════════════════════╣       ╠════════════════════╣
-║  ▶ AYARLAR                   ║       ║  ▶ OYUN    SÜRE    ║
-║  ▶ Otomatik Seç    [●]       ║       ║    42      18:27   ║
-║  ☕ Mola Hatırl.   [●]       ║       ╠════════════════════╣
-║  💰 Otomatik Topla [●]       ║       ║  1 SAATTE ~76 oyun ║
-╠══════════════════════════════╣       ╠════════════════════╣
-║  [▶ Pas Geç]  [⊘ Daima]     ║       ║ [▶ Pas Geç][⊘ Da.] ║
-║  [▶▶ Auto-Play: AÇIK      ]  ║       ╚════════════════════╝
-╠══════════════════════════════╣          Sayfa içi widget
-║  ⏸ Pas Geçilen · 10dk        ║          (sol üst köşe)
-║  ⊘ Daima Atlanan             ║
-║  [🗑 Hafızayı Temizle      ]  ║
-╚══════════════════════════════╝
-         Popup paneli
-```
-
-</div>
 
 <br/>
 
