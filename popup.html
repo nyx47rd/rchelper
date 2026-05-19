@@ -2,48 +2,255 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { width:300px; padding:15px; font-family:Arial; background:#1a1a2e; color:#fff; margin:0; }
-    h3 { color:#e94560; margin:0 0 10px 0; font-size:14px; }
-    .section { background:#0f3460; padding:8px; border-radius:6px; margin-bottom:8px; font-size:11px; }
-    .btn { width:100%; padding:8px; margin:4px 0; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px; }
-    .btn-green { background:#00aa44; color:#fff; }
-    .btn-red { background:#e94560; color:#fff; }
-    .btn-blue { background:#2196F3; color:#fff; }
-    label { font-size:11px; color:#aaa; display:block; margin-top:4px; }
-    .check-row { display:flex; align-items:center; gap:6px; margin:4px 0; font-size:11px; color:#aaa; }
-    .check-row input { width:auto; margin:0; }
-    .game-list { max-height:150px; overflow-y:auto; margin-top:4px; }
-    .game-item { display:flex; align-items:center; gap:6px; padding:2px 0; }
-    .game-item input { width:auto; margin:0; }
-    .game-item label { margin:0; cursor:pointer; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 256px;
+      padding: 14px;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0D0F1A;
+      color: #E2E8F0;
+      font-size: 13px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #1E2545;
+    }
+    .header-left { display: flex; align-items: center; gap: 9px; }
+    .header-icon {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, #FF3D6B, #C42B52);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .header-title { font-size: 13px; font-weight: 700; color: #fff; line-height: 1.2; }
+    .header-sub   { font-size: 10px; color: #4A5568; line-height: 1.2; margin-top: 1px; }
+
+    /* ── Card ── */
+    .card {
+      background: #141728;
+      border: 1px solid #1E2545;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+    .card-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      color: #4A5568;
+      text-transform: uppercase;
+      margin-bottom: 9px;
+    }
+    .card-label svg { color: #FF3D6B; }
+
+    /* ── Toggle ── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+    }
+    .toggle-row + .toggle-row { border-top: 1px solid #1E2545; }
+    .toggle-row-left { display: flex; align-items: center; gap: 7px; color: #CBD5E0; font-size: 12px; }
+    .toggle-row-left svg { color: #4A5568; flex-shrink: 0; }
+    .toggle {
+      position: relative; width: 34px; height: 19px; flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: #1E2545;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.22s;
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      width: 13px; height: 13px;
+      background: #4A5568;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: transform 0.22s, background 0.22s;
+    }
+    .toggle input:checked + .toggle-track { background: rgba(255,61,107,0.2); border: 1px solid rgba(255,61,107,0.4); }
+    .toggle input:checked + .toggle-track::after { transform: translateX(15px); background: #FF3D6B; }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%;
+      padding: 9px 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: filter 0.15s, transform 0.1s;
+      line-height: 1;
+    }
+    .btn svg { flex-shrink: 0; }
+    .btn:hover  { filter: brightness(1.1); }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-row { display: flex; gap: 6px; margin-bottom: 8px; }
+    .btn-row .btn { flex: 1; }
+
+    .btn-skip { background: #FF3D6B; color: #fff; }
+    .btn-perm { background: #141728; border: 1px solid #1E2545; color: #60A5FA; }
+    .btn-auto { background: #1E3A5F; border: 1px solid #2563EB; color: #60A5FA; margin-bottom: 8px; }
+    .btn-auto.active { background: #FF3D6B; border-color: #FF3D6B; color: #fff; }
+    .btn-clear {
+      background: #141728;
+      border: 1px solid #1E2545;
+      color: #4A5568;
+      font-size: 11px;
+    }
+    .btn-clear:hover { border-color: #FF3D6B; color: #FF3D6B; filter: none; }
+
+    /* ── Skip list ── */
+    .skip-list {
+      font-size: 11px;
+      color: #4A5568;
+      max-height: 68px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #1E2545 transparent;
+    }
+    .skip-list::-webkit-scrollbar { width: 3px; }
+    .skip-list::-webkit-scrollbar-thumb { background: #1E2545; border-radius: 2px; }
+
+    /* item rows inside list */
+    .skip-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px 0;
+      color: #CBD5E0;
+      font-size: 11px;
+    }
+    .skip-item + .skip-item { border-top: 1px solid #1E2545; }
+    .skip-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+    .skip-item-meta { color: #4A5568; font-size: 10px; margin-left: 4px; flex-shrink: 0; }
+    .skip-item-rm {
+      background: transparent;
+      border: none;
+      color: #4A5568;
+      cursor: pointer;
+      padding: 1px 3px;
+      border-radius: 3px;
+      display: flex; align-items: center;
+      flex-shrink: 0;
+      transition: color 0.15s;
+    }
+    .skip-item-rm:hover { color: #FF3D6B; }
+    .skip-empty { color: #4A5568; font-size: 11px; }
   </style>
 </head>
 <body>
-  <h3>RollerCoin Helper</h3>
 
-  <div class="section">
-    <div class="check-row">
-      <input type="checkbox" id="chk-choose">
-      <label for="chk-choose" style="margin:0;">CHOOSE GAME</label>
-    </div>
-    <div class="check-row">
-      <input type="checkbox" id="chk-collect" checked>
-      <label for="chk-collect" style="margin:0;">Collect/Complete</label>
-    </div>
-  </div>
-
-  <div class="section">
-    <label>Auto-Play'e Dahil Olmayan Oyunlar:</label>
-    <div class="game-list" id="game-list">
-      <div style="color:#aaa; font-size:10px;">Oyunlar yükleniyor...</div>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <div>
+        <div class="header-title">RC Helper</div>
+        <div class="header-sub">rollercoin.com</div>
+      </div>
     </div>
   </div>
 
-  <button class="btn btn-green" id="btn-once">Akıllı Oyun Başlat</button>
-  <button class="btn btn-blue" id="btn-auto">Auto-Play: KAPALI</button>
+  <!-- Settings -->
+  <div class="card">
+    <div class="card-label">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      Ayarlar
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-row-left">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Otomatik Seç
+      </div>
+      <label class="toggle"><input type="checkbox" id="chk-choose" checked><span class="toggle-track"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-row-left">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Otomatik Topla
+      </div>
+      <label class="toggle"><input type="checkbox" id="chk-collect" checked><span class="toggle-track"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-row-left">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+        Mola Hatırlatıcısı
+      </div>
+      <label class="toggle"><input type="checkbox" id="chk-break" checked><span class="toggle-track"></span></label>
+    </div>
+  </div>
 
-  <div id="status" style="margin-top:8px; font-size:11px; color:#aaa;"></div>
+  <!-- Skip / Perm row -->
+  <div class="btn-row">
+    <button class="btn btn-skip" id="btn-skip">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+      Pas Geç
+    </button>
+    <button class="btn btn-perm" id="btn-skip-perm" title="Daima Atla">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      Daima
+    </button>
+  </div>
+
+  <!-- Auto-Play -->
+  <button class="btn btn-auto" id="btn-auto">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    Auto-Play: KAPALI
+  </button>
+
+  <!-- Temp skipped -->
+  <div class="card">
+    <div class="card-label">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Pas Geçilen · 10dk
+    </div>
+    <div id="skipped-games-list" class="skip-list"><span class="skip-empty">Henüz yok</span></div>
+  </div>
+
+  <!-- Permanent skipped -->
+  <div class="card">
+    <div class="card-label">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      Daima Atlanan
+    </div>
+    <div id="permanent-skipped-list" class="skip-list"><span class="skip-empty">Henüz yok</span></div>
+  </div>
+
+  <!-- Clear -->
+  <button class="btn btn-clear" id="btn-clear">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+    Hafızayı Temizle
+  </button>
 
   <script src="popup.js"></script>
 </body>

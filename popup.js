@@ -1,141 +1,212 @@
-function sendMessage(msg, cb) {
-  chrome.tabs.query({active:true, currentWindow:true}, function(tabs) {
-    if (!tabs || !tabs[0]) { 
-      document.getElementById('status').innerText = 'RollerCoin sekmesi bulunamadı!';
-      if(cb)cb(null); 
-      return; 
-    }
-    chrome.tabs.sendMessage(tabs[0].id, msg, function(response) {
-      if (chrome.runtime.lastError) {
-        document.getElementById('status').innerText = 'Sayfa yenilenmeli!';
-        if(cb)cb(null);
-        return;
-      }
-      if(cb)cb(response);
+var autoPlayState = false;
+
+function sendMessage(msg) {
+  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+    if (!tabs || !tabs[0]) return;
+    chrome.tabs.sendMessage(tabs[0].id, msg, function() {
+      void chrome.runtime.lastError;
     });
   });
 }
 
-var gameList = [
-  'Crypto Hex',
-  'Coinclick',
-  'Dr.Hamster',
-  'Coin-match',
-  'Token Surfer: Snow Ride',
-  'Token Blaster',
-  'Coin Fisher',
-  'Hamster Climber',
-  'Flappy Rocket',
-  'Mission Hamspossible',
-  'Crypto Hamster',
-  '2048 Coins',
-  'Cryptonoid',
-  'Coin-Flip',
-  'Lambo Rider'
-];
-
-function getExcludedGames() {
-  return JSON.parse(localStorage.getItem('excludeGames') || '[]');
-}
-
-function saveExcludedGames(list) {
-  localStorage.setItem('excludeGames', JSON.stringify(list));
-}
-
-function renderGameList() {
-  var container = document.getElementById('game-list');
-  if (!container) return;
-  var excluded = getExcludedGames();
-  container.innerHTML = '';
-  gameList.forEach(function(name) {
-    var div = document.createElement('div');
-    div.className = 'game-item';
-    var cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.id = 'game-' + name;
-    cb.checked = excluded.indexOf(name) !== -1;
-    cb.onchange = function() {
-      var excluded = getExcludedGames();
-      if (cb.checked) {
-        if (excluded.indexOf(name) === -1) excluded.push(name);
-      } else {
-        var idx = excluded.indexOf(name);
-        if (idx !== -1) excluded.splice(idx, 1);
-      }
-      saveExcludedGames(excluded);
-    };
-    var label = document.createElement('label');
-    label.htmlFor = cb.id;
-    label.innerText = name;
-    div.appendChild(cb);
-    div.appendChild(label);
-    container.appendChild(div);
-  });
-}
-
 document.addEventListener('DOMContentLoaded', function() {
-  var btnOnce = document.getElementById('btn-once');
-  var btnAuto = document.getElementById('btn-auto');
-  var chkChoose = document.getElementById('chk-choose');
-  var chkCollect = document.getElementById('chk-collect');
-  var statusEl = document.getElementById('status');
+  var btnAuto      = document.getElementById('btn-auto');
+  var btnSkip      = document.getElementById('btn-skip');
+  var btnSkipPerm  = document.getElementById('btn-skip-perm');
+  var btnClear     = document.getElementById('btn-clear');
+  var chkChoose    = document.getElementById('chk-choose');
+  var chkCollect   = document.getElementById('chk-collect');
+  var chkBreak    = document.getElementById('chk-break');
 
-  chkChoose.checked = localStorage.getItem('autoChoose') === 'true';
-  chkCollect.checked = localStorage.getItem('autoCollect') !== 'false';
-  var autoPlayState = localStorage.getItem('autoPlay') === 'true';
-  if(btnAuto) {
-    btnAuto.innerText = autoPlayState ? 'Auto-Play: AÇIK' : 'Auto-Play: KAPALI';
-    btnAuto.className = autoPlayState ? 'btn btn-red' : 'btn btn-blue';
+  chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'breakReminder'], (data) => {
+    autoPlayState = !!data.autoPlay;
+    chkChoose.checked  = data.autoChoose  !== false;
+    chkCollect.checked = data.autoCollect !== false;
+    chkBreak.checked = data.breakReminder !== false;
+    updateAutoBtn(autoPlayState);
+  });
+
+  btnAuto.onclick = function() {
+    autoPlayState = !autoPlayState;
+    updateAutoBtn(autoPlayState);
+    chrome.storage.local.set({ autoPlay: autoPlayState });
+    sendMessage({ action: 'toggleAuto', on: autoPlayState });
+  };
+
+  function updateAutoBtn(state) {
+    btnAuto.textContent = state ? 'Auto-Play: AÇIK' : 'Auto-Play: KAPALI';
+    btnAuto.classList.toggle('active', state);
   }
 
-  renderGameList();
+  function updateSkippedGamesList(skippedGames) {
+    var listEl = document.getElementById('skipped-games-list');
+    if (!listEl) return;
+    
+    var now = Date.now();
+    var skipDuration = 10 * 60 * 1000;
+    var validGames = [];
+    
+    for (var key in skippedGames) {
+      var remaining = Math.ceil((skipDuration - (now - skippedGames[key])) / 60000);
+      if (remaining > 0) {
+        validGames.push({ name: key, remaining: remaining });
+      } else {
+        delete skippedGames[key];
+      }
+    }
+    
+    var ICON_X = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    if (validGames.length === 0) {
+      listEl.innerHTML = '<span class="skip-empty">Henüz yok</span>';
+    } else {
+      listEl.innerHTML = '';
+      validGames.forEach(function(g) {
+        var div = document.createElement('div');
+        div.className = 'skip-item';
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'skip-item-name';
+        nameSpan.textContent = g.name;
+        var metaSpan = document.createElement('span');
+        metaSpan.className = 'skip-item-meta';
+        metaSpan.textContent = g.remaining + 'dk';
+        var btn = document.createElement('button');
+        btn.className = 'skip-item-rm';
+        btn.innerHTML = ICON_X;
+        btn.onclick = function() {
+          chrome.storage.local.get(['skippedGames'], function(data) {
+            var skipped = data.skippedGames || {};
+            delete skipped[g.name];
+            chrome.storage.local.set({ skippedGames: skipped });
+            loadSkippedGames();
+          });
+        };
+        div.appendChild(nameSpan);
+        div.appendChild(metaSpan);
+        div.appendChild(btn);
+        listEl.appendChild(div);
+      });
+    }
+  }
 
-  if(btnOnce) {
-    btnOnce.onclick = function() {
-      statusEl.innerText = 'Akıllı oyun seçiliyor...';
-      var excludeList = getExcludedGames();
-      sendMessage({action: 'playSmart', exclude: excludeList}, function(r) {
-        statusEl.innerText = r ? 'Oyun başlatıldı!' : 'Hata! Sayfayı yenileyin.';
-        setTimeout(function(){ statusEl.innerText = ''; }, 2000);
+  function updatePermanentSkippedList(permanentSkipped) {
+    var listEl = document.getElementById('permanent-skipped-list');
+    if (!listEl) return;
+    
+    var games = Object.keys(permanentSkipped);
+    
+    var ICON_X2 = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    if (games.length === 0) {
+      listEl.innerHTML = '<span class="skip-empty">Henüz yok</span>';
+    } else {
+      listEl.innerHTML = '';
+      games.forEach(function(g) {
+        var div = document.createElement('div');
+        div.className = 'skip-item';
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'skip-item-name';
+        nameSpan.textContent = g;
+        var btn = document.createElement('button');
+        btn.className = 'skip-item-rm';
+        btn.innerHTML = ICON_X2;
+        btn.onclick = function() {
+          chrome.storage.local.get(['permanentSkippedGames'], function(data) {
+            var permanent = data.permanentSkippedGames || {};
+            delete permanent[g];
+            chrome.storage.local.set({ permanentSkippedGames: permanent });
+            loadSkippedGames();
+          });
+        };
+        div.appendChild(nameSpan);
+        div.appendChild(btn);
+        listEl.appendChild(div);
+      });
+    }
+  }
+
+  function loadSkippedGames() {
+    chrome.storage.local.get(['skippedGames', 'permanentSkippedGames'], (data) => {
+      updateSkippedGamesList(data.skippedGames || {});
+      updatePermanentSkippedList(data.permanentSkippedGames || {});
+    });
+  }
+
+  window.removeSkipped = function(gameName) {
+    chrome.storage.local.get(['skippedGames'], (data) => {
+      var skipped = data.skippedGames || {};
+      delete skipped[gameName];
+      chrome.storage.local.set({ skippedGames: skipped });
+      loadSkippedGames();
+    });
+  };
+
+  window.removePermanent = function(gameName) {
+    chrome.storage.local.get(['permanentSkippedGames'], (data) => {
+      var permanent = data.permanentSkippedGames || {};
+      delete permanent[gameName];
+      chrome.storage.local.set({ permanentSkippedGames: permanent });
+      loadSkippedGames();
+    });
+  };
+
+  setInterval(loadSkippedGames, 5000);
+  loadSkippedGames();
+
+  btnSkip.onclick = function() {
+    var orig = btnSkip.textContent;
+    btnSkip.textContent = 'Geçiliyor...';
+    sendMessage({ action: 'skipGame' });
+    setTimeout(function() { 
+      btnSkip.textContent = orig; 
+      loadSkippedGames();
+    }, 1500);
+  };
+
+  btnSkipPerm.onclick = function() {
+    var orig = btnSkipPerm.textContent;
+    btnSkipPerm.textContent = '...';
+    sendMessage({ action: 'skipGamePermanent' });
+    setTimeout(function() { 
+      btnSkipPerm.textContent = orig; 
+      loadSkippedGames();
+    }, 1500);
+  };
+
+  chkChoose.onchange  = function() { chrome.storage.local.set({ autoChoose: chkChoose.checked }); sendMessage({ action: 'toggleChoose',  on: chkChoose.checked }); };
+  chkCollect.onchange = function() { chrome.storage.local.set({ autoCollect: chkCollect.checked }); sendMessage({ action: 'toggleCollect', on: chkCollect.checked }); };
+  chkBreak.onchange = function() {
+    chrome.storage.local.set({ breakReminder: chkBreak.checked });
+    sendMessage({ action: 'toggleBreak', on: chkBreak.checked });
+  };
+
+  btnClear.onclick = function() {
+    var existing = document.getElementById('rc-confirm-box');
+    if (existing) { existing.remove(); return; }
+    var box = document.createElement('div');
+    box.id = 'rc-confirm-box';
+    box.style.cssText = 'background:#1e2235; border:1px solid #e94560; border-radius:8px; padding:10px; margin-top:6px; font-size:11px; color:#ccc; text-align:center;';
+    box.innerHTML = '<div style="margin-bottom:8px;">Emin misin? Tüm ayarlar silinecek.</div>';
+    var yes = document.createElement('button');
+    yes.textContent = 'Evet, Temizle';
+    yes.style.cssText = 'background:#e94560; color:#fff; border:none; border-radius:5px; padding:5px 10px; cursor:pointer; font-size:11px; margin-right:6px;';
+    yes.onclick = function() {
+      chrome.storage.local.clear(function() {
+        box.remove();
+        btnClear.textContent = '✓ Temizlendi!';
+        btnClear.style.background = '#4ade80';
+        btnClear.style.color = '#fff';
+        setTimeout(function() {
+          btnClear.textContent = '🗑️ Hafızayı Temizle';
+          btnClear.style.background = '#1e2235';
+          btnClear.style.color = '#666';
+        }, 2000);
       });
     };
-  }
-
-  if(btnAuto) {
-    btnAuto.onclick = function() {
-      var newState = !autoPlayState;
-      autoPlayState = newState;
-      localStorage.setItem('autoPlay', newState);
-      var excludeList = getExcludedGames();
-      sendMessage({action: 'toggleAuto', on: newState, exclude: excludeList}, function(r) {
-        if(r) {
-          btnAuto.innerText = r.on ? 'Auto-Play: AÇIK' : 'Auto-Play: KAPALI';
-          btnAuto.className = r.on ? 'btn btn-red' : 'btn btn-blue';
-          statusEl.innerText = r.on ? 'Oto-oynatma AÇIK' : 'Oto-oynatma KAPALI';
-        } else {
-          statusEl.innerText = 'Hata! Sayfayı yenileyin.';
-        }
-        setTimeout(function(){ statusEl.innerText = ''; }, 2000);
-      });
-    };
-  }
-
-  if(chkChoose) {
-    chkChoose.onchange = function() {
-      var isChecked = chkChoose.checked;
-      localStorage.setItem('autoChoose', isChecked);
-      sendMessage({action: 'toggleChoose', on: isChecked}, function(r) {
-        statusEl.innerText = r && r.on ? 'CHOOSE GAME: AÇIK' : 'CHOOSE GAME: KAPALI';
-        setTimeout(function(){ statusEl.innerText = ''; }, 2000);
-      });
-    };
-  }
-
-  if(chkCollect) {
-    chkCollect.onchange = function() {
-      var isChecked = chkCollect.checked;
-      localStorage.setItem('autoCollect', isChecked);
-      sendMessage({action: 'toggleCollect', on: isChecked});
-    };
-  }
+    var no = document.createElement('button');
+    no.textContent = 'İptal';
+    no.style.cssText = 'background:#333; color:#888; border:none; border-radius:5px; padding:5px 10px; cursor:pointer; font-size:11px;';
+    no.onclick = function() { box.remove(); };
+    box.appendChild(yes);
+    box.appendChild(no);
+    btnClear.parentNode.insertBefore(box, btnClear.nextSibling);
+  };
 });

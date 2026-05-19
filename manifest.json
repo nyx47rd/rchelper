@@ -1,12 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "RollerCoin Helper",
+  "name": "RollerCoin Auto Helper",
   "version": "2.0",
-  "permissions": ["activeTab", "scripting", "tabs"],
+  "description": "RollerCoin otomatik oynatma ve coin toplama yardımcısı",
+  "permissions": ["activeTab", "scripting", "tabs", "storage"],
   "host_permissions": ["*://*.rollercoin.com/*", "*://rollercoin.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "RollerCoin Helper"
+    "default_title": "RollerCoin Auto Helper",
+    "default_icon": "icon48.png"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
   },
   "content_scripts": [
     {
