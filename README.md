@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=FF3D6B&height=200&section=header&text=RC%20Helper&fontSize=72&fontColor=ffffff&fontAlignY=45&animation=fadeIn" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=220&section=header&text=RC%20Helper&fontSize=80&fontColor=ffffff&fontAlignY=45&animation=twinkling&desc=RollerCoin%20Power%20Otomasyonu&descAlignY=65&descSize=18&descColor=ffffff" width="100%"/>
 
 <img src="favicon.ico" width="48" height="48" alt="RC Helper Icon"/>
 
@@ -8,7 +8,7 @@
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Otomatik+oyun+secici+%E2%86%92+daha+fazla+guc;Coin+toplama+otomasyonu;Mola+hatirlaticisi+ile+saglikli+oyun;Klavye+kisayollari+ile+tam+kontrol" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Otomatik+oyun+secici+%E2%86%92+daha+fazla+guc;Power+toplama+otomasyonu;Mola+hatirlaticisi+ile+saglikli+oyun;Klavye+kisayollari+ile+tam+kontrol;Auto-Play+ile+eller+serbest;Akilli+oyun+atlama+sistemi" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -17,6 +17,12 @@
 [![Chrome](https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chrome.google.com/webstore)
 [![License](https://img.shields.io/badge/License-MIT-34D399?style=for-the-badge&logoColor=white)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/nyx47rd/rchelper?style=for-the-badge&color=FF3D6B&logo=github)](https://github.com/nyx47rd/rchelper/stargazers)
+
+<br/>
+
+![Profile Views](https://komarev.com/ghpvc/?username=nyx47rd&label=Repo+Views&color=FF3D6B&style=for-the-badge)
+[![GitHub last commit](https://img.shields.io/github/last-commit/nyx47rd/rchelper?style=for-the-badge&color=FF3D6B&logo=github)](https://github.com/nyx47rd/rchelper/commits)
+[![GitHub release](https://img.shields.io/github/v/release/nyx47rd/rchelper?style=for-the-badge&color=FF3D6B&logo=github)](https://github.com/nyx47rd/rchelper/releases/latest)
 
 </div>
 
