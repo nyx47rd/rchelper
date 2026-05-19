@@ -111,6 +111,12 @@ git clone https://github.com/nyx47rd/rchelper.git
 
 Sayfanın sağ alt köşesinde küçük bir konsol widget'ı bulunur. Şu an oynanan oyunun adını gösterir. Kapatmak için sağ üst `✕` butonuna basılabilir, tekrar açmak için liste ikonuna tıklanır.
 
+<div align="center">
+
+![Şu An Oynanan](suanoynanan.png)
+
+</div>
+
 <br/>
 
 ---
