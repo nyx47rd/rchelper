@@ -996,6 +996,9 @@ function pickAndPlay() {
   const items = Array.from(document.querySelectorAll('.choose-game-item-container, .choose-game-item, .game-item:not(.winning-game-item), div[class*="choose-game-item"]:not(.winning-game-item)'));
   if (items.length === 0) {
     window.pickAndPlayRunning = false;
+    setTimeout(() => {
+      if (!window.gameSelectionInProgress && window.autoPlayActive) pickAndPlay();
+    }, 1500);
     return;
   }
   
@@ -1063,13 +1066,21 @@ function pickAndPlay() {
     startGameTimer();
     console.log('[RC] Butona tıklanıyor:', btnText);
     btn.click();
+    btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
     window.pickAndPlayRunning = false;
     if (window.updateRCStatus) {
       window.updateRCStatus('[RC] 🎮 OYNANIYOR: ' + selectedGameName);
     }
+    const urlAtClick = window.location.href;
     setTimeout(() => {
-      window.gameSelectionInProgress = false;
-    }, 5000);
+      if (window.location.href === urlAtClick && window.gameSelectionInProgress) {
+        console.log('[RC] ⚠ Sayfa geçişi olmadı, tekrar deneniyor...');
+        window.gameSelectionInProgress = false;
+        window.pickAndPlayRunning = false;
+      } else {
+        window.gameSelectionInProgress = false;
+      }
+    }, 4000);
   } else {
     window.pickAndPlayRunning = false;
   }
