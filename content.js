@@ -1125,7 +1125,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   else if (msg.action === 'getAvailableGames') {
     const items = Array.from(document.querySelectorAll('.choose-game-item-container, .choose-game-item, .game-item:not(.winning-game-item), div[class*="choose-game-item"]:not(.winning-game-item)'));
-    const games = items.map(item => getGameName(item)).filter(n => n && !n.startsWith('Game-'));
+    const seen = new Set();
+    const games = items
+      .map(item => ({ name: getGameName(item), el: item }))
+      .filter(({ name, el }) => {
+        if (!name || name.startsWith('Game-')) return false;
+        const lname = name.toLowerCase();
+        if (lname.includes('coming soon') || lname.includes('wait')) return false;
+        const btn = el.querySelector('button, a, [class*="btn"], [role="button"]');
+        const btnText = (btn?.innerText || btn?.textContent || '').toUpperCase();
+        if (btn && (btn.disabled || btnText.includes('WAIT') || btnText.includes('SOON'))) return false;
+        if (seen.has(name)) return false;
+        seen.add(name);
+        return true;
+      })
+      .map(({ name }) => name);
     sendResponse({ games: games.length > 0 ? games : null });
     return true;
   }
