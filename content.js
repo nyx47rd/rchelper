@@ -913,37 +913,45 @@ function isOnPlayGamePage() {
   return isPlayGame;
 }
 
+const BADGE_WORDS = new Set(['new', 'hot', 'soon', 'coming soon', 'wait', 'beta', 'free']);
+
+function isValidGameName(text) {
+  if (!text) return false;
+  const t = text.trim().toLowerCase();
+  return t.length > 1 && !BADGE_WORDS.has(t);
+}
+
 function getGameName(item) {
   const dataName = item.getAttribute('data-game-name') || item.getAttribute('data-name') || item.getAttribute('data-title');
-  if (dataName) {
+  if (dataName && isValidGameName(dataName)) {
     return dataName.trim().substring(0, 40);
   }
   
   const nameSelectors = [
     '[class*="game-name"]',
-    '[class*="gameName"]', 
-    '[class*="title"]',
-    '[class*="Name"]',
-    '.game-card-title',
-    '.game-title',
-    'h3',
-    'h4',
-    '[data-game-name]',
+    '[class*="gameName"]',
     '[class*="item-name"]',
     '[class*="itemName"]',
+    '.game-card-title',
+    '.game-title',
+    '[class*="game-title"]',
+    'h3',
+    'h4',
+    '[class*="title"]',
+    '[class*="Name"]',
     '.name',
-    '.game-title'
   ];
   
   for (const selector of nameSelectors) {
     const nameEl = item.querySelector(selector);
-    if (nameEl?.innerText?.trim()) {
-      return nameEl.innerText.trim().substring(0, 40);
+    const text = nameEl?.innerText?.trim();
+    if (isValidGameName(text)) {
+      return text.substring(0, 40);
     }
   }
   
   const allText = item.innerText.trim();
-  const lines = allText.split(/[\n\r]+/).map(l => l.trim()).filter(l => l);
+  const lines = allText.split(/[\n\r]+/).map(l => l.trim()).filter(isValidGameName);
   if (lines.length > 0) {
     return lines[0].substring(0, 40);
   }
