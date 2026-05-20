@@ -8,7 +8,7 @@
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Otomatik+oyun+secici+%E2%86%92+daha+fazla+guc;Power+toplama+otomasyonu;Mola+hatirlaticisi+ile+saglikli+oyun;Klavye+kisayollari+ile+tam+kontrol;Auto-Play+ile+eller+serbest;Akilli+oyun+atlama+sistemi" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Otomatik+oyun+secici+%E2%86%92+daha+fazla+guc;Power+toplama+otomasyonu;Mola+hatirlaticisi+ile+saglikli+oyun;Klavye+kisayollari+ile+tam+kontrol;Auto-Play+ile+eller+serbest;Akilli+oyun+atlama+sistemi;Listeden+pas+gec+ve+daima+atla" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -42,6 +42,7 @@
 | 💰 **Otomatik Topla** | *Gain Power* ve *Collect* butonlarına otomatik basar |
 | ⏸ **Pas Geç · 10dk** | Seçili oyunu 10 dakika boyunca atlar, süre dolunca geri gelir |
 | 🚫 **Daima Atla** | Oyunu kalıcı olarak engeller, hiç seçilmez |
+| 📋 **Listeden Seç** | Oyun seçim sayfasına gitmeden popup'tan istediğin oyunu pas geç veya daima atla listesine ekle |
 | ☕ **Mola Hatırlatıcısı** | 10 dakika sonra tam ekran mola sayacı açar (2.5dk dinlen) |
 | 📊 **Canlı İstatistik** | Oyun sayısı, süre ve saatlik tahmin widget'ı |
 | ⌨️ **Klavye Kısayolları** | `S` pas geç · `P` daima atla |
