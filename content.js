@@ -1027,14 +1027,15 @@ function pickAndPlay() {
     return;
   }
   
-  const lastGameName = window.lastPlayedGameName;
+  if (!window.recentGames) window.recentGames = [];
+  const historySize = Math.max(1, Math.floor(validItems.length / 2));
   const filteredValidItems = validItems.filter(item => {
     const name = getGameName(item);
-    return name !== lastGameName && !window.skippedGames[name] && !window.permanentSkippedGames[name];
+    return !window.recentGames.includes(name);
   });
   const finalItems = filteredValidItems.length > 0 ? filteredValidItems : validItems;
   
-  console.log('[RC] Son oynanan:', lastGameName, '| Filtrelenmiş:', filteredValidItems.length, '| Son:', finalItems.length);
+  console.log('[RC] Son oynanlar:', window.recentGames, '| Filtrelenmiş:', filteredValidItems.length, '| Son:', finalItems.length);
   
   if (finalItems.length === 0) {
     console.log('[RC] ⚠ Tüm oyunlar wait veya pas geçilmiş, bekleniyor...');
@@ -1050,6 +1051,8 @@ function pickAndPlay() {
   const selected = finalItems[Math.floor(Math.random() * finalItems.length)];
   const selectedGameName = getGameName(selected);
   window.lastPlayedGameName = selectedGameName;
+  window.recentGames.push(selectedGameName);
+  if (window.recentGames.length > historySize) window.recentGames.shift();
   
   const btn = selected.querySelector('button, a, [class*="btn"], [role="button"]');
   const btnText = btn?.innerText || btn?.textContent || '';
