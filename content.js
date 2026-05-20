@@ -1115,6 +1115,30 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (banner) banner.remove();
     }
   }
+  else if (msg.action === 'getAvailableGames') {
+    const items = Array.from(document.querySelectorAll('.choose-game-item-container, .choose-game-item, .game-item:not(.winning-game-item), div[class*="choose-game-item"]:not(.winning-game-item)'));
+    const games = items.map(item => getGameName(item)).filter(n => n && !n.startsWith('Game-'));
+    sendResponse({ games: games.length > 0 ? games : null });
+    return true;
+  }
+  else if (msg.action === 'addSkip') {
+    if (msg.gameName) {
+      window.skippedGames[msg.gameName] = Date.now();
+      chrome.storage.local.set({ skippedGames: window.skippedGames });
+      updateSkippedDisplay();
+    }
+    sendResponse({ ok: true });
+    return true;
+  }
+  else if (msg.action === 'addPermSkip') {
+    if (msg.gameName) {
+      window.permanentSkippedGames[msg.gameName] = true;
+      chrome.storage.local.set({ permanentSkippedGames: window.permanentSkippedGames });
+      updateSkippedDisplay();
+    }
+    sendResponse({ ok: true });
+    return true;
+  }
   sendResponse({ ok: true });
   return true;
 });

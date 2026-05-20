@@ -207,6 +207,65 @@
       transition: border-color 0.15s, color 0.15s;
     }
     .btn-github:hover { border-color: #4A5568; color: #CBD5E0; }
+
+    /* ── Game picker panel ── */
+    .game-picker {
+      display: none;
+      background: #141728;
+      border: 1px solid #1E2545;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .game-picker-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid #1E2545;
+    }
+    .game-picker-title { font-size: 10px; font-weight: 600; color: #4A5568; text-transform: uppercase; letter-spacing: 0.6px; }
+    .game-picker-close {
+      background: none; border: none; color: #4A5568; cursor: pointer;
+      display: flex; align-items: center; padding: 2px;
+      transition: color 0.15s;
+    }
+    .game-picker-close:hover { color: #FF3D6B; }
+    .game-picker-list {
+      max-height: 160px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #1E2545 transparent;
+    }
+    .game-picker-list::-webkit-scrollbar { width: 3px; }
+    .game-picker-list::-webkit-scrollbar-thumb { background: #1E2545; border-radius: 2px; }
+    .game-picker-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      border-bottom: 1px solid #1E2545;
+      gap: 6px;
+    }
+    .game-picker-item:last-child { border-bottom: none; }
+    .game-picker-name { font-size: 11px; color: #CBD5E0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .game-picker-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .game-picker-btn {
+      border: none; border-radius: 5px; cursor: pointer;
+      font-size: 10px; font-weight: 600; padding: 3px 7px;
+      font-family: 'Inter', system-ui, sans-serif;
+      transition: filter 0.15s;
+      white-space: nowrap;
+    }
+    .game-picker-btn:hover { filter: brightness(1.15); }
+    .game-picker-btn-skip { background: rgba(255,61,107,0.15); color: #FF3D6B; border: 1px solid rgba(255,61,107,0.3); }
+    .game-picker-btn-perm { background: rgba(96,165,250,0.1); color: #60A5FA; border: 1px solid rgba(96,165,250,0.25); }
+    .game-picker-empty { padding: 12px; font-size: 11px; color: #4A5568; text-align: center; }
+    .btn-list {
+      background: #141728; border: 1px solid #1E2545; color: #60A5FA;
+      flex: 0 0 auto; width: auto; padding: 9px 10px;
+    }
+    .btn-list:hover { border-color: #60A5FA; }
   </style>
 </head>
 <body>
@@ -266,6 +325,17 @@
     </div>
   </div>
 
+  <!-- Game picker panel -->
+  <div class="game-picker" id="game-picker">
+    <div class="game-picker-header">
+      <span class="game-picker-title">Listeden Oyun Seç</span>
+      <button class="game-picker-close" id="game-picker-close">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="game-picker-list" id="game-picker-list"></div>
+  </div>
+
   <!-- Skip / Perm row -->
   <div class="btn-row">
     <button class="btn btn-skip" id="btn-skip">
@@ -275,6 +345,9 @@
     <button class="btn btn-perm" id="btn-skip-perm" title="Daima Atla">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
       Daima
+    </button>
+    <button class="btn btn-list" id="btn-list" title="Listeden seç">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
     </button>
   </div>
 

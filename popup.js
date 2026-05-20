@@ -57,11 +57,12 @@ function unlockAutoPlay() {
   }
 }
 
-function sendMessage(msg) {
+function sendMessage(msg, callback) {
   chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-    if (!tabs || !tabs[0]) return;
-    chrome.tabs.sendMessage(tabs[0].id, msg, function() {
+    if (!tabs || !tabs[0]) { if (callback) callback(null); return; }
+    chrome.tabs.sendMessage(tabs[0].id, msg, function(resp) {
       void chrome.runtime.lastError;
+      if (callback) callback(resp || null);
     });
   });
 }
@@ -209,6 +210,89 @@ document.addEventListener('DOMContentLoaded', function() {
 
   setInterval(loadSkippedGames, 5000);
   loadSkippedGames();
+
+  var btnList = document.getElementById('btn-list');
+  var gamePicker = document.getElementById('game-picker');
+  var gamePickerList = document.getElementById('game-picker-list');
+  var gamePickerClose = document.getElementById('game-picker-close');
+
+  function renderGamePicker(games, skipped, permanent) {
+    gamePickerList.innerHTML = '';
+    if (!games || games.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'game-picker-empty';
+      empty.textContent = 'Oyun listesi bulunamadı. Önce oyun seçim sayfasına git.';
+      gamePickerList.appendChild(empty);
+      return;
+    }
+    games.forEach(function(name) {
+      var isSkipped = skipped && skipped[name];
+      var isPerm = permanent && permanent[name];
+      var item = document.createElement('div');
+      item.className = 'game-picker-item';
+      var nameEl = document.createElement('span');
+      nameEl.className = 'game-picker-name';
+      nameEl.textContent = name;
+      if (isSkipped || isPerm) nameEl.style.opacity = '0.4';
+      var actions = document.createElement('div');
+      actions.className = 'game-picker-actions';
+      var btnSkipG = document.createElement('button');
+      btnSkipG.className = 'game-picker-btn game-picker-btn-skip';
+      btnSkipG.textContent = isSkipped ? '✓ Pas' : 'Pas';
+      btnSkipG.onclick = function() {
+        sendMessage({ action: 'addSkip', gameName: name });
+        chrome.storage.local.get(['skippedGames'], function(d) {
+          var s = d.skippedGames || {};
+          s[name] = Date.now();
+          chrome.storage.local.set({ skippedGames: s }, function() { openGamePicker(); });
+        });
+      };
+      var btnPermG = document.createElement('button');
+      btnPermG.className = 'game-picker-btn game-picker-btn-perm';
+      btnPermG.textContent = isPerm ? '✓ Daima' : 'Daima';
+      btnPermG.onclick = function() {
+        sendMessage({ action: 'addPermSkip', gameName: name });
+        chrome.storage.local.get(['permanentSkippedGames'], function(d) {
+          var p = d.permanentSkippedGames || {};
+          p[name] = true;
+          chrome.storage.local.set({ permanentSkippedGames: p }, function() { openGamePicker(); });
+        });
+      };
+      actions.appendChild(btnSkipG);
+      actions.appendChild(btnPermG);
+      item.appendChild(nameEl);
+      item.appendChild(actions);
+      gamePickerList.appendChild(item);
+    });
+  }
+
+  function openGamePicker() {
+    gamePicker.style.display = 'block';
+    gamePickerList.innerHTML = '<div class="game-picker-empty">Yükleniyor...</div>';
+    chrome.storage.local.get(['skippedGames', 'permanentSkippedGames', 'knownGames'], function(data) {
+      var skipped = data.skippedGames || {};
+      var permanent = data.permanentSkippedGames || {};
+      sendMessage({ action: 'getAvailableGames' }, function(resp) {
+        var games = resp && resp.games ? resp.games : (data.knownGames || null);
+        if (games && games.length > 0) {
+          chrome.storage.local.set({ knownGames: games });
+        }
+        renderGamePicker(games, skipped, permanent);
+      });
+    });
+  }
+
+  btnList.onclick = function() {
+    if (gamePicker.style.display === 'block') {
+      gamePicker.style.display = 'none';
+    } else {
+      openGamePicker();
+    }
+  };
+
+  gamePickerClose.onclick = function() {
+    gamePicker.style.display = 'none';
+  };
 
   btnSkip.onclick = function() {
     var orig = btnSkip.textContent;
