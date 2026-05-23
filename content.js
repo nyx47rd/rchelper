@@ -13,6 +13,7 @@ var _RC_CONTENT_STRINGS = {
     break_title: 'Mola Zamanı', break_end_btn: 'Molayı Bitir',
     break_worked: 'dakika çalıştın —', break_rest: 'dakika dinlen.',
     break_next_suffix: 'sonra mola',
+    w_skipped_prefix: '\u23f8 Pas',
   },
   en: {
     w_game: 'Game', w_time: 'Time', w_now_playing: 'Now Playing',
@@ -24,6 +25,7 @@ var _RC_CONTENT_STRINGS = {
     break_title: 'Break Time', break_end_btn: 'End Break',
     break_worked: 'minutes worked —', break_rest: 'minutes rest.',
     break_next_suffix: 'until break',
+    w_skipped_prefix: '\u23f8 Skipped',
   },
 };
 function cT(key) {
@@ -46,11 +48,21 @@ function _applyWidgetLang() {
     if (el) el.textContent = cT(els[id]);
   });
   var skipB = document.getElementById('rc-skip-btn');
-  if (skipB) { skipB.title = cT('w_skip_title'); var s = skipB.querySelector('span'); if (s) s.lastChild.textContent = ' ' + cT('w_skip_btn'); }
+  if (skipB) {
+    skipB.title = cT('w_skip_title');
+    var sSpan = skipB.querySelector('[data-label="skip"]');
+    if (sSpan) sSpan.textContent = cT('w_skip_btn');
+  }
   var permB = document.getElementById('rc-perm-btn');
-  if (permB) { permB.title = cT('w_perm_title'); var s2 = permB.querySelector('span'); if (s2) s2.lastChild.textContent = ' ' + cT('w_perm_btn'); }
-  var statusLbl = document.getElementById('rc-status-lbl');
-  if (statusLbl) statusLbl.lastChild.textContent = ' ' + cT('w_now_playing');
+  if (permB) {
+    permB.title = cT('w_perm_title');
+    var pSpan = permB.querySelector('[data-label="perm"]');
+    if (pSpan) pSpan.textContent = cT('w_perm_btn');
+  }
+  var statusLblTxt = document.getElementById('rc-status-lbl-text');
+  if (statusLblTxt) statusLblTxt.textContent = cT('w_now_playing');
+  var skippedPfx = document.getElementById('rc-skipped-prefix');
+  if (skippedPfx) skippedPfx.textContent = cT('w_skipped_prefix');
   var sc = document.getElementById('rc-shortcut-row');
   if (sc) {
     var spans = sc.querySelectorAll('span[data-key]');
@@ -677,7 +689,7 @@ function createFloatButton() {
   skipBtn.className = 'rc-btn';
   skipBtn.id = 'rc-skip-btn';
   skipBtn.title = cT('w_skip_title');
-  skipBtn.innerHTML = `<span style="display:flex; align-items:center; gap:5px;">${ICON.skip} ${cT('w_skip_btn')}</span>`;
+  skipBtn.innerHTML = `<span style="display:flex; align-items:center; gap:5px;">${ICON.skip} <span data-label="skip">${cT('w_skip_btn')}</span></span>`;
   skipBtn.style.cssText = 'flex:1; background:#FF3D6B; color:#fff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center;';
   skipBtn.onclick = () => skipToChooseGame();
 
@@ -685,7 +697,7 @@ function createFloatButton() {
   permBtn.className = 'rc-btn';
   permBtn.id = 'rc-perm-btn';
   permBtn.title = cT('w_perm_title');
-  permBtn.innerHTML = `<span style="display:flex; align-items:center; gap:4px;">${ICON.ban} ${cT('w_perm_btn')}</span>`;
+  permBtn.innerHTML = `<span style="display:flex; align-items:center; gap:4px;">${ICON.ban} <span data-label="perm">${cT('w_perm_btn')}</span></span>`;
   permBtn.style.cssText = 'background:#141728; border:1px solid #1E2545; color:#60A5FA; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center;';
   permBtn.onclick = () => skipGamePermanent();
 
@@ -779,7 +791,7 @@ function createStatusWidget() {
   const topBar = document.createElement('div');
   topBar.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom:1px solid #1E2545;';
   topBar.innerHTML = `
-    <div id="rc-status-lbl" style="display:flex; align-items:center; gap:6px; color:#4A5568; font-size:9px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase;">${ICON_CTRL} ${cT('w_now_playing')}</div>
+    <div id="rc-status-lbl" style="display:flex; align-items:center; gap:6px; color:#4A5568; font-size:9px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase;">${ICON_CTRL} <span id="rc-status-lbl-text">${cT('w_now_playing')}</span></div>
   `;
 
   const closeBtnStatus = document.createElement('button');
@@ -882,7 +894,9 @@ function updateSkippedDisplay() {
   if (items.length > 0) {
     infoEl.style.display = 'block';
     while (infoEl.firstChild) infoEl.removeChild(infoEl.firstChild);
-    const header = document.createTextNode(cT('w_skipped_prefix'));
+    const header = document.createElement('span');
+    header.id = 'rc-skipped-prefix';
+    header.textContent = cT('w_skipped_prefix');
     infoEl.appendChild(header);
     const wrap = document.createElement('div');
     wrap.style.marginTop = '4px';
