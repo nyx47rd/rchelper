@@ -1,3 +1,9 @@
+<div align="right">
+
+[![🇹🇷 Türkçe](https://img.shields.io/badge/🇹🇷-Türkçe-E30A17?style=flat-square)](README.md)
+
+</div>
+
 <div align="center">
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=220&section=header&text=RC%20Helper&fontSize=80&fontColor=ffffff&fontAlignY=45&animation=twinkling&desc=RollerCoin%20Power%20Otomasyonu&descAlignY=65&descSize=18&descColor=ffffff" width="100%"/>
