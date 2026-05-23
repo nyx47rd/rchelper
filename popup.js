@@ -67,240 +67,37 @@ function sendMessage(msg, callback) {
   });
 }
 
-/* ── Tutorial ── */
-var TUT_STEPS = [
-  {
-    targetId: null,
-    title: 'RC Helper\'e Hoş Geldin! 👋',
-    desc: 'Bu kısa tur seni <strong>2 dakikada</strong> tüm özelliklerle tanıştıracak. RollerCoin\'de oyun seçimini otomatikleştirmek için tasarlandı.',
-  },
-  {
-    targetId: 'row-choose',
-    title: 'Otomatik Seç',
-    desc: '<strong>Oyun seçim ekranında</strong> rastgele bir oyun seçip butona basar. Sen sadece oyunu oynarsın — seçimi o yapar.',
-  },
-  {
-    targetId: 'row-collect',
-    title: 'Otomatik Topla',
-    desc: 'Oyun bitince çıkan <strong>"Gain Power"</strong> ve <strong>"Collect"</strong> butonlarına otomatik basar. Power\'ı kaçırmazsın.',
-  },
-  {
-    targetId: 'row-break',
-    title: 'Mola Hatırlatıcısı',
-    desc: '<strong>10 dakika</strong> oynayınca tam ekran mola ekranı açılır, <strong>2.5 dakika</strong> dinlenir, sonra otomatik devam eder. Gözlerini koru!',
-  },
-  {
-    targetId: 'btn-skip',
-    title: 'Pas Geç (S tuşu)',
-    desc: 'Şu anki oyunu <strong>10 dakika</strong> boyunca atlar. Sıkıcı bir oyunla karşılaştında kullan. Klavyeden de <strong>S</strong> tuşuna basabilirsin.',
-  },
-  {
-    targetId: 'btn-skip-perm',
-    title: 'Daima Atla (P tuşu)',
-    desc: 'Bu oyunu <strong>kalıcı olarak</strong> engeller — bir daha asla seçilmez. Hiç sevmediğin oyunlar için. <strong>P</strong> tuşuyla da çalışır.',
-  },
-  {
-    targetId: 'btn-list',
-    title: 'Listeden Seç',
-    desc: 'Oyun seçim sayfasına gitmeden <strong>popup\'tan</strong> hangi oyunların pas geçileceğini ayarlayabilirsin.',
-  },
-  {
-    targetId: 'btn-auto',
-    title: 'Auto-Play',
-    desc: '<strong>Ana buton.</strong> Açıkken her 1 saniyede kontrol eder, oyun seçim ekranındaysan otomatik seçer. Kapatınca her şey durur.',
-  },
-  {
-    targetId: 'stats-card',
-    title: 'İstatistikler',
-    desc: 'Oynadığın <strong>toplam oyun</strong>, bugün, bu hafta, toplam süre, ortalama süre ve en çok oynadığın oyunu burada görürsün.',
-  },
-];
-
-function startTutorial(autoShow) {
-  var overlay = document.getElementById('tut-overlay');
-  if (!overlay) return;
-  var step = 0;
-
-  var dotsEl = document.getElementById('tut-dots');
-  dotsEl.innerHTML = '';
-  TUT_STEPS.forEach(function(_, i) {
-    var d = document.createElement('span');
-    d.className = 'tut-dot';
-    dotsEl.appendChild(d);
-  });
-
-  /* Hedef elementin document-relative rect'ini al (scroll dahil) */
-  function getDocRect(id) {
-    if (!id) return null;
-    var el = document.getElementById(id);
-    if (!el) return null;
-    var br = el.getBoundingClientRect();
-    var scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-    var scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
-    return {
-      top:    br.top  + scrollY,
-      left:   br.left + scrollX,
-      width:  br.width,
-      height: br.height,
-      bottom: br.top  + scrollY + br.height,
-    };
-  }
-
-  function getDocH() {
-    return Math.max(
-      document.body.scrollHeight,
-      document.documentElement.scrollHeight,
-      document.body.offsetHeight
-    );
-  }
-
-  function getDocW() {
-    return document.body.offsetWidth || document.documentElement.offsetWidth || 256;
-  }
-
-  function setMasks(r) {
-    var W = getDocW();
-    var H = getDocH();
-    var pad = 5;
-    var mTop = document.getElementById('tut-m-top');
-    var mBot = document.getElementById('tut-m-bottom');
-    var mLft = document.getElementById('tut-m-left');
-    var mRgt = document.getElementById('tut-m-right');
-    var sp   = document.getElementById('tut-spotlight');
-
-    /* overlay'in yüksekliğini doc boyutuna eşitle */
-    overlay.style.height = H + 'px';
-
-    if (!r) {
-      mTop.style.cssText = 'position:absolute;left:0;top:0;width:' + W + 'px;height:' + H + 'px;background:rgba(5,7,18,0.85);';
-      mBot.style.display = 'none';
-      mLft.style.display = 'none';
-      mRgt.style.display = 'none';
-      sp.style.display   = 'none';
-      return;
-    }
-
-    var rx = Math.max(0, r.left - pad);
-    var ry = Math.max(0, r.top  - pad);
-    var rw = r.width  + pad * 2;
-    var rh = r.height + pad * 2;
-
-    var bg = 'rgba(5,7,18,0.85)';
-    mTop.style.cssText = 'position:absolute;left:0;top:0;width:' + W + 'px;height:' + ry + 'px;background:' + bg + ';';
-    mBot.style.cssText = 'position:absolute;left:0;top:' + (ry+rh) + 'px;width:' + W + 'px;height:' + (H - ry - rh) + 'px;background:' + bg + ';display:block;';
-    mLft.style.cssText = 'position:absolute;left:0;top:' + ry + 'px;width:' + rx + 'px;height:' + rh + 'px;background:' + bg + ';display:block;';
-    mRgt.style.cssText = 'position:absolute;left:' + (rx+rw) + 'px;top:' + ry + 'px;width:' + (W - rx - rw) + 'px;height:' + rh + 'px;background:' + bg + ';display:block;';
-    sp.style.cssText   = 'position:absolute;left:' + rx + 'px;top:' + ry + 'px;width:' + rw + 'px;height:' + rh + 'px;' +
-                         'border:2px solid #FF3D6B;border-radius:9px;' +
-                         'box-shadow:0 0 0 3px rgba(255,61,107,0.2),0 0 16px rgba(255,61,107,0.25);display:block;pointer-events:none;';
-  }
-
-  function positionBox(r) {
-    var box  = document.getElementById('tut-box');
-    var H    = getDocH();
-    var GAP  = 10;
-    var boxH = 170; /* yaklaşık kutu yüksekliği */
-
-    if (!r) {
-      /* Hoş geldin adımı: sayfanın üst 1/3'ü */
-      box.style.top = '60px';
-      return;
-    }
-
-    /* Spotlight'ın altına sığıyor mu? */
-    var belowTop = r.bottom + GAP;
-    if (belowTop + boxH <= H) {
-      box.style.top = belowTop + 'px';
-      return;
-    }
-
-    /* Üstüne sığıyor mu? */
-    var aboveTop = r.top - GAP - boxH;
-    if (aboveTop >= 0) {
-      box.style.top = aboveTop + 'px';
-      return;
-    }
-
-    /* İkisi de olmuyorsa ortala */
-    box.style.top = Math.max(8, (H - boxH) / 2) + 'px';
-  }
-
-  function scrollToStep(r) {
-    if (!r) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
-    var viewH   = window.innerHeight;
-    var scrollY = window.pageYOffset || 0;
-    var elCenter = r.top + r.height / 2;
-    var target  = elCenter - viewH / 2;
-    window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
-  }
-
-  function render() {
-    var s     = TUT_STEPS[step];
-    var total = TUT_STEPS.length;
-
-    document.getElementById('tut-badge').textContent = 'Adım ' + (step + 1) + ' / ' + total;
-    document.getElementById('tut-title').textContent = s.title;
-    document.getElementById('tut-desc').innerHTML    = s.desc;
-
-    var r = getDocRect(s.targetId);
-    scrollToStep(r);
-
-    /* Scroll bittikten sonra yeniden hesapla */
-    setTimeout(function() {
-      var r2 = getDocRect(s.targetId);
-      setMasks(r2);
-      positionBox(r2);
-    }, 180);
-
-    var dots = document.querySelectorAll('.tut-dot');
-    dots.forEach(function(d, i) { d.className = 'tut-dot' + (i === step ? ' active' : ''); });
-
-    var nextBtn = document.getElementById('tut-next');
-    var prevBtn = document.getElementById('tut-prev');
-    var skipBtn = document.getElementById('tut-skip');
-
-    prevBtn.style.display = step === 0 ? 'none' : '';
-    if (step === total - 1) {
-      nextBtn.textContent = '✓ Tamamla';
-      nextBtn.className   = 'tut-btn tut-btn-done';
-      skipBtn.style.display = 'none';
-    } else {
-      nextBtn.textContent = 'İleri ›';
-      nextBtn.className   = 'tut-btn tut-btn-next';
-      skipBtn.style.display = '';
-    }
-  }
-
-  function closeTutorial(done) {
-    overlay.classList.remove('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (done) chrome.storage.local.set({ tutorialDone: true });
-  }
-
-  document.getElementById('tut-next').onclick = function() {
-    if (step < TUT_STEPS.length - 1) { step++; render(); }
-    else { closeTutorial(true); }
-  };
-  document.getElementById('tut-prev').onclick = function() {
-    if (step > 0) { step--; render(); }
-  };
-  document.getElementById('tut-skip').onclick = function() { closeTutorial(true); };
-
-  overlay.classList.add('active');
-  render();
-}
-
 document.addEventListener('DOMContentLoaded', function() {
   checkForUpdates();
 
+  /* ── Tutorial başlatıcı ── */
   var btnTutorial = document.getElementById('btn-tutorial');
-  if (btnTutorial) btnTutorial.onclick = function() { startTutorial(false); };
-
+  if (btnTutorial) btnTutorial.onclick = function() { startTutorial(); };
   chrome.storage.local.get(['tutorialDone'], function(data) {
-    if (!data.tutorialDone) {
-      setTimeout(function() { startTutorial(true); }, 300);
-    }
+    if (!data.tutorialDone) setTimeout(function() { startTutorial(); }, 300);
   });
+
+  /* ── Mola ayarları ── */
+  var inpSession = document.getElementById('inp-session-min');
+  var inpBreak   = document.getElementById('inp-break-min');
+
+  chrome.storage.local.get(['breakSessionMin', 'breakDurationMin'], function(data) {
+    if (inpSession) inpSession.value = data.breakSessionMin  || 10;
+    if (inpBreak)   inpBreak.value   = data.breakDurationMin || 2.5;
+  });
+
+  function saveBreakSettings() {
+    var sMin = parseFloat(inpSession.value);
+    var bMin = parseFloat(inpBreak.value);
+    if (isNaN(sMin) || sMin < 1)   { inpSession.value = 1;   sMin = 1; }
+    if (isNaN(bMin) || bMin < 0.5) { inpBreak.value   = 0.5; bMin = 0.5; }
+    chrome.storage.local.set({ breakSessionMin: sMin, breakDurationMin: bMin });
+    sendMessage({ action: 'setBreakSettings', sessionMin: sMin, breakMin: bMin });
+  }
+
+  if (inpSession) inpSession.addEventListener('change', saveBreakSettings);
+  if (inpBreak)   inpBreak.addEventListener('change', saveBreakSettings);
+
   var btnAuto      = document.getElementById('btn-auto');
   var btnSkip      = document.getElementById('btn-skip');
   var btnSkipPerm  = document.getElementById('btn-skip-perm');

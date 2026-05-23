@@ -129,10 +129,12 @@ window.nextBreakTime = null;
 var mainTimer = null;
 var breakCheckTimer = null;
 
-chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak'], (data) => {
+chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak'], (data) => {
   window.autoCollect = data.autoCollect !== false;
   window.autoChoose  = data.autoChoose  !== false;
   window.breakReminderEnabled = data.breakReminder !== false;
+  if (data.breakSessionMin)  window.breakSessionMinutes  = parseFloat(data.breakSessionMin);
+  if (data.breakDurationMin) window.breakDurationMinutes = parseFloat(data.breakDurationMin);
   if (data.skippedGames) {
     window.skippedGames = data.skippedGames;
     console.log('[RC] Yüklenen skippedGames:', window.skippedGames);
@@ -371,8 +373,8 @@ function showBreakBanner() {
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF3D6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
       </div>
       <div style="font-size:22px; font-weight:700; color:#fff; letter-spacing:-0.3px; margin-bottom:8px;">Mola Zamanı</div>
-      <div style="font-size:13px; color:#4A5568; margin-bottom:32px;">10 dakika çalıştın — 2.5 dakika dinlen.</div>
-      <div style="font-size:52px; font-weight:700; color:#FF3D6B; font-variant-numeric:tabular-nums; letter-spacing:-1px; margin-bottom:36px;" id="rc-break-timer">02:30</div>
+      <div style="font-size:13px; color:#4A5568; margin-bottom:32px;">${window.breakSessionMinutes} dakika çalıştın — ${window.breakDurationMinutes} dakika dinlen.</div>
+      <div style="font-size:52px; font-weight:700; color:#FF3D6B; font-variant-numeric:tabular-nums; letter-spacing:-1px; margin-bottom:36px;" id="rc-break-timer">${String(Math.floor(window.breakDurationMinutes)).padStart(2,'0')}:${String(Math.round((window.breakDurationMinutes % 1)*60)).padStart(2,'0')}</div>
       <button id="rc-end-break-btn" style="
         background: #FF3D6B;
         color: #fff;
@@ -1281,6 +1283,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const banner = document.getElementById('rc-break-banner');
       if (banner) banner.remove();
     }
+  }
+  else if (msg.action === 'setBreakSettings') {
+    if (msg.sessionMin)  window.breakSessionMinutes  = parseFloat(msg.sessionMin);
+    if (msg.breakMin)    window.breakDurationMinutes = parseFloat(msg.breakMin);
+    console.log('[RC] Mola ayarları güncellendi: oyun=' + window.breakSessionMinutes + 'dk, mola=' + window.breakDurationMinutes + 'dk');
   }
   else if (msg.action === 'getAvailableGames') {
     const items = Array.from(document.querySelectorAll('.choose-game-item-container, .choose-game-item, .game-item:not(.winning-game-item), div[class*="choose-game-item"]:not(.winning-game-item)'));
