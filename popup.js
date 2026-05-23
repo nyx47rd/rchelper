@@ -1,5 +1,5 @@
 var autoPlayState = false;
-var CURRENT_VERSION = '2.2.1';
+var CURRENT_VERSION = '2.2.2';
 var updateAvailable = false;
 var latestReleaseUrl = 'https://github.com/nyx47rd/rchelper/releases/latest';
 
@@ -210,6 +210,95 @@ document.addEventListener('DOMContentLoaded', function() {
 
   setInterval(loadSkippedGames, 5000);
   loadSkippedGames();
+
+  /* ── İstatistikler ── */
+  function formatDuration(ms) {
+    if (!ms || ms < 1000) return '0s';
+    const sec = Math.round(ms / 1000);
+    if (sec < 60) return sec + 's';
+    const min = Math.floor(sec / 60);
+    const remSec = sec % 60;
+    if (min < 60) return remSec > 0 ? min + 'm ' + remSec + 's' : min + 'm';
+    const hr = Math.floor(min / 60);
+    const remMin = min % 60;
+    return hr + 'h ' + remMin + 'm';
+  }
+
+  function getWeekKey(date) {
+    // ISO hafta başlangıcı: pazartesi
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = (day === 0 ? -6 : 1) - day;
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function updateStatsCard() {
+    chrome.storage.local.get(['gameStats'], (data) => {
+      const stats = data.gameStats || {};
+      const totalGames = stats.totalGames || 0;
+      const today = new Date().toISOString().slice(0, 10);
+      const todayGames = (stats.dailyStats && stats.dailyStats[today]) || 0;
+
+      // Bu hafta (son 7 gün)
+      let weekGames = 0;
+      const weekCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      if (stats.dailyStats) {
+        Object.keys(stats.dailyStats).forEach(d => {
+          const t = new Date(d + 'T00:00:00').getTime();
+          if (!isNaN(t) && t >= weekCutoff) weekGames += stats.dailyStats[d];
+        });
+      }
+
+      const totalMs = stats.totalPlayTimeMs || 0;
+      const avgMs = totalGames > 0 ? totalMs / totalGames : 0;
+
+      // En çok oynanan
+      let favGame = '-';
+      let maxPlays = 0;
+      if (stats.perGame) {
+        for (const name in stats.perGame) {
+          if (stats.perGame[name].plays > maxPlays) {
+            maxPlays = stats.perGame[name].plays;
+            favGame = name;
+          }
+        }
+      }
+
+      const activeDays = stats.dailyStats ? Object.keys(stats.dailyStats).length : 0;
+
+      var setT = function(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; };
+      setT('stat-total-games', totalGames);
+      setT('stat-today-games', todayGames);
+      setT('stat-week-games', weekGames);
+      setT('stat-total-time', formatDuration(totalMs));
+      setT('stat-avg-time', formatDuration(avgMs));
+      setT('stat-longest-time', formatDuration(stats.longestGameMs || 0));
+      setT('stat-fav-game', favGame === '-' ? '-' : favGame + (maxPlays ? ' (' + maxPlays + ')' : ''));
+      setT('stat-last-game', stats.lastGame || '-');
+      setT('stat-active-days', activeDays);
+    });
+
+    // Şu an oynanan oyunu content script'ten al
+    sendMessage({ action: 'getGameStats' }, function(resp) {
+      var el = document.getElementById('stat-current-game');
+      if (el) el.textContent = (resp && resp.currentGame) ? resp.currentGame : '-';
+    });
+  }
+
+  var btnStatsReset = document.getElementById('btn-stats-reset');
+  if (btnStatsReset) {
+    btnStatsReset.onclick = function() {
+      if (!confirm('Tüm oyun istatistiklerini sıfırlamak istediğinden emin misin?')) return;
+      chrome.storage.local.set({ gameStats: null }, function() {
+        updateStatsCard();
+      });
+      sendMessage({ action: 'resetGameStats' });
+    };
+  }
+
+  updateStatsCard();
+  setInterval(updateStatsCard, 3000);
 
   var btnList = document.getElementById('btn-list');
   var gamePicker = document.getElementById('game-picker');

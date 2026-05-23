@@ -1,4 +1,4 @@
-const RC_VERSION = '2.2.1';
+const RC_VERSION = '2.2.2';
 
 let _rcAudioCtx = null;
 function _getRCAudioCtx() {
@@ -571,6 +571,19 @@ function createFloatButton() {
   `;
   wrapper.appendChild(statsCard);
 
+  /* ── Şu an oynanıyor kartı (gizli başlar) ── */
+  const nowPlayingCard = document.createElement('div');
+  nowPlayingCard.id = 'rc-now-playing';
+  nowPlayingCard.style.cssText = 'display:none; background:rgba(255,61,107,0.08); border:1px solid rgba(255,61,107,0.22); border-radius:9px; padding:7px 10px;';
+  nowPlayingCard.innerHTML = `
+    <div style="display:flex; align-items:center; gap:4px; color:#FF3D6B; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px;">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Şu An Oynanıyor
+    </div>
+    <div id="rc-now-playing-name" style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
+  `;
+  wrapper.appendChild(nowPlayingCard);
+
   /* ── Prediction ── */
   const predictCard = document.createElement('div');
   predictCard.style.cssText = 'background:#141728; border-radius:9px; padding:7px 10px; display:flex; align-items:center; justify-content:space-between;';
@@ -1065,22 +1078,38 @@ function pickAndPlay() {
   if (btn && !btn.disabled) {
     window.gameSelectionInProgress = true;
     window.currentPlayingGame = selectedGameName;
-    incrementGamesPlayed();
-    startGameTimer();
+    window.pendingGameClick = { name: selectedGameName, clickedAt: Date.now() };
     console.log('[RC] Butona tıklanıyor:', btnText);
     btn.click();
     btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-    window.pickAndPlayRunning = false;
     if (window.updateRCStatus) {
       window.updateRCStatus('[RC] 🎮 OYNANIYOR: ' + selectedGameName);
     }
     const urlAtClick = window.location.href;
+
+    // Fallback: 1.5s sonra URL değişmediyse item'a tıklama dene
     setTimeout(() => {
       if (window.location.href === urlAtClick && window.gameSelectionInProgress) {
-        console.log('[RC] ⚠ Sayfa geçişi olmadı, tekrar deneniyor...');
+        console.log('[RC] İlk tıklama başarısız, item tıklanıyor...');
+        try {
+          selected.click();
+          selected.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+          btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+          btn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+        } catch(e) {}
+      }
+    }, 1500);
+
+    window.pickAndPlayRunning = false;
+    setTimeout(() => {
+      if (window.location.href === urlAtClick && window.gameSelectionInProgress) {
+        console.log('[RC] ⚠ Sayfa geçişi olmadı, oyun açılamadı (sayım YAPILMADI):', selectedGameName);
+        // Açılamadı: sayma da yapma, kısa süreliğine pas geçilenler listesine ekleme yapmadan reset
+        window.pendingGameClick = null;
         window.gameSelectionInProgress = false;
         window.pickAndPlayRunning = false;
       } else {
+        // URL değişti → gerçek oyun başladı; transition watcher devreye girecek
         window.gameSelectionInProgress = false;
       }
     }, 4000);
@@ -1088,6 +1117,122 @@ function pickAndPlay() {
     window.pickAndPlayRunning = false;
   }
 }
+
+/* ── Oyun başlangıç/bitiş URL geçişi izleyici ── */
+function checkGameTransitions() {
+  const nowPlaying = isOnPlayGamePage();
+  const wasPlaying = window._lastWasPlaying === true;
+
+  if (!wasPlaying && nowPlaying) {
+    // /choose_game → /play_game: oyun gerçekten başladı
+    const name = (window.pendingGameClick && window.pendingGameClick.name)
+      || window.lastSelectedGame
+      || window.currentPlayingGame
+      || 'Unknown';
+    window._activeGame = { name: name, startedAt: Date.now() };
+    window.lastGameStartTime = Date.now();
+    if (!window.sessionStartTime) window.sessionStartTime = Date.now();
+    startGameTimer();
+    window.pendingGameClick = null;
+    updatePlayingIndicator(name);
+    console.log('[RC] ✓ Oyun başladı:', name, '(sayaç oyun bitince artacak)');
+  } else if (wasPlaying && !nowPlaying) {
+    // /play_game → ayrıldı: oyun BITTI → şimdi say
+    if (window._activeGame) {
+      const dur = Date.now() - window._activeGame.startedAt;
+
+      // EMA ve gameTimes güncelle (tahmin için)
+      window.gameTimes.push(dur);
+      if (window.gameTimes.length > 20) window.gameTimes.shift();
+      window.totalGameTime += dur;
+      window.gamesPlayedTotal++;
+      if (dur < window.minGameTime) window.minGameTime = dur;
+      if (dur > window.maxGameTime) window.maxGameTime = dur;
+      if (window.emaGameTime === null) {
+        window.emaGameTime = dur;
+      } else {
+        window.emaGameTime = window.emaAlpha * dur + (1 - window.emaAlpha) * window.emaGameTime;
+      }
+
+      // Oturum sayacını şimdi artır
+      window.gamesPlayedThisSession++;
+      const countEl = document.getElementById('rc-games-count');
+      if (countEl) countEl.textContent = window.gamesPlayedThisSession;
+
+      console.log('[RC] ✓ Oyun bitti, sayaç arttı:', window._activeGame.name, '| Toplam:', window.gamesPlayedThisSession);
+      recordGameCompletion(window._activeGame.name, dur);
+      window._activeGame = null;
+    }
+    updatePlayingIndicator(null);
+  }
+
+  window._lastWasPlaying = nowPlaying;
+}
+
+function updatePlayingIndicator(name) {
+  const card = document.getElementById('rc-now-playing');
+  const nameEl = document.getElementById('rc-now-playing-name');
+  if (!card) return;
+  if (name) {
+    if (nameEl) nameEl.textContent = name;
+    card.style.display = 'block';
+  } else {
+    card.style.display = 'none';
+    if (nameEl) nameEl.textContent = '—';
+  }
+}
+
+function recordGameCompletion(name, durationMs) {
+  // Çok kısa (3sn'den az) veya çok uzun (30dk'dan fazla) süreleri geçersiz say
+  if (!name || durationMs < 3000 || durationMs > 30 * 60 * 1000) {
+    console.log('[RC] Oyun süresi geçersiz, kaydedilmedi:', name, durationMs);
+    return;
+  }
+  chrome.storage.local.get(['gameStats'], (data) => {
+    const stats = data.gameStats || {
+      totalGames: 0,
+      totalPlayTimeMs: 0,
+      perGame: {},
+      dailyStats: {},
+      lastGame: null,
+      lastGameAt: null,
+      firstGameAt: null,
+      longestGameMs: 0,
+    };
+    stats.totalGames = (stats.totalGames || 0) + 1;
+    stats.totalPlayTimeMs = (stats.totalPlayTimeMs || 0) + durationMs;
+    const pg = stats.perGame[name] || { plays: 0, totalTimeMs: 0 };
+    pg.plays++;
+    pg.totalTimeMs += durationMs;
+    stats.perGame[name] = pg;
+    const today = new Date().toISOString().slice(0, 10);
+    stats.dailyStats = stats.dailyStats || {};
+    stats.dailyStats[today] = (stats.dailyStats[today] || 0) + 1;
+    stats.lastGame = name;
+    stats.lastGameAt = Date.now();
+    if (!stats.firstGameAt) stats.firstGameAt = Date.now();
+    if (durationMs > (stats.longestGameMs || 0)) stats.longestGameMs = durationMs;
+
+    // 60 günden eski daily kayıtları temizle
+    const cutoff = Date.now() - 60 * 24 * 60 * 60 * 1000;
+    Object.keys(stats.dailyStats).forEach(d => {
+      const t = new Date(d + 'T00:00:00').getTime();
+      if (!isNaN(t) && t < cutoff) delete stats.dailyStats[d];
+    });
+
+    chrome.storage.local.set({ gameStats: stats });
+    console.log('[RC] ✓ Oyun stats kaydedildi:', name, Math.round(durationMs/1000) + 's');
+  });
+}
+
+// Her saniye URL geçişlerini kontrol et (auto-play olmasa bile, manuel oyun da sayılsın)
+setTimeout(() => {
+  if (!window._transitionWatcherStarted) {
+    window._transitionWatcherStarted = true;
+    window._lastWasPlaying = isOnPlayGamePage();
+    setInterval(checkGameTransitions, 1000);
+  }
+}, 2000);
 
 function startAutoPlay() {
   playSound('autoOn');
@@ -1164,6 +1309,18 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       updateSkippedDisplay();
     }
     sendResponse({ ok: true });
+    return true;
+  }
+  else if (msg.action === 'getGameStats') {
+    chrome.storage.local.get(['gameStats'], (data) => {
+      sendResponse({ stats: data.gameStats || null, currentGame: window._activeGame ? window._activeGame.name : null });
+    });
+    return true;
+  }
+  else if (msg.action === 'resetGameStats') {
+    chrome.storage.local.set({ gameStats: null }, () => {
+      sendResponse({ ok: true });
+    });
     return true;
   }
   else if (msg.action === 'addPermSkip') {
