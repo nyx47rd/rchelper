@@ -1,4 +1,4 @@
-const RC_VERSION = '2.2.3';
+const RC_VERSION = '2.2.4';
 
 let _rcAudioCtx = null;
 function _getRCAudioCtx() {
