@@ -8,7 +8,7 @@
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Otomatik+oyun+secici+%E2%86%92+daha+fazla+guc;Power+toplama+otomasyonu;Mola+hatirlaticisi+ile+saglikli+oyun;Klavye+kisayollari+ile+tam+kontrol;Auto-Play+ile+eller+serbest;Akilli+oyun+atlama+sistemi;Listeden+pas+gec+ve+daima+atla" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Otomatik+oyun+secici+%E2%86%92+daha+fazla+guc;Power+toplama+otomasyonu;Ayarlanabilir+mola+hatirlaticisi;Oyun+istatistikleri+ve+canli+widget;Interaktif+tutorial+ile+kolay+baslangic;Klavye+kisayollari+ile+tam+kontrol;Auto-Play+ile+eller+serbest;Akilli+oyun+atlama+sistemi" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -30,23 +30,35 @@
 
 ## 🚀 Nedir?
 
-**RC Helper**, [RollerCoin](https://rollercoin.com) platformu için geliştirilmiş bir Chrome eklentisidir. Oyunları sizin yerinize **oynamaz** — oyun seçim ekranında uygun oyunu otomatik seçer ve başlatır, geri kalanını siz yaparsınız. Power toplamayı ve mola yönetimini de otomatikleştirir.
+**RC Helper**, [RollerCoin](https://rollercoin.com) platformu için geliştirilmiş bir Chrome eklentisidir. Oyunları sizin yerinize **oynamaz** — oyun seçim ekranında uygun oyunu otomatik seçer ve başlatır, geri kalanını siz yaparsınız. Power toplamayı, mola yönetimini ve istatistik takibini otomatikleştirir.
+
+> ⚠️ **Önemli:** RC Helper yalnızca oyun *seçimini* otomatikleştirir. Oyunları robotik biçimde oynamaz, RollerCoin kurallarını ihlal etmez.
 
 <br/>
+
+---
+
+## ✨ Özellikler
 
 <div align="center">
 
 | ⚡ Özellik | 📖 Açıklama |
 |:---:|:---|
-| 🎮 **Otomatik Oyun Seç** | Pas geçilmeyenler arasından rastgele oyun seçer ve başlatır |
-| 💰 **Otomatik Topla** | *Gain Power* ve *Collect* butonlarına otomatik basar |
-| ⏸ **Pas Geç · 10dk** | Seçili oyunu 10 dakika boyunca atlar, süre dolunca geri gelir |
-| 🚫 **Daima Atla** | Oyunu kalıcı olarak engeller, hiç seçilmez |
-| 📋 **Listeden Seç** | Oyun seçim sayfasına gitmeden popup'tan istediğin oyunu pas geç veya daima atla listesine ekle |
-| ☕ **Mola Hatırlatıcısı** | 10 dakika sonra tam ekran mola sayacı açar (2.5dk dinlen) |
-| 📊 **Canlı İstatistik** | Oyun sayısı, süre ve saatlik tahmin widget'ı |
-| ⌨️ **Klavye Kısayolları** | `S` pas geç · `P` daima atla |
+| 🎮 **Otomatik Oyun Seç** | Pas geçilmeyenler arasından rastgele oyun seçer, butona basar ve başlatır |
+| 💰 **Otomatik Topla** | Oyun bitince çıkan *Gain Power* ve *Collect* butonlarına otomatik basar |
+| ⏸ **Pas Geç** | Seçili oyunu **10 dakika** boyunca atlar; süre dolunca listeye otomatik geri döner |
+| 🚫 **Daima Atla** | Oyunu **kalıcı olarak** engeller; bir daha asla seçilmez |
+| 📋 **Listeden Yönet** | Popup'tan tüm oyunları görerek tek tıkla pas geç veya daima atla listesine ekle/çıkar |
+| ☕ **Mola Hatırlatıcısı** | Belirlenen süre sonunda tam ekran mola sayacı açılır; bittikten sonra otomatik devam eder |
+| ⚙️ **Mola Ayarları** | Oyun süresi (1–120 dk) ve mola süresini (0.5–60 dk) popup'tan serbestçe ayarla |
+| 📊 **İstatistikler** | Toplam/günlük/haftalık oyun sayısı, toplam süre, ort. süre, en çok oynanan ve daha fazlası |
+| 🎯 **Şu An Oynanıyor** | Widget'ta aktif oyunun adı ve oturum sayacı canlı olarak gösterilir |
+| 📈 **Saatlik Tahmin** | EMA algoritmasıyla o anki hızına göre saatte kaç oyun oynayacağını tahmin eder |
+| 🛡️ **Güncelleme Koruması** | Eski sürümde auto-play otomatik engellenir; popup'ta güncelleme uyarısı gösterilir |
+| 🎓 **İnteraktif Tutorial** | İlk açılışta spotlight'lı 10 adımlık tur; `?` butonuyla istediğin zaman tekrar açılır |
+| ⌨️ **Klavye Kısayolları** | `S` = Pas Geç · `P` = Daima Atla |
 | 🔊 **Ses Efektleri** | Oyun seçimi, pas geçme, mola başlangıcı/bitişi, otomasyon açma/kapama için farklı tonlar |
+| 🗑️ **Hafızayı Temizle** | Tüm ayarları ve istatistikleri tek butonda sıfırla |
 
 </div>
 
@@ -58,63 +70,160 @@
 
 ### Adım 1 — Dosyaları İndirin
 
-1. Aşağıdaki butona tıklayın:
+[![Download ZIP](https://img.shields.io/badge/⬇_Son_Sürümü_İndir-FF3D6B?style=for-the-badge)](https://github.com/nyx47rd/rchelper/releases/latest)
 
-   [![Download ZIP](https://img.shields.io/badge/⬇_Son_Sürümü_İndir-FF3D6B?style=for-the-badge)](https://github.com/nyx47rd/rchelper/releases/latest)
-
-2. ZIP dosyasını masaüstüne çıkartın
+Releases sayfasından `rchelper-vX.X.X.zip` dosyasını indirip bir klasöre çıkartın.
 
 ---
 
 ### Adım 2 — Chrome'a Yükleyin
 
-1. Chrome adres çubuğuna yazın:
-   ```
-   chrome://extensions
-   ```
-
-2. Sağ üst köşedeki **Geliştirici Modu** toggle'ını açın
-
+1. Adres çubuğuna `chrome://extensions` yazın
+2. Sağ üst köşeden **Geliştirici Modu**'nu açın
 3. **"Paketlenmemiş öğe yükle"** butonuna basın
-
-4. ZIP'ten çıkardığınız klasörü seçin
-
-5. ✅ Listede **RC Helper** gözükürse kurulum tamamdır!
+4. Çıkardığınız `rchelper` klasörünü seçin
+5. ✅ Listede **RC Helper** görünürse kurulum tamamdır
 
 ---
 
 ### Adım 3 — Kullanmaya Başlayın
 
 1. [rollercoin.com](https://rollercoin.com) adresine gidin
-2. Tarayıcı araç çubuğundaki ⚡ ikonuna tıklayın
-3. **Auto-Play: KAPALI** butonuna basın → **Auto-Play: AÇIK** 🟢
+2. Sağ üst köşedeki eklenti ikonuna tıklayın
+3. İlk açılışta **interaktif tutorial** otomatik başlar
+4. **Auto-Play: KAPALI** butonuna basın → **Auto-Play: AÇIK** 🟢
 
-> Sayfa içinde sol üstte canlı istatistik widget'ı belirir.
+> Sayfanın sol üstünde canlı istatistik widget'ı belirir.
 
 <br/>
 
 ---
 
-## 🖥️ Ekran Görüntüleri
+## 🖥️ Popup Paneli
 
-<div align="center">
+Eklenti ikonu tıklandığında açılan popup 256px genişliğinde bir kontrol panelidir. Bölümler:
 
-| Popup Paneli | Sayfa İçi Widget |
-|:---:|:---:|
-| ![Popup](popup.png) | ![Widget](sayfaiciwidget.png) |
-| Eklenti ikonuna tıklayarak açılır | Sayfanın sol üstünde sabit durur |
+| Bölüm | İçerik |
+|:---|:---|
+| **Başlık** | RC Helper logosu, sürüm bilgisi, `?` tutorial butonu |
+| **Güncelleme Banner'ı** | Yeni sürüm varsa otomatik gösterilir, indirme bağlantısı içerir |
+| **Ayarlar** | Otomatik Seç / Otomatik Topla / Mola Hatırlatıcısı toggle'ları |
+| **Mola Ayarları** | Oyun süresi ve mola süresi sayısal inputları |
+| **Listeden Seç** | Tüm bilinen oyunları listeleyen panel (Pas Geç / Daima Atla butonlu) |
+| **Pas Geç / Daima / Liste** | Hızlı aksiyon butonları |
+| **Auto-Play** | Ana aç/kapat butonu |
+| **Pas Geçilen · 10dk** | Geçici olarak atlanan oyunlar ve kalan süreleri |
+| **Daima Atlanan** | Kalıcı engel listesi — X butonu ile kaldırılabilir |
+| **İstatistikler** | 9 metriklik istatistik kartı + sıfırlama butonu |
+| **Hafızayı Temizle** | Tüm `chrome.storage.local` verisini temizler |
 
-</div>
+<br/>
 
-### Sağ Alt — Oyun Konsolu
+---
 
-Sayfanın sağ alt köşesinde küçük bir konsol widget'ı bulunur. Şu an oynanan oyunun adını gösterir. Kapatmak için sağ üst `✕` butonuna basılabilir, tekrar açmak için liste ikonuna tıklanır.
+## 📊 Sayfa İçi Widget
 
-<div align="center">
+Sayfanın **sol üst köşesinde** sabit bir kart görünür. İçerir:
 
-![Şu An Oynanan](suanoynanan.png)
+- **Oturum sayacı** — bu oturumda oynanan oyun sayısı
+- **Süre sayacı** — oturum başından itibaren geçen süre (mm:ss)
+- **Saatlik tahmin** — EMA bazlı "saatte ~X oyun" tahmini (en az 3 oyun sonra görünür)
+- **Break durumu** — mola aktifse kalan süre, değilse sonraki molaya kalan süre
+- **Şu an oynanıyor** — oyun başladığında oyunun adını gösterir, bitince gizlenir
+- **Konsol** — önemli sistem mesajlarını kırmızı renkte gösterir
 
-</div>
+Widget'ı kapatmak için sağ üst `✕` butonuna basılabilir. Tekrar açmak için köşede belirecek küçük liste ikonuna tıklanır.
+
+<br/>
+
+---
+
+## ☕ Mola Sistemi
+
+Mola hatırlatıcısı açık olduğunda şu döngü çalışır:
+
+```
+[Oyun oyna] ──(Oyun süresi doldu)──► [Tam ekran mola ekranı açılır]
+                                              │
+                                    (Mola süresi doldu veya
+                                     "Molayı Bitir" tıklandı)
+                                              │
+                                              ▼
+                                     [Otomatik devam]
+```
+
+**Mola ekranında** büyük bir geri sayım sayacı ve "Molayı Bitir" butonu görünür. Saatlik tahmin hesabı mola sürelerini otomatik olarak düşer.
+
+**Mola Ayarları** popup'taki karttan değiştirilebilir:
+
+| Ayar | Varsayılan | Aralık |
+|:---|:---:|:---:|
+| Oyun süresi | 10 dk | 1 – 120 dk |
+| Mola süresi | 2.5 dk | 0.5 – 60 dk |
+
+Değeri değiştirip inputtan çıkınca anında kaydedilir ve aktif sekmede geçerli olur.
+
+<br/>
+
+---
+
+## 📈 İstatistikler
+
+Popup'taki **İstatistikler** kartı her 3 saniyede otomatik güncellenir:
+
+| Metrik | Açıklama |
+|:---|:---|
+| **Toplam Oyun** | Tüm zamanların toplam oyun sayısı |
+| **Bugün** | Gün bazında oynanan oyun sayısı |
+| **Bu Hafta** | Son 7 günün toplamı |
+| **Toplam Süre** | Tüm oyunların toplam süresi |
+| **Ort. Süre** | Oyun başına ortalama süre |
+| **En Uzun** | Tek seferde oynanan en uzun oyun |
+| **En Çok Oynanan** | Toplam oynama sayısına göre favori oyun |
+| **Son Oyun** | En son oynanan oyunun adı |
+| **Aktif Gün** | Kaç farklı günde oyun oynandığı |
+| **Şu An Oynanan** | Anlık aktif oyun (content script'ten sorgulanır) |
+
+Veriler `chrome.storage.local`'da saklanır. Sıfırlamak için kart başlığındaki 🔄 ikonuna basın.
+
+<br/>
+
+---
+
+## 🎓 İnteraktif Tutorial
+
+İlk kurulumda otomatik başlar. Popup başlığındaki **`?`** butonu ile istediğin zaman tekrar açılır.
+
+**10 adım:**
+
+| # | Hedef | Konu |
+|:---:|:---|:---|
+| 1 | — | Hoş geldin ekranı |
+| 2 | Otomatik Seç toggle | Oyun seçimi otomasyonu |
+| 3 | Otomatik Topla toggle | Power toplama otomasyonu |
+| 4 | Mola Hatırlatıcısı toggle | Mola sistemi |
+| 5 | Mola Ayarları kartı | Süre özelleştirme |
+| 6 | Pas Geç butonu | Geçici atlama |
+| 7 | Daima Atla butonu | Kalıcı engelleme |
+| 8 | Liste butonu | Listeden yönetim |
+| 9 | Auto-Play butonu | Ana kontrol |
+| 10 | İstatistikler kartı | Oyun takibi |
+
+Her adımda hedef element **kırmızı spotlight** ile vurgulanır. Açıklama kutusu otomatik konumlanır ve ekran hedef elemente scroll eder.
+
+<br/>
+
+---
+
+## 🛡️ Güncelleme Koruması
+
+RC Helper her açılışta GitHub API'den son sürümü kontrol eder. Eğer kullandığın sürüm eskiyse:
+
+- Auto-play **otomatik olarak engellenir**
+- Popup'ta turuncu bir **güncelleme banner'ı** belirir
+- Widget'ta ⚠️ uyarısı gösterilir
+
+Bu sayede eski bir sürümün bozuk davranış göstermesi önlenir.
 
 <br/>
 
@@ -129,9 +238,9 @@ Sayfanın sağ alt köşesinde küçük bir konsol widget'ı bulunur. Şu an oyn
 | `S` | **Pas Geç** | Mevcut oyunu 10 dakika atlar |
 | `P` | **Daima Atla** | Mevcut oyunu kalıcı olarak engeller |
 
-> Kısayollar yalnızca `rollercoin.com` üzerinde, input/textarea odakta değilken çalışır.
-
 </div>
+
+> Yalnızca `rollercoin.com` üzerinde, bir `input` veya `textarea` odakta değilken çalışır.
 
 <br/>
 
@@ -146,9 +255,33 @@ Sayfanın sağ alt köşesinde küçük bir konsol widget'ı bulunur. Şu an oyn
 | `activeTab` | Aktif sekmede script çalıştırmak için |
 | `scripting` | Sayfaya content script enjekte etmek için |
 | `tabs` | Popup → sekme arası mesajlaşma için |
-| `storage` | Ayarları ve pas geçilen oyunları kaydetmek için |
+| `storage` | Ayarları, istatistikleri ve atlanan oyunları kalıcı saklamak için |
 
 </div>
+
+<br/>
+
+---
+
+## ❓ Sık Sorulan Sorular
+
+**Auto-Play açılmıyor, ne yapmalıyım?**
+Eski sürüm kullanıyorsundur. Popup'ta güncelleme banner'ı çıktıysa son sürümü indirip yeniden yükle.
+
+**Oyunun adı "Game-XXXX" şeklinde görünüyor.**
+Oyun seçim sayfasındaki oyun henüz isim bilgisi yüklememiştir. Sayfa yenilenince düzelir.
+
+**Pas geçtiğim oyun hâlâ seçiliyor.**
+Atlama listesi 10 dakika sonra otomatik temizlenir. Süre dolmadan önce seçilmesini istemiyorsan "Daima Atla" kullan.
+
+**Mola ekranı çok sık/az açılıyor.**
+Popup → Mola Ayarları kartından oyun süresini artır veya azalt.
+
+**İstatistikler sıfırlandı / kayboldu.**
+"Hafızayı Temizle" butonu `chrome.storage.local`'ın tamamını siler. Bu butona dikkatli basılmalı.
+
+**Widget sayfada görünmüyor.**
+Sayfayı yenile. Eklenti bir content script olarak yüklenir; bazı sayfalarda gecikmeli başlayabilir.
 
 <br/>
 
@@ -169,20 +302,25 @@ Sayfanın sağ alt köşesinde küçük bir konsol widget'ı bulunur. Şu an oyn
 
 ```
 📁 rchelper/
-├── 📄 manifest.json      ← Eklenti tanımı (Manifest v3)
-├── 📜 content.js         ← Sayfa içi otomasyon + widget UI
-├── 📜 popup.js           ← Popup panel mantığı
-├── 🎨 popup.html         ← Popup panel arayüzü
-├── ⚙️  background.js     ← Service worker
-└── 🖼️  icon*.png         ← Eklenti ikonları
+├── 📄 manifest.json           ← Eklenti tanımı (Manifest v3)
+├── 📜 content.js              ← Sayfa içi otomasyon + widget UI + mola sistemi
+├── 📜 popup.js                ← Popup panel mantığı + istatistik okuma
+├── 🎨 popup.html              ← Popup panel arayüzü + stilleri
+├── 🎓 tutorial.js             ← İnteraktif tutorial adımları + spotlight mantığı
+├── 🎨 tutorial.css            ← Tutorial overlay stilleri
+├── ⚙️  background.js          ← Service worker (Manifest v3 zorunluluğu)
+├── 🐍 make_release_body.py    ← Commit logunu markdown release notuna çeviren script
+└── 🖼️  icon16/48/128.png      ← Eklenti ikonları
 ```
 
 **Öne çıkan teknik detaylar:**
-- `chrome.storage.local` ile kalıcı durum yönetimi
-- EMA (Exponential Moving Average) tabanlı saatlik tahmin algoritması
-- Break checker 1 saniyelik tick — geri sayım piksel-perfect doğru
-- Tüm UI vanilla JS + inline CSS (zero dependency)
-- Manifest v3 + Service Worker mimarisi
+
+- **URL geçiş izleyici** (`checkGameTransitions`) — sayaç oyun *başladığında* değil, *bittiğinde* artar; böylece başarısız girişimlerde false-positive olmaz
+- **EMA** (Exponential Moving Average) bazlı saatlik tahmin — son 20 oyunun ağırlıklı ortalaması, mola sürelerini de hesaba katar
+- **4-maske spotlight sistemi** — tutorial overlay `position:absolute` + scroll-aware koordinat hesabıyla her çözünürlükte doğru çalışır
+- **Güncelleme koruması** — GitHub Releases API'den sürüm karşılaştırması, eski sürümde auto-play engeli
+- **Sıfır bağımlılık** — tüm UI vanilla JS + inline/harici CSS, hiçbir npm paketi yok
+- **Manifest v3** + Service Worker mimarisi
 
 <br/>
 
@@ -194,17 +332,27 @@ Sayfanın sağ alt köşesinde küçük bir konsol widget'ı bulunur. Şu an oyn
 graph TD
     A([rollercoin.com yüklendi]) --> B{Sayfa türü?}
     B -->|choose_game| C[Oyun listesini tara]
-    B -->|play_game| D[Sonucu bekle]
-    C --> E{Pas geçilenler var mı?}
-    E -->|Evet| F[Filtrele]
-    E -->|Hayır| G[Rastgele seç & başlat]
+    B -->|play_game| D[Oyun ekranında bekle]
+    B -->|Diğer| B
+
+    C --> E{Pas/Daima listesi?}
+    E -->|Evet| F[Filtrele ve tekrar seç]
+    E -->|Hayır| G[Rastgele seç & butona bas]
     F --> G
-    D --> H[Gain Power / Collect tıkla]
-    H --> I{10dk doldu mu?}
-    I -->|Evet| J[☕ Mola Ekranı]
-    J --> K[2.5dk sonra devam]
-    K --> B
-    I -->|Hayır| B
+
+    G --> H{URL play_game'e geçti mi?}
+    H -->|Evet| I[Oyun başladı: timer başlat]
+    H -->|Hayır| J[1.5sn bekle, tekrar dene]
+    J --> G
+
+    D --> K[Gain Power / Collect tıkla]
+    I --> L{choose_game'e döndü mü?}
+    L -->|Evet| M[Sayaç +1, istatistik kaydet]
+    M --> N{Oyun süresi doldu mu?}
+    N -->|Evet| O[☕ Tam ekran mola aç]
+    N -->|Hayır| B
+    O --> P[Geri sayım — mola süresi]
+    P --> B
 ```
 
 <br/>
