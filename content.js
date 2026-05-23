@@ -1,5 +1,61 @@
 const RC_VERSION = '2.2.9';
 
+/* ── i18n (content script) ── */
+var _RC_LANG_CONTENT = 'tr';
+var _RC_CONTENT_STRINGS = {
+  tr: {
+    w_game: 'Oyun', w_time: 'Süre', w_now_playing: 'Şu An Oynanıyor',
+    w_per_hour: '1 saatte', w_break: 'Mola',
+    w_skip_btn: 'Pas Geç', w_perm_btn: 'Daima',
+    w_skip_title: 'Pas Geç (S)', w_perm_title: 'Daima Atla (P)',
+    w_sound_title: 'Ses Aç/Kapat', w_hide_title: 'Gizle',
+    w_shortcut_skip: 'pas geç', w_shortcut_perm: 'daima atla',
+    break_title: 'Mola Zamanı', break_end_btn: 'Molayı Bitir',
+    break_worked: 'dakika çalıştın —', break_rest: 'dakika dinlen.',
+    break_next_suffix: 'sonra mola',
+  },
+  en: {
+    w_game: 'Game', w_time: 'Time', w_now_playing: 'Now Playing',
+    w_per_hour: 'per hour', w_break: 'Break',
+    w_skip_btn: 'Skip', w_perm_btn: 'Always',
+    w_skip_title: 'Skip (S)', w_perm_title: 'Always Skip (P)',
+    w_sound_title: 'Sound On/Off', w_hide_title: 'Hide',
+    w_shortcut_skip: 'skip', w_shortcut_perm: 'always skip',
+    break_title: 'Break Time', break_end_btn: 'End Break',
+    break_worked: 'minutes worked —', break_rest: 'minutes rest.',
+    break_next_suffix: 'until break',
+  },
+};
+function cT(key) {
+  var d = _RC_CONTENT_STRINGS[_RC_LANG_CONTENT] || _RC_CONTENT_STRINGS['tr'];
+  return d[key] !== undefined ? d[key] : (_RC_CONTENT_STRINGS['tr'][key] || key);
+}
+chrome.storage.local.get(['rcLang'], function(d) {
+  if (d.rcLang) _RC_LANG_CONTENT = d.rcLang;
+});
+function _applyWidgetLang() {
+  var els = {
+    'rc-game-label':     'w_game',
+    'rc-time-label':     'w_time',
+    'rc-now-playing-lbl':'w_now_playing',
+    'rc-per-hour-lbl':   'w_per_hour',
+    'rc-break-lbl':      'w_break',
+  };
+  Object.keys(els).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = cT(els[id]);
+  });
+  var skipB = document.getElementById('rc-skip-btn');
+  if (skipB) { skipB.title = cT('w_skip_title'); var s = skipB.querySelector('span'); if (s) s.lastChild.textContent = ' ' + cT('w_skip_btn'); }
+  var permB = document.getElementById('rc-perm-btn');
+  if (permB) { permB.title = cT('w_perm_title'); var s2 = permB.querySelector('span'); if (s2) s2.lastChild.textContent = ' ' + cT('w_perm_btn'); }
+  var sc = document.getElementById('rc-shortcut-row');
+  if (sc) {
+    var spans = sc.querySelectorAll('span[data-key]');
+    spans.forEach(function(sp) { sp.textContent = cT(sp.getAttribute('data-key')); });
+  }
+}
+
 let _rcAudioCtx = null;
 function _getRCAudioCtx() {
   if (!_rcAudioCtx || _rcAudioCtx.state === 'closed') {
@@ -307,9 +363,9 @@ function updateBreakStatusDisplay() {
     const mins = Math.floor(remaining);
     const secs = Math.floor((remaining % 1) * 60);
     if (mins > 0) {
-      statusEl.textContent = mins + 'd ' + secs + 'sn';
+      statusEl.textContent = mins + 'm ' + secs + 's ' + cT('break_next_suffix');
     } else {
-      statusEl.textContent = secs + 'sn';
+      statusEl.textContent = secs + 's ' + cT('break_next_suffix');
     }
   } else {
     statusEl.textContent = '-';
@@ -372,8 +428,8 @@ function showBreakBanner() {
       <div style="width:56px; height:56px; background:rgba(255,61,107,0.12); border:1px solid rgba(255,61,107,0.3); border-radius:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF3D6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
       </div>
-      <div style="font-size:22px; font-weight:700; color:#fff; letter-spacing:-0.3px; margin-bottom:8px;">Mola Zamanı</div>
-      <div style="font-size:13px; color:#4A5568; margin-bottom:32px;">${window.breakSessionMinutes} dakika çalıştın — ${window.breakDurationMinutes} dakika dinlen.</div>
+      <div style="font-size:22px; font-weight:700; color:#fff; letter-spacing:-0.3px; margin-bottom:8px;">${cT('break_title')}</div>
+      <div style="font-size:13px; color:#4A5568; margin-bottom:32px;">${window.breakSessionMinutes} ${cT('break_worked')} ${window.breakDurationMinutes} ${cT('break_rest')}</div>
       <div style="font-size:52px; font-weight:700; color:#FF3D6B; font-variant-numeric:tabular-nums; letter-spacing:-1px; margin-bottom:36px;" id="rc-break-timer">${String(Math.floor(window.breakDurationMinutes)).padStart(2,'0')}:${String(Math.round((window.breakDurationMinutes % 1)*60)).padStart(2,'0')}</div>
       <button id="rc-end-break-btn" style="
         background: #FF3D6B;
@@ -387,7 +443,7 @@ function showBreakBanner() {
         font-family: 'Inter', system-ui, sans-serif;
         letter-spacing: 0.2px;
         transition: filter 0.15s;
-      " onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='none'">Molayı Bitir</button>
+      " onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='none'">${cT('break_end_btn')}</button>
     </div>
   `;
   document.body.appendChild(banner);
@@ -520,7 +576,7 @@ function createFloatButton() {
 
   const soundBtn = document.createElement('button');
   soundBtn.className = 'rc-btn';
-  soundBtn.title = 'Ses Aç/Kapat';
+  soundBtn.title = cT('w_sound_title');
   soundBtn.innerHTML = ICON.vol;
   soundBtn.style.cssText = 'background:#141728; border:1px solid #1E2545; color:#34D399; border-radius:6px; padding:5px; display:flex; align-items:center; justify-content:center; flex-shrink:0;';
   soundBtn.onclick = () => {
@@ -543,7 +599,7 @@ function createFloatButton() {
 
   const hideBtn = document.createElement('button');
   hideBtn.className = 'rc-btn';
-  hideBtn.title = 'Gizle';
+  hideBtn.title = cT('w_hide_title');
   hideBtn.innerHTML = ICON.hide;
   hideBtn.style.cssText = 'background:#141728; border:1px solid #1E2545; color:#4A5568; border-radius:6px; padding:5px; display:flex; align-items:center; justify-content:center; flex-shrink:0;';
   hideBtn.onclick = () => { playSound('toggle'); wrapper.style.display = 'none'; showBtn.style.display = 'flex'; };
@@ -563,11 +619,11 @@ function createFloatButton() {
   statsCard.style.cssText = 'background:#141728; border-radius:9px; padding:8px 10px; display:flex; justify-content:space-between;';
   statsCard.innerHTML = `
     <div>
-      <div style="display:flex; align-items:center; gap:4px; color:#4A5568; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px;">${ICON.play} Oyun</div>
+      <div style="display:flex; align-items:center; gap:4px; color:#4A5568; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px;">${ICON.play} <span id="rc-game-label">${cT('w_game')}</span></div>
       <div id="rc-games-count" style="font-size:18px; font-weight:700; color:#FF3D6B; line-height:1;">0</div>
     </div>
     <div style="text-align:right;">
-      <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px; color:#4A5568; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px;">${ICON.clock} Süre</div>
+      <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px; color:#4A5568; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px;">${ICON.clock} <span id="rc-time-label">${cT('w_time')}</span></div>
       <div id="rc-game-timer" style="font-size:18px; font-weight:700; color:#60A5FA; line-height:1; font-variant-numeric:tabular-nums;">00:00</div>
     </div>
   `;
@@ -580,7 +636,7 @@ function createFloatButton() {
   nowPlayingCard.innerHTML = `
     <div style="display:flex; align-items:center; gap:4px; color:#FF3D6B; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px;">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-      Şu An Oynanıyor
+      <span id="rc-now-playing-lbl">${cT('w_now_playing')}</span>
     </div>
     <div id="rc-now-playing-name" style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
   `;
@@ -590,7 +646,7 @@ function createFloatButton() {
   const predictCard = document.createElement('div');
   predictCard.style.cssText = 'background:#141728; border-radius:9px; padding:7px 10px; display:flex; align-items:center; justify-content:space-between;';
   predictCard.innerHTML = `
-    <div style="display:flex; align-items:center; gap:4px; color:#4A5568; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">${ICON.trend} 1 saatte</div>
+    <div style="display:flex; align-items:center; gap:4px; color:#4A5568; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">${ICON.trend} <span id="rc-per-hour-lbl">${cT('w_per_hour')}</span></div>
     <div id="rc-predicted-games" style="font-size:12px; font-weight:600; color:#34D399;">—</div>
   `;
   wrapper.appendChild(predictCard);
@@ -600,7 +656,7 @@ function createFloatButton() {
   breakStatusRow.id = 'rc-break-status';
   breakStatusRow.style.cssText = 'display:none; background:rgba(255,61,107,0.1); border:1px solid rgba(255,61,107,0.25); border-radius:9px; padding:7px 10px; align-items:center; justify-content:space-between;';
   breakStatusRow.innerHTML = `
-    <div style="display:flex; align-items:center; gap:4px; color:#FF3D6B; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">${ICON.coffee} Mola</div>
+    <div style="display:flex; align-items:center; gap:4px; color:#FF3D6B; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">${ICON.coffee} <span id="rc-break-lbl">${cT('w_break')}</span></div>
     <div id="rc-break-status-text" style="font-size:12px; font-weight:600; color:#FF3D6B; font-variant-numeric:tabular-nums;">—</div>
   `;
   wrapper.appendChild(breakStatusRow);
@@ -608,9 +664,10 @@ function createFloatButton() {
   /* ── Kısayol ipucu ── */
   const shortcuts = document.createElement('div');
   shortcuts.style.cssText = 'display:flex; gap:8px; padding:0 2px;';
+  shortcuts.id = 'rc-shortcut-row';
   shortcuts.innerHTML = `
-    <span style="font-size:9px; color:#4A5568;"><span style="color:#FF3D6B; font-weight:600;">S</span> pas geç</span>
-    <span style="font-size:9px; color:#4A5568;"><span style="color:#FF3D6B; font-weight:600;">P</span> daima atla</span>
+    <span style="font-size:9px; color:#4A5568;"><span style="color:#FF3D6B; font-weight:600;">S</span> <span data-key="w_shortcut_skip">${cT('w_shortcut_skip')}</span></span>
+    <span style="font-size:9px; color:#4A5568;"><span style="color:#FF3D6B; font-weight:600;">P</span> <span data-key="w_shortcut_perm">${cT('w_shortcut_perm')}</span></span>
   `;
   wrapper.appendChild(shortcuts);
 
@@ -620,15 +677,17 @@ function createFloatButton() {
 
   const skipBtn = document.createElement('button');
   skipBtn.className = 'rc-btn';
-  skipBtn.title = 'Pas Geç (S)';
-  skipBtn.innerHTML = `<span style="display:flex; align-items:center; gap:5px;">${ICON.skip} Pas Geç</span>`;
+  skipBtn.id = 'rc-skip-btn';
+  skipBtn.title = cT('w_skip_title');
+  skipBtn.innerHTML = `<span style="display:flex; align-items:center; gap:5px;">${ICON.skip} ${cT('w_skip_btn')}</span>`;
   skipBtn.style.cssText = 'flex:1; background:#FF3D6B; color:#fff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center;';
   skipBtn.onclick = () => skipToChooseGame();
 
   const permBtn = document.createElement('button');
   permBtn.className = 'rc-btn';
-  permBtn.title = 'Daima Atla (P)';
-  permBtn.innerHTML = `<span style="display:flex; align-items:center; gap:4px;">${ICON.ban} Daima</span>`;
+  permBtn.id = 'rc-perm-btn';
+  permBtn.title = cT('w_perm_title');
+  permBtn.innerHTML = `<span style="display:flex; align-items:center; gap:4px;">${ICON.ban} ${cT('w_perm_btn')}</span>`;
   permBtn.style.cssText = 'background:#141728; border:1px solid #1E2545; color:#60A5FA; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center;';
   permBtn.onclick = () => skipGamePermanent();
 
@@ -1283,6 +1342,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const banner = document.getElementById('rc-break-banner');
       if (banner) banner.remove();
     }
+  }
+  else if (msg.action === 'setLang') {
+    _RC_LANG_CONTENT = msg.lang || 'tr';
+    _applyWidgetLang();
   }
   else if (msg.action === 'setBreakSettings') {
     if (msg.sessionMin)  window.breakSessionMinutes  = parseFloat(msg.sessionMin);

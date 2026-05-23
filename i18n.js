@@ -77,6 +77,28 @@ var RC_STRINGS = {
     update_btn: 'Güncellemeyi İndir',
     update_sub: 'Yeni bir sürüm yayınlandı. Auto-Play kullanmak için güncellemeniz gerekiyor.',
     update_title: 'Yeni Sürüm Mevcut!',
+    /* ── content.js widget ── */
+    w_game: 'Oyun',
+    w_time: 'Süre',
+    w_now_playing: 'Şu An Oynanıyor',
+    w_per_hour: '1 saatte',
+    w_break: 'Mola',
+    w_skip_btn: 'Pas Geç',
+    w_perm_btn: 'Daima',
+    w_skip_title: 'Pas Geç (S)',
+    w_perm_title: 'Daima Atla (P)',
+    w_sound_title: 'Ses Aç/Kapat',
+    w_hide_title: 'Gizle',
+    w_shortcut_skip: 'pas geç',
+    w_shortcut_perm: 'daima atla',
+    /* ── break banner ── */
+    break_title: 'Mola Zamanı',
+    break_worked: 'dakika çalıştın —',
+    break_rest: 'dakika dinlen.',
+    break_end_btn: 'Molayı Bitir',
+    /* ── break status row ── */
+    break_status_label: 'Mola',
+    break_next_suffix: 'sonra mola',
   },
   en: {
     auto_off: 'Auto-Play: OFF',
@@ -148,6 +170,28 @@ var RC_STRINGS = {
     update_btn: 'Download Update',
     update_sub: 'A new version has been released. Please update to use Auto-Play.',
     update_title: 'New Version Available!',
+    /* ── content.js widget ── */
+    w_game: 'Game',
+    w_time: 'Time',
+    w_now_playing: 'Now Playing',
+    w_per_hour: 'per hour',
+    w_break: 'Break',
+    w_skip_btn: 'Skip',
+    w_perm_btn: 'Always',
+    w_skip_title: 'Skip (S)',
+    w_perm_title: 'Always Skip (P)',
+    w_sound_title: 'Sound On/Off',
+    w_hide_title: 'Hide',
+    w_shortcut_skip: 'skip',
+    w_shortcut_perm: 'always skip',
+    /* ── break banner ── */
+    break_title: 'Break Time',
+    break_worked: 'minutes worked —',
+    break_rest: 'minutes rest.',
+    break_end_btn: 'End Break',
+    /* ── break status row ── */
+    break_status_label: 'Break',
+    break_next_suffix: 'until break',
   },
 };
 
@@ -182,8 +226,20 @@ function setLang(lang) {
   if (overlay && overlay.classList.contains('active')) {
     if (typeof renderTutStep === 'function') renderTutStep();
   }
+  _updateLangBtn(lang);
+  /* content script'e dil değişimini bildir */
+  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+    if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { action: 'setLang', lang: lang });
+  });
+}
+
+function _updateLangBtn(lang) {
   var btn = document.getElementById('btn-lang');
-  if (btn) btn.textContent = lang === 'tr' ? '🇬🇧 EN' : '🇹🇷 TR';
+  if (!btn) return;
+  btn.setAttribute('data-lang', lang);
+  btn.innerHTML = lang === 'tr'
+    ? '<svg width="13" height="10" viewBox="0 0 20 14" fill="none"><rect width="20" height="14" rx="2" fill="#012169"/><path d="M0 0l20 14M20 0L0 14" stroke="#fff" stroke-width="3"/><path d="M0 0l20 14M20 0L0 14" stroke="#C8102E" stroke-width="1.8"/><rect x="8" width="4" height="14" fill="#fff"/><rect y="5" width="20" height="4" fill="#fff"/><rect x="9" width="2" height="14" fill="#C8102E"/><rect y="6" width="20" height="2" fill="#C8102E"/></svg><span>EN</span>'
+    : '<svg width="13" height="10" viewBox="0 0 30 20" fill="none"><rect width="30" height="20" rx="2" fill="#E30A17"/><circle cx="11" cy="10" r="5.5" fill="#fff"/><circle cx="12.5" cy="10" r="4.4" fill="#E30A17"/><path d="M16.5 7.5l.8 2.5-2.2-1.5h2.8l-2.2 1.5z" fill="#fff"/></svg><span>TR</span>';
 }
 
 /** Sayfa yüklenince kaydedilmiş dili uygula */
@@ -191,7 +247,6 @@ function initLang() {
   chrome.storage.local.get(['rcLang'], function(data) {
     RC_LANG = data.rcLang || 'tr';
     applyTranslations();
-    var btn = document.getElementById('btn-lang');
-    if (btn) btn.textContent = RC_LANG === 'tr' ? '🇬🇧 EN' : '🇹🇷 TR';
+    _updateLangBtn(RC_LANG);
   });
 }

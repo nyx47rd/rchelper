@@ -1,4 +1,31 @@
 /* ── Tutorial overlay styles ── */
+
+/* ── Language toggle button ── */
+.lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 5px;
+  background: #141728;
+  border: 1px solid #1E2545;
+  border-radius: 20px;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+  height: 24px;
+}
+.lang-btn svg { display: block; border-radius: 2px; }
+.lang-btn span { line-height: 1; }
+.lang-btn:hover {
+  border-color: #FF3D6B;
+  color: #fff;
+  background: rgba(255,61,107,0.08);
+}
+
 .tut-help-btn {
   background: #141728;
   border: 1px solid #1E2545;
