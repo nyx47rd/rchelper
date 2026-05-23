@@ -76,7 +76,7 @@
 
 ### Step 1 — Download Files
 
-[![Download ZIP](https://img.shields.io/badge/⬇_Son_Sürümü_İndir-FF3D6B?style=for-the-badge)](https://github.com/nyx47rd/rchelper/releases/latest)
+[![Download ZIP](https://img.shields.io/badge/⬇_INSTALL_LATEST_VERSION-FF3D6B?style=for-the-badge)](https://github.com/nyx47rd/rchelper/releases/latest)
 
 Download the `rchelper-vX.X.X.zip` file from the Releases page and extract it to a folder.
 
