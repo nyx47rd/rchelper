@@ -75,17 +75,17 @@ var TUT_STEPS = [
     desc: 'Bu kısa tur seni <strong>2 dakikada</strong> tüm özelliklerle tanıştıracak. RollerCoin\'de oyun seçimini otomatikleştirmek için tasarlandı.',
   },
   {
-    targetId: 'chk-choose',
+    targetId: 'row-choose',
     title: 'Otomatik Seç',
     desc: '<strong>Oyun seçim ekranında</strong> rastgele bir oyun seçip butona basar. Sen sadece oyunu oynarsın — seçimi o yapar.',
   },
   {
-    targetId: 'chk-collect',
+    targetId: 'row-collect',
     title: 'Otomatik Topla',
     desc: 'Oyun bitince çıkan <strong>"Gain Power"</strong> ve <strong>"Collect"</strong> butonlarına otomatik basar. Power\'ı kaçırmazsın.',
   },
   {
-    targetId: 'chk-break',
+    targetId: 'row-break',
     title: 'Mola Hatırlatıcısı',
     desc: '<strong>10 dakika</strong> oynayınca tam ekran mola ekranı açılır, <strong>2.5 dakika</strong> dinlenir, sonra otomatik devam eder. Gözlerini koru!',
   },
