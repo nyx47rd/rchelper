@@ -227,7 +227,9 @@ function applyTranslations() {
 /** Dili değiştirir, kaydeder ve UI'ı yeniler */
 function setLang(lang) {
   RC_LANG = lang;
-  chrome.storage.local.set({ rcLang: lang });
+  chrome.storage.local.set({ rcLang: lang }, function() {
+    if (chrome.runtime.lastError) console.error('[i18n] storage.set failed:', chrome.runtime.lastError);
+  });
   applyTranslations();
   if (typeof refreshDynamicTexts === 'function') refreshDynamicTexts();
   var overlay = document.getElementById('tut-overlay');
@@ -236,9 +238,16 @@ function setLang(lang) {
   }
   _updateLangBtn(lang);
   /* content script'e dil değişimini bildir */
-  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-    if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { action: 'setLang', lang: lang });
-  });
+  try {
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+      if (chrome.runtime.lastError) return;
+      if (tabs && tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'setLang', lang: lang }, function() {
+          if (chrome.runtime.lastError) { /* tab inject edilmemiş olabilir, normal */ }
+        });
+      }
+    });
+  } catch(e) {}
 }
 
 function _updateLangBtn(lang) {
@@ -252,9 +261,16 @@ function _updateLangBtn(lang) {
 
 /** Sayfa yüklenince kaydedilmiş dili uygula */
 function initLang() {
+  /* Önce mevcut data-lang attribute'undan sync render et */
+  var btn = document.getElementById('btn-lang');
+  var cachedLang = (btn && btn.getAttribute('data-lang')) || 'tr';
+  _updateLangBtn(cachedLang);
+
+  /* Storage'dan gerçek dili oku ve uygula */
   chrome.storage.local.get(['rcLang'], function(data) {
     RC_LANG = data.rcLang || 'tr';
-    applyTranslations();
     _updateLangBtn(RC_LANG);
+    applyTranslations();
+    if (typeof refreshDynamicTexts === 'function') refreshDynamicTexts();
   });
 }

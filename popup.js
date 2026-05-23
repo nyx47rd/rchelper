@@ -80,7 +80,10 @@ document.addEventListener('DOMContentLoaded', function() {
   checkForUpdates();
   initLang();
   var btnLang = document.getElementById('btn-lang');
-  if (btnLang) btnLang.onclick = function() { setLang(RC_LANG === 'tr' ? 'en' : 'tr'); };
+  if (btnLang) btnLang.onclick = function() {
+    var cur = this.getAttribute('data-lang') || RC_LANG || 'tr';
+    setLang(cur === 'tr' ? 'en' : 'tr');
+  };
 
   /* ── Tutorial başlatıcı ── */
   var btnTutorial = document.getElementById('btn-tutorial');
