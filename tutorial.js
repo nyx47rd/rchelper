@@ -1,3 +1,4 @@
+var renderTutStep = null;
 /* ── RC Helper Interactive Tutorial ── */
 var TUT_STEPS = [
   {
@@ -51,6 +52,12 @@ var TUT_STEPS = [
     desc: 'Oynadığın <strong>toplam oyun</strong>, bugün, bu hafta, toplam süre, ortalama süre, en çok oynadığın oyun ve şu an oynadığın oyunu burada görürsün.',
   },
 ];
+var TUT_TARGET_IDS = [null,'row-choose','row-collect','row-break','break-settings-card','btn-skip','btn-skip-perm','btn-list','btn-auto','stats-card'];
+function getTutSteps() {
+  return TUT_TARGET_IDS.map(function(id, i) {
+    return { targetId: id, title: t('tut_step_'+i+'_title'), desc: t('tut_step_'+i+'_desc') };
+  });
+}
 
 function startTutorial() {
   var overlay = document.getElementById('tut-overlay');
@@ -59,7 +66,7 @@ function startTutorial() {
 
   var dotsEl = document.getElementById('tut-dots');
   dotsEl.innerHTML = '';
-  TUT_STEPS.forEach(function() {
+  getTutSteps().forEach(function() {
     var d = document.createElement('span');
     d.className = 'tut-dot';
     dotsEl.appendChild(d);
@@ -154,10 +161,11 @@ function startTutorial() {
   }
 
   function render() {
-    var s     = TUT_STEPS[step];
-    var total = TUT_STEPS.length;
+  renderTutStep = render;
+    var s     = getTutSteps()[step];
+    var total = getTutSteps().length;
 
-    document.getElementById('tut-badge').textContent = 'Adım ' + (step + 1) + ' / ' + total;
+    document.getElementById('tut-badge').textContent = t('tut_step_label') + ' ' + (step + 1) + ' ' + t('tut_step_of') + ' ' + total;
     document.getElementById('tut-title').textContent = s.title;
     document.getElementById('tut-desc').innerHTML    = s.desc;
 
@@ -180,11 +188,11 @@ function startTutorial() {
 
     prevBtn.style.display = step === 0 ? 'none' : '';
     if (step === total - 1) {
-      nextBtn.textContent   = '✓ Tamamla';
+      nextBtn.textContent = t('tut_done');
       nextBtn.className     = 'tut-btn tut-btn-done';
       skipBtn.style.display = 'none';
     } else {
-      nextBtn.textContent   = 'İleri ›';
+      nextBtn.textContent = t('tut_next');
       nextBtn.className     = 'tut-btn tut-btn-next';
       skipBtn.style.display = '';
     }
@@ -197,7 +205,7 @@ function startTutorial() {
   }
 
   document.getElementById('tut-next').onclick = function() {
-    if (step < TUT_STEPS.length - 1) { step++; render(); }
+    if (step < getTutSteps().length - 1) { step++; render(); }
     else { closeTutorial(true); }
   };
   document.getElementById('tut-prev').onclick = function() {

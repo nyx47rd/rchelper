@@ -32,7 +32,7 @@ function checkForUpdates() {
         var sub = document.getElementById('update-banner-sub');
         var btnUpdate = document.getElementById('btn-update');
         if (banner) banner.style.display = 'block';
-        if (sub) sub.textContent = 'v' + latest + ' mevcut. Auto-Play kullanmak için güncellemeniz gerekiyor.';
+        if (sub) sub.textContent = 'v' + latest + ' — ' + t('update_sub');
         if (btnUpdate) btnUpdate.onclick = function() { chrome.tabs.create({ url: latestReleaseUrl }); };
         if (btnAuto) {
           btnAuto.disabled = true;
@@ -67,8 +67,20 @@ function sendMessage(msg, callback) {
   });
 }
 
+
+/* ── i18n: dinamik metin yenileme ── */
+function refreshDynamicTexts() {
+  var state = typeof autoPlayState !== 'undefined' ? autoPlayState : false;
+  var lbl = document.getElementById('auto-play-lbl') || document.getElementById('btn-auto');
+  if (lbl) lbl.textContent = t(state ? 'auto_on' : 'auto_off');
+  loadSkippedGames();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   checkForUpdates();
+  initLang();
+  var btnLang = document.getElementById('btn-lang');
+  if (btnLang) btnLang.onclick = function() { setLang(RC_LANG === 'tr' ? 'en' : 'tr'); };
 
   /* ── Tutorial başlatıcı ── */
   var btnTutorial = document.getElementById('btn-tutorial');
@@ -123,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   function updateAutoBtn(state) {
-    btnAuto.textContent = state ? 'Auto-Play: AÇIK' : 'Auto-Play: KAPALI';
+    btnAuto.querySelector('#auto-play-lbl,span') ? (btnAuto.querySelector('[data-i18n]').setAttribute('data-i18n', state ? 'auto_on' : 'auto_off'), btnAuto.querySelector('[data-i18n]').textContent = t(state ? 'auto_on' : 'auto_off')) : (btnAuto.textContent = t(state ? 'auto_on' : 'auto_off'));
     btnAuto.classList.toggle('active', state);
   }
 
@@ -146,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     var ICON_X = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     if (validGames.length === 0) {
-      listEl.innerHTML = '<span class="skip-empty">Henüz yok</span>';
+      listEl.innerHTML = '<span class="skip-empty">' + t('skip_empty') + '</span>';
     } else {
       listEl.innerHTML = '';
       validGames.forEach(function(g) {
@@ -157,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
         nameSpan.textContent = g.name;
         var metaSpan = document.createElement('span');
         metaSpan.className = 'skip-item-meta';
-        metaSpan.textContent = g.remaining + 'dk';
+        metaSpan.textContent = g.remaining + t('skip_min_suffix');
         var btn = document.createElement('button');
         btn.className = 'skip-item-rm';
         btn.innerHTML = ICON_X;
@@ -185,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     var ICON_X2 = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     if (games.length === 0) {
-      listEl.innerHTML = '<span class="skip-empty">Henüz yok</span>';
+      listEl.innerHTML = '<span class="skip-empty">' + t('skip_empty') + '</span>';
     } else {
       listEl.innerHTML = '';
       games.forEach(function(g) {
@@ -318,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var btnStatsReset = document.getElementById('btn-stats-reset');
   if (btnStatsReset) {
     btnStatsReset.onclick = function() {
-      if (!confirm('Tüm oyun istatistiklerini sıfırlamak istediğinden emin misin?')) return;
+      if (!confirm(t('confirm_stats'))) return;
       chrome.storage.local.set({ gameStats: null }, function() {
         updateStatsCard();
       });
@@ -339,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!games || games.length === 0) {
       var empty = document.createElement('div');
       empty.className = 'game-picker-empty';
-      empty.textContent = 'Oyun listesi bulunamadı. Önce oyun seçim sayfasına git.';
+      empty.textContent = t('picker_empty_msg');
       gamePickerList.appendChild(empty);
       return;
     }
@@ -356,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
       actions.className = 'game-picker-actions';
       var btnSkipG = document.createElement('button');
       btnSkipG.className = 'game-picker-btn game-picker-btn-skip';
-      btnSkipG.textContent = isSkipped ? '✓ Pas' : 'Pas';
+      btnSkipG.textContent = isSkipped ? t('picker_skip_done') : t('picker_skip');
       btnSkipG.onclick = function() {
         sendMessage({ action: 'addSkip', gameName: name });
         chrome.storage.local.get(['skippedGames'], function(d) {
@@ -367,7 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       var btnPermG = document.createElement('button');
       btnPermG.className = 'game-picker-btn game-picker-btn-perm';
-      btnPermG.textContent = isPerm ? '✓ Daima' : 'Daima';
+      btnPermG.textContent = isPerm ? t('picker_perm_done') : t('picker_perm');
       btnPermG.onclick = function() {
         sendMessage({ action: 'addPermSkip', gameName: name });
         chrome.storage.local.get(['permanentSkippedGames'], function(d) {
@@ -386,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function openGamePicker() {
     gamePicker.style.display = 'block';
-    gamePickerList.innerHTML = '<div class="game-picker-empty">Yükleniyor...</div>';
+    gamePickerList.innerHTML = '<div class="game-picker-empty">' + t('picker_loading') + '</div>';
     chrome.storage.local.get(['skippedGames', 'permanentSkippedGames', 'knownGames'], function(data) {
       var skipped = data.skippedGames || {};
       var permanent = data.permanentSkippedGames || {};
@@ -414,7 +426,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   btnSkip.onclick = function() {
     var orig = btnSkip.textContent;
-    btnSkip.textContent = 'Geçiliyor...';
+    btnSkip.querySelector('[data-i18n]') ? (btnSkip.querySelector('[data-i18n]').textContent = t('btn_skipping')) : (btnSkip.textContent = t('btn_skipping'));
     sendMessage({ action: 'skipGame' });
     setTimeout(function() { 
       btnSkip.textContent = orig; 
@@ -447,23 +459,23 @@ document.addEventListener('DOMContentLoaded', function() {
     box.style.cssText = 'background:#1e2235; border:1px solid #e94560; border-radius:8px; padding:10px; margin-top:6px; font-size:11px; color:#ccc; text-align:center;';
     box.innerHTML = '<div style="margin-bottom:8px;">Emin misin? Tüm ayarlar silinecek.</div>';
     var yes = document.createElement('button');
-    yes.textContent = 'Evet, Temizle';
+    yes.textContent = t('confirm_yes');
     yes.style.cssText = 'background:#e94560; color:#fff; border:none; border-radius:5px; padding:5px 10px; cursor:pointer; font-size:11px; margin-right:6px;';
     yes.onclick = function() {
       chrome.storage.local.clear(function() {
         box.remove();
-        btnClear.textContent = '✓ Temizlendi!';
+        btnClear.querySelector('[data-i18n]') ? (btnClear.querySelector('[data-i18n]').textContent = t('btn_clear_done')) : (btnClear.textContent = t('btn_clear_done'));
         btnClear.style.background = '#4ade80';
         btnClear.style.color = '#fff';
         setTimeout(function() {
-          btnClear.textContent = '🗑️ Hafızayı Temizle';
+          btnClear.querySelector('[data-i18n]') ? (btnClear.querySelector('[data-i18n]').textContent = t('btn_clear_lbl')) : (btnClear.textContent = t('btn_clear_lbl'));
           btnClear.style.background = '#1e2235';
           btnClear.style.color = '#666';
         }, 2000);
       });
     };
     var no = document.createElement('button');
-    no.textContent = 'İptal';
+    no.textContent = t('confirm_no');
     no.style.cssText = 'background:#333; color:#888; border:none; border-radius:5px; padding:5px 10px; cursor:pointer; font-size:11px;';
     no.onclick = function() { box.remove(); };
     box.appendChild(yes);
