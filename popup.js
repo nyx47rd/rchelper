@@ -320,11 +320,6 @@ document.addEventListener('DOMContentLoaded', function() {
       setT('stat-active-days', activeDays);
     });
 
-    // Şu an oynanan oyunu content script'ten al
-    sendMessage({ action: 'getGameStats' }, function(resp) {
-      var el = document.getElementById('stat-current-game');
-      if (el) el.textContent = (resp && resp.currentGame) ? resp.currentGame : '-';
-    });
   }
 
   var btnStatsReset = document.getElementById('btn-stats-reset');

@@ -37,7 +37,6 @@ function _applyWidgetLang() {
   var els = {
     'rc-game-label':     'w_game',
     'rc-time-label':     'w_time',
-    'rc-now-playing-lbl':'w_now_playing',
     'rc-per-hour-lbl':   'w_per_hour',
     'rc-break-lbl':      'w_break',
   };
@@ -362,11 +361,7 @@ function updateBreakStatusDisplay() {
     const remaining = Math.max(0, window.breakSessionMinutes - elapsedMinutes);
     const mins = Math.floor(remaining);
     const secs = Math.floor((remaining % 1) * 60);
-    if (mins > 0) {
-      statusEl.textContent = mins + 'm ' + secs + 's ' + cT('break_next_suffix');
-    } else {
-      statusEl.textContent = secs + 's ' + cT('break_next_suffix');
-    }
+    statusEl.textContent = (mins > 0 ? mins + 'm ' : '') + secs + 's';
   } else {
     statusEl.textContent = '-';
   }
@@ -629,18 +624,7 @@ function createFloatButton() {
   `;
   wrapper.appendChild(statsCard);
 
-  /* ── Şu an oynanıyor kartı (gizli başlar) ── */
-  const nowPlayingCard = document.createElement('div');
-  nowPlayingCard.id = 'rc-now-playing';
-  nowPlayingCard.style.cssText = 'display:none; background:rgba(255,61,107,0.08); border:1px solid rgba(255,61,107,0.22); border-radius:9px; padding:7px 10px;';
-  nowPlayingCard.innerHTML = `
-    <div style="display:flex; align-items:center; gap:4px; color:#FF3D6B; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px;">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-      <span id="rc-now-playing-lbl">${cT('w_now_playing')}</span>
-    </div>
-    <div id="rc-now-playing-name" style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
-  `;
-  wrapper.appendChild(nowPlayingCard);
+  /* rc-now-playing kaldırıldı — stats card'daki oyun sayacında zaten görünüyor */
 
   /* ── Prediction ── */
   const predictCard = document.createElement('div');
@@ -884,7 +868,7 @@ function updateSkippedDisplay() {
   if (items.length > 0) {
     infoEl.style.display = 'block';
     while (infoEl.firstChild) infoEl.removeChild(infoEl.firstChild);
-    const header = document.createTextNode('\u23f8 Pas');
+    const header = document.createTextNode(cT('w_skipped_prefix'));
     infoEl.appendChild(header);
     const wrap = document.createElement('div');
     wrap.style.marginTop = '4px';
@@ -1231,16 +1215,8 @@ function checkGameTransitions() {
 }
 
 function updatePlayingIndicator(name) {
-  const card = document.getElementById('rc-now-playing');
-  const nameEl = document.getElementById('rc-now-playing-name');
-  if (!card) return;
-  if (name) {
-    if (nameEl) nameEl.textContent = name;
-    card.style.display = 'block';
-  } else {
-    card.style.display = 'none';
-    if (nameEl) nameEl.textContent = '—';
-  }
+  const countEl = document.getElementById('rc-games-count');
+  if (countEl) countEl.title = name || '';
 }
 
 function recordGameCompletion(name, durationMs) {

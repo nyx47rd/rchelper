@@ -99,6 +99,10 @@ var RC_STRINGS = {
     /* ── break status row ── */
     break_status_label: 'Mola',
     break_next_suffix: 'sonra mola',
+    break_session_lbl: 'Oyun süresi',
+    break_duration_lbl: 'Mola süresi',
+    btn_clear_lbl: 'Hafızayı Temizle',
+    w_skipped_prefix: '⏸ Pas',
   },
   en: {
     auto_off: 'Auto-Play: OFF',
@@ -192,6 +196,10 @@ var RC_STRINGS = {
     /* ── break status row ── */
     break_status_label: 'Break',
     break_next_suffix: 'until break',
+    break_session_lbl: 'Game duration',
+    break_duration_lbl: 'Break duration',
+    btn_clear_lbl: 'Clear Memory',
+    w_skipped_prefix: '⏸ Skipped',
   },
 };
 

@@ -458,7 +458,7 @@
     <div class="break-setting-row">
       <div class="break-setting-label">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Oyun süresi
+        <span data-i18n="break_session_lbl">Oyun süresi</span>
       </div>
       <div class="break-setting-control">
         <input class="break-input" type="number" id="inp-session-min" min="1" max="120" value="10">
@@ -468,7 +468,7 @@
     <div class="break-setting-row">
       <div class="break-setting-label">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
-        Mola süresi
+        <span data-i18n="break_duration_lbl">Mola süresi</span>
       </div>
       <div class="break-setting-control">
         <input class="break-input" type="number" id="inp-break-min" min="0.5" max="60" step="0.5" value="2.5">
@@ -513,7 +513,7 @@
   <div class="card">
     <div class="card-label">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Pas Geçilen · 10dk
+      <span data-i18n="card_skipped_temp">Pas Geçilen · 10dk</span>
     </div>
     <div id="skipped-games-list" class="skip-list"><span class="skip-empty">Henüz yok</span></div>
   </div>
@@ -522,7 +522,7 @@
   <div class="card">
     <div class="card-label">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-      Daima Atlanan
+      <span data-i18n="card_skipped_perm">Daima Atlanan</span>
     </div>
     <div id="permanent-skipped-list" class="skip-list"><span class="skip-empty">Henüz yok</span></div>
   </div>
@@ -575,17 +575,13 @@
         <span class="stat-detail-label"><span data-i18n="stat_active_label">Aktif gün:</span></span>
         <span class="stat-detail-value" id="stat-active-days">-</span>
       </div>
-      <div class="stat-detail">
-        <span class="stat-detail-label"><span data-i18n="stat_current_label">Şu an oynanan:</span></span>
-        <span class="stat-detail-value" id="stat-current-game">-</span>
-      </div>
     </div>
   </div>
 
   <!-- Clear -->
   <button class="btn btn-clear" id="btn-clear">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-    Hafızayı Temizle
+    <span data-i18n="btn_clear_lbl">Hafızayı Temizle</span>
   </button>
 
   <!-- Footer -->
