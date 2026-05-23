@@ -284,8 +284,9 @@
 
     #tut-overlay {
       display: none;
-      position: fixed;
-      inset: 0;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
       z-index: 9999;
       pointer-events: none;
     }
@@ -312,12 +313,13 @@
     #tut-box {
       position: absolute;
       background: #141728;
-      border: 1px solid #1E2545;
+      border: 1px solid #FF3D6B;
       border-radius: 12px;
       padding: 14px;
-      width: 224px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-      transition: all 0.25s cubic-bezier(.4,0,.2,1);
+      left: 8px;
+      right: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,61,107,0.2);
+      transition: top 0.25s cubic-bezier(.4,0,.2,1);
       pointer-events: all;
     }
     .tut-step-badge {

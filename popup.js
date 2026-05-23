@@ -126,72 +126,131 @@ function startTutorial(autoShow) {
   TUT_STEPS.forEach(function(_, i) {
     var d = document.createElement('span');
     d.className = 'tut-dot';
-    d.dataset.i = i;
     dotsEl.appendChild(d);
   });
 
-  function getRect(id) {
+  /* Hedef elementin document-relative rect'ini al (scroll dahil) */
+  function getDocRect(id) {
     if (!id) return null;
     var el = document.getElementById(id);
     if (!el) return null;
-    return el.getBoundingClientRect();
+    var br = el.getBoundingClientRect();
+    var scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    var scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    return {
+      top:    br.top  + scrollY,
+      left:   br.left + scrollX,
+      width:  br.width,
+      height: br.height,
+      bottom: br.top  + scrollY + br.height,
+    };
+  }
+
+  function getDocH() {
+    return Math.max(
+      document.body.scrollHeight,
+      document.documentElement.scrollHeight,
+      document.body.offsetHeight
+    );
+  }
+
+  function getDocW() {
+    return document.body.offsetWidth || document.documentElement.offsetWidth || 256;
   }
 
   function setMasks(r) {
-    var W = window.innerWidth, H = window.innerHeight;
-    var pad = 6;
-    var top = document.getElementById('tut-m-top');
-    var bot = document.getElementById('tut-m-bottom');
-    var lft = document.getElementById('tut-m-left');
-    var rgt = document.getElementById('tut-m-right');
-    var sp  = document.getElementById('tut-spotlight');
+    var W = getDocW();
+    var H = getDocH();
+    var pad = 5;
+    var mTop = document.getElementById('tut-m-top');
+    var mBot = document.getElementById('tut-m-bottom');
+    var mLft = document.getElementById('tut-m-left');
+    var mRgt = document.getElementById('tut-m-right');
+    var sp   = document.getElementById('tut-spotlight');
+
+    /* overlay'in yüksekliğini doc boyutuna eşitle */
+    overlay.style.height = H + 'px';
 
     if (!r) {
-      top.style.cssText    = 'position:absolute;left:0;top:0;width:100%;height:100%;background:rgba(5,7,18,0.82);transition:all 0.25s;';
-      bot.style.cssText    = 'display:none';
-      lft.style.cssText    = 'display:none';
-      rgt.style.cssText    = 'display:none';
-      sp.style.cssText     = 'display:none;position:absolute;';
+      mTop.style.cssText = 'position:absolute;left:0;top:0;width:' + W + 'px;height:' + H + 'px;background:rgba(5,7,18,0.85);';
+      mBot.style.display = 'none';
+      mLft.style.display = 'none';
+      mRgt.style.display = 'none';
+      sp.style.display   = 'none';
       return;
     }
-    var rx = r.left - pad, ry = r.top - pad;
-    var rw = r.width + pad*2, rh = r.height + pad*2;
-    top.style.cssText  = 'position:absolute;left:0;top:0;width:' + W + 'px;height:' + ry + 'px;background:rgba(5,7,18,0.82);transition:all 0.25s;display:block;';
-    bot.style.cssText  = 'position:absolute;left:0;top:' + (ry+rh) + 'px;width:' + W + 'px;height:' + (H-ry-rh) + 'px;background:rgba(5,7,18,0.82);transition:all 0.25s;display:block;';
-    lft.style.cssText  = 'position:absolute;left:0;top:' + ry + 'px;width:' + rx + 'px;height:' + rh + 'px;background:rgba(5,7,18,0.82);transition:all 0.25s;display:block;';
-    rgt.style.cssText  = 'position:absolute;left:' + (rx+rw) + 'px;top:' + ry + 'px;width:' + (W-rx-rw) + 'px;height:' + rh + 'px;background:rgba(5,7,18,0.82);transition:all 0.25s;display:block;';
-    sp.style.cssText   = 'position:absolute;left:' + rx + 'px;top:' + ry + 'px;width:' + rw + 'px;height:' + rh + 'px;border:2px solid #FF3D6B;border-radius:9px;box-shadow:0 0 0 3px rgba(255,61,107,0.18);display:block;transition:all 0.25s;pointer-events:none;';
+
+    var rx = Math.max(0, r.left - pad);
+    var ry = Math.max(0, r.top  - pad);
+    var rw = r.width  + pad * 2;
+    var rh = r.height + pad * 2;
+
+    var bg = 'rgba(5,7,18,0.85)';
+    mTop.style.cssText = 'position:absolute;left:0;top:0;width:' + W + 'px;height:' + ry + 'px;background:' + bg + ';';
+    mBot.style.cssText = 'position:absolute;left:0;top:' + (ry+rh) + 'px;width:' + W + 'px;height:' + (H - ry - rh) + 'px;background:' + bg + ';display:block;';
+    mLft.style.cssText = 'position:absolute;left:0;top:' + ry + 'px;width:' + rx + 'px;height:' + rh + 'px;background:' + bg + ';display:block;';
+    mRgt.style.cssText = 'position:absolute;left:' + (rx+rw) + 'px;top:' + ry + 'px;width:' + (W - rx - rw) + 'px;height:' + rh + 'px;background:' + bg + ';display:block;';
+    sp.style.cssText   = 'position:absolute;left:' + rx + 'px;top:' + ry + 'px;width:' + rw + 'px;height:' + rh + 'px;' +
+                         'border:2px solid #FF3D6B;border-radius:9px;' +
+                         'box-shadow:0 0 0 3px rgba(255,61,107,0.2),0 0 16px rgba(255,61,107,0.25);display:block;pointer-events:none;';
   }
 
   function positionBox(r) {
-    var box = document.getElementById('tut-box');
-    var H = window.innerHeight, W = window.innerWidth;
-    var bw = 224, pad = 8;
-    box.style.left = ((W - bw) / 2) + 'px';
+    var box  = document.getElementById('tut-box');
+    var H    = getDocH();
+    var GAP  = 10;
+    var boxH = 170; /* yaklaşık kutu yüksekliği */
+
     if (!r) {
-      box.style.top = ((H - 160) / 2) + 'px';
+      /* Hoş geldin adımı: sayfanın üst 1/3'ü */
+      box.style.top = '60px';
       return;
     }
-    var below = r.bottom + pad + 8;
-    var above = r.top - pad - 170;
-    if (below + 160 < H) {
-      box.style.top = below + 'px';
-    } else if (above > 0) {
-      box.style.top = above + 'px';
-    } else {
-      box.style.top = Math.max(8, Math.min(r.top, H - 170)) + 'px';
+
+    /* Spotlight'ın altına sığıyor mu? */
+    var belowTop = r.bottom + GAP;
+    if (belowTop + boxH <= H) {
+      box.style.top = belowTop + 'px';
+      return;
     }
+
+    /* Üstüne sığıyor mu? */
+    var aboveTop = r.top - GAP - boxH;
+    if (aboveTop >= 0) {
+      box.style.top = aboveTop + 'px';
+      return;
+    }
+
+    /* İkisi de olmuyorsa ortala */
+    box.style.top = Math.max(8, (H - boxH) / 2) + 'px';
+  }
+
+  function scrollToStep(r) {
+    if (!r) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    var viewH   = window.innerHeight;
+    var scrollY = window.pageYOffset || 0;
+    var elCenter = r.top + r.height / 2;
+    var target  = elCenter - viewH / 2;
+    window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
   }
 
   function render() {
-    var s = TUT_STEPS[step];
+    var s     = TUT_STEPS[step];
     var total = TUT_STEPS.length;
+
     document.getElementById('tut-badge').textContent = 'Adım ' + (step + 1) + ' / ' + total;
     document.getElementById('tut-title').textContent = s.title;
-    document.getElementById('tut-desc').innerHTML = s.desc;
-    var r = getRect(s.targetId);
-    setMasks(r);
-    positionBox(r);
+    document.getElementById('tut-desc').innerHTML    = s.desc;
+
+    var r = getDocRect(s.targetId);
+    scrollToStep(r);
+
+    /* Scroll bittikten sonra yeniden hesapla */
+    setTimeout(function() {
+      var r2 = getDocRect(s.targetId);
+      setMasks(r2);
+      positionBox(r2);
+    }, 180);
 
     var dots = document.querySelectorAll('.tut-dot');
     dots.forEach(function(d, i) { d.className = 'tut-dot' + (i === step ? ' active' : ''); });
@@ -199,20 +258,22 @@ function startTutorial(autoShow) {
     var nextBtn = document.getElementById('tut-next');
     var prevBtn = document.getElementById('tut-prev');
     var skipBtn = document.getElementById('tut-skip');
+
     prevBtn.style.display = step === 0 ? 'none' : '';
     if (step === total - 1) {
       nextBtn.textContent = '✓ Tamamla';
-      nextBtn.className = 'tut-btn tut-btn-done';
+      nextBtn.className   = 'tut-btn tut-btn-done';
       skipBtn.style.display = 'none';
     } else {
       nextBtn.textContent = 'İleri ›';
-      nextBtn.className = 'tut-btn tut-btn-next';
+      nextBtn.className   = 'tut-btn tut-btn-next';
       skipBtn.style.display = '';
     }
   }
 
   function closeTutorial(done) {
     overlay.classList.remove('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     if (done) chrome.storage.local.set({ tutorialDone: true });
   }
 
