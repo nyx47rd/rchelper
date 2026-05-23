@@ -266,6 +266,77 @@
       flex: 0 0 auto; width: auto; padding: 9px 10px;
     }
     .btn-list:hover { border-color: #60A5FA; }
+
+    /* ── Statistics ── */
+    #stats-card .card-label { position: relative; }
+    .stat-reset-btn {
+      position: absolute;
+      right: 0;
+      top: -2px;
+      background: transparent;
+      border: none;
+      color: #4A5568;
+      cursor: pointer;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+    .stat-reset-btn:hover { color: #FF3D6B; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .stat-item {
+      background: #0D0F1A;
+      border: 1px solid #1E2545;
+      border-radius: 7px;
+      padding: 7px 4px;
+      text-align: center;
+      overflow: hidden;
+    }
+    .stat-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: #FF3D6B;
+      line-height: 1.2;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stat-label {
+      font-size: 8px;
+      color: #4A5568;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .stats-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-top: 8px;
+      border-top: 1px solid #1E2545;
+    }
+    .stat-detail {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      gap: 6px;
+    }
+    .stat-detail-label { color: #4A5568; flex-shrink: 0; }
+    .stat-detail-value {
+      color: #CBD5E0;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: right;
+    }
   </style>
 </head>
 <body>
@@ -373,6 +444,61 @@
       Daima Atlanan
     </div>
     <div id="permanent-skipped-list" class="skip-list"><span class="skip-empty">Henüz yok</span></div>
+  </div>
+
+  <!-- Statistics -->
+  <div class="card" id="stats-card">
+    <div class="card-label">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      İstatistikler
+      <button class="stat-reset-btn" id="btn-stats-reset" title="İstatistikleri Sıfırla">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-value" id="stat-total-games">0</div>
+        <div class="stat-label">Toplam Oyun</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-today-games">0</div>
+        <div class="stat-label">Bugün</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-week-games">0</div>
+        <div class="stat-label">Bu Hafta</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-total-time">0m</div>
+        <div class="stat-label">Toplam Süre</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-avg-time">0s</div>
+        <div class="stat-label">Ort. Süre</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-longest-time">0s</div>
+        <div class="stat-label">En Uzun</div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-detail">
+        <span class="stat-detail-label">En çok oynanan:</span>
+        <span class="stat-detail-value" id="stat-fav-game">-</span>
+      </div>
+      <div class="stat-detail">
+        <span class="stat-detail-label">Son oyun:</span>
+        <span class="stat-detail-value" id="stat-last-game">-</span>
+      </div>
+      <div class="stat-detail">
+        <span class="stat-detail-label">Aktif gün:</span>
+        <span class="stat-detail-value" id="stat-active-days">-</span>
+      </div>
+      <div class="stat-detail">
+        <span class="stat-detail-label">Şu an oynanan:</span>
+        <span class="stat-detail-value" id="stat-current-game">-</span>
+      </div>
+    </div>
   </div>
 
   <!-- Clear -->
