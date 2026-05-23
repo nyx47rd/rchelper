@@ -38,7 +38,7 @@
 
 **RC Helper** is a Chrome extension developed for the [RollerCoin](https://rollercoin.com) platform.It doesn't **play** the games for you — it automatically selects and starts the appropriate game on the game selection screen, and you do the rest.Automates power harvesting, break management, and stats tracking.
 
-> ⚠️ **Important:** RC Helper only automates game *selection*.He does not play the games robotically and does not violate RollerCoin rules.
+> ⚠️ **Important:** RC Helper only automates game *selection*. It does not play games robotically and does not violate RollerCoin rules.
 
 <br/>
 
@@ -50,10 +50,10 @@
 
 |⚡ Feature |📖 Description |
 |:---:|:---|
-|🎮 **Auto Select Game** |He randomly selects a game among those that cannot be passed, presses the button and starts it.
+|🎮 **Auto Select Game** |Randomly selects a non-skipped game, presses the button and starts it.
 |💰 **Auto Collect** |Automatically presses the *Gain Power* and *Collect* buttons that appear when the game is over |
 |⏸ **Pass** |Skips the selected game for **10 minutes**;automatically returns to the list when time expires |
-|🚫 **Always Skip** |**Permanently** blocks the game;will never be elected again |
+|🚫 **Always Skip** |**Permanently** blocks the game;will never be selected again |
 |📋 **Manage from List** |See all games from the popup and add/remove them to the pass or always skip list with one click |
 |☕ **Break Reminder** |At the end of the specified time, the full-screen break timer opens;continues automatically after it finishes |
 |⚙️ **Break Settings** |Set game duration (1–120 min) and break time (0.5–60 min) freely from popup |
@@ -186,7 +186,7 @@ The **Stats** card in the popup is automatically updated every 3 seconds:
 |**Avg.Duration** |Average time per game |
 |**Longest** |Longest game played in one go |
 |**Most Played** |Favorite game by total number of plays |
-|**Endgame** |Name of the last game played |
+|**Last Game** |Name of the last game played |
 |**Active Day** |On how many different days were games played?
 |**Currently Playing** |Instant active game (queried from content script) |
 
