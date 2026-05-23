@@ -267,6 +267,115 @@
     }
     .btn-list:hover { border-color: #60A5FA; }
 
+    /* ── Tutorial ── */
+    .tut-help-btn {
+      background: #141728;
+      border: 1px solid #1E2545;
+      color: #4A5568;
+      border-radius: 6px;
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 11px; font-weight: 700;
+      transition: border-color 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .tut-help-btn:hover { border-color: #FF3D6B; color: #FF3D6B; }
+
+    #tut-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #tut-overlay.active { display: block; pointer-events: all; }
+
+    /* Karanlık maske — 4 parça etrafı kapatır */
+    .tut-mask {
+      position: absolute;
+      background: rgba(5,7,18,0.82);
+      transition: all 0.25s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* Spotlight çerçevesi */
+    #tut-spotlight {
+      position: absolute;
+      border: 2px solid #FF3D6B;
+      border-radius: 9px;
+      box-shadow: 0 0 0 3px rgba(255,61,107,0.18);
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* Tooltip kutusu */
+    #tut-box {
+      position: absolute;
+      background: #141728;
+      border: 1px solid #1E2545;
+      border-radius: 12px;
+      padding: 14px;
+      width: 224px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      transition: all 0.25s cubic-bezier(.4,0,.2,1);
+      pointer-events: all;
+    }
+    .tut-step-badge {
+      font-size: 9px;
+      font-weight: 600;
+      color: #FF3D6B;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .tut-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 5px;
+      line-height: 1.3;
+    }
+    .tut-desc {
+      font-size: 11px;
+      color: #718096;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    .tut-desc strong { color: #CBD5E0; }
+    .tut-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .tut-dots {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .tut-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #1E2545;
+      transition: background 0.2s;
+    }
+    .tut-dot.active { background: #FF3D6B; width: 14px; border-radius: 3px; }
+    .tut-btns { display: flex; gap: 5px; }
+    .tut-btn {
+      border: none; border-radius: 7px;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 11px; font-weight: 600;
+      cursor: pointer;
+      padding: 6px 11px;
+      transition: filter 0.15s;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .tut-btn:hover { filter: brightness(1.1); }
+    .tut-btn-skip { background: #141728; border: 1px solid #1E2545; color: #4A5568; }
+    .tut-btn-prev { background: #141728; border: 1px solid #1E2545; color: #CBD5E0; }
+    .tut-btn-next { background: #FF3D6B; color: #fff; }
+    .tut-btn-done { background: #22C55E; color: #fff; }
+
     /* ── Statistics ── */
     #stats-card .card-label { position: relative; }
     .stat-reset-btn {
@@ -341,6 +450,28 @@
 </head>
 <body>
 
+  <!-- Tutorial Overlay -->
+  <div id="tut-overlay">
+    <div class="tut-mask" id="tut-m-top"></div>
+    <div class="tut-mask" id="tut-m-bottom"></div>
+    <div class="tut-mask" id="tut-m-left"></div>
+    <div class="tut-mask" id="tut-m-right"></div>
+    <div id="tut-spotlight"></div>
+    <div id="tut-box">
+      <div class="tut-step-badge" id="tut-badge">Adım 1 / 8</div>
+      <div class="tut-title" id="tut-title"></div>
+      <div class="tut-desc" id="tut-desc"></div>
+      <div class="tut-footer">
+        <div class="tut-dots" id="tut-dots"></div>
+        <div class="tut-btns">
+          <button class="tut-btn tut-btn-skip" id="tut-skip">Geç</button>
+          <button class="tut-btn tut-btn-prev" id="tut-prev">‹</button>
+          <button class="tut-btn tut-btn-next" id="tut-next">İleri ›</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Update Banner -->
   <div class="update-banner" id="update-banner">
     <div class="update-banner-title">
@@ -365,6 +496,7 @@
         <div class="header-sub">rollercoin.com</div>
       </div>
     </div>
+    <button class="tut-help-btn" id="btn-tutorial" title="Nasıl Kullanılır?">?</button>
   </div>
 
   <!-- Settings -->

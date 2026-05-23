@@ -67,8 +67,179 @@ function sendMessage(msg, callback) {
   });
 }
 
+/* ── Tutorial ── */
+var TUT_STEPS = [
+  {
+    targetId: null,
+    title: 'RC Helper\'e Hoş Geldin! 👋',
+    desc: 'Bu kısa tur seni <strong>2 dakikada</strong> tüm özelliklerle tanıştıracak. RollerCoin\'de oyun seçimini otomatikleştirmek için tasarlandı.',
+  },
+  {
+    targetId: 'chk-choose',
+    title: 'Otomatik Seç',
+    desc: '<strong>Oyun seçim ekranında</strong> rastgele bir oyun seçip butona basar. Sen sadece oyunu oynarsın — seçimi o yapar.',
+  },
+  {
+    targetId: 'chk-collect',
+    title: 'Otomatik Topla',
+    desc: 'Oyun bitince çıkan <strong>"Gain Power"</strong> ve <strong>"Collect"</strong> butonlarına otomatik basar. Power\'ı kaçırmazsın.',
+  },
+  {
+    targetId: 'chk-break',
+    title: 'Mola Hatırlatıcısı',
+    desc: '<strong>10 dakika</strong> oynayınca tam ekran mola ekranı açılır, <strong>2.5 dakika</strong> dinlenir, sonra otomatik devam eder. Gözlerini koru!',
+  },
+  {
+    targetId: 'btn-skip',
+    title: 'Pas Geç (S tuşu)',
+    desc: 'Şu anki oyunu <strong>10 dakika</strong> boyunca atlar. Sıkıcı bir oyunla karşılaştında kullan. Klavyeden de <strong>S</strong> tuşuna basabilirsin.',
+  },
+  {
+    targetId: 'btn-skip-perm',
+    title: 'Daima Atla (P tuşu)',
+    desc: 'Bu oyunu <strong>kalıcı olarak</strong> engeller — bir daha asla seçilmez. Hiç sevmediğin oyunlar için. <strong>P</strong> tuşuyla da çalışır.',
+  },
+  {
+    targetId: 'btn-list',
+    title: 'Listeden Seç',
+    desc: 'Oyun seçim sayfasına gitmeden <strong>popup\'tan</strong> hangi oyunların pas geçileceğini ayarlayabilirsin.',
+  },
+  {
+    targetId: 'btn-auto',
+    title: 'Auto-Play',
+    desc: '<strong>Ana buton.</strong> Açıkken her 1 saniyede kontrol eder, oyun seçim ekranındaysan otomatik seçer. Kapatınca her şey durur.',
+  },
+  {
+    targetId: 'stats-card',
+    title: 'İstatistikler',
+    desc: 'Oynadığın <strong>toplam oyun</strong>, bugün, bu hafta, toplam süre, ortalama süre ve en çok oynadığın oyunu burada görürsün.',
+  },
+];
+
+function startTutorial(autoShow) {
+  var overlay = document.getElementById('tut-overlay');
+  if (!overlay) return;
+  var step = 0;
+
+  var dotsEl = document.getElementById('tut-dots');
+  dotsEl.innerHTML = '';
+  TUT_STEPS.forEach(function(_, i) {
+    var d = document.createElement('span');
+    d.className = 'tut-dot';
+    d.dataset.i = i;
+    dotsEl.appendChild(d);
+  });
+
+  function getRect(id) {
+    if (!id) return null;
+    var el = document.getElementById(id);
+    if (!el) return null;
+    return el.getBoundingClientRect();
+  }
+
+  function setMasks(r) {
+    var W = window.innerWidth, H = window.innerHeight;
+    var pad = 6;
+    var top = document.getElementById('tut-m-top');
+    var bot = document.getElementById('tut-m-bottom');
+    var lft = document.getElementById('tut-m-left');
+    var rgt = document.getElementById('tut-m-right');
+    var sp  = document.getElementById('tut-spotlight');
+
+    if (!r) {
+      top.style.cssText    = 'position:absolute;left:0;top:0;width:100%;height:100%;background:rgba(5,7,18,0.82);transition:all 0.25s;';
+      bot.style.cssText    = 'display:none';
+      lft.style.cssText    = 'display:none';
+      rgt.style.cssText    = 'display:none';
+      sp.style.cssText     = 'display:none;position:absolute;';
+      return;
+    }
+    var rx = r.left - pad, ry = r.top - pad;
+    var rw = r.width + pad*2, rh = r.height + pad*2;
+    top.style.cssText  = 'position:absolute;left:0;top:0;width:' + W + 'px;height:' + ry + 'px;background:rgba(5,7,18,0.82);transition:all 0.25s;display:block;';
+    bot.style.cssText  = 'position:absolute;left:0;top:' + (ry+rh) + 'px;width:' + W + 'px;height:' + (H-ry-rh) + 'px;background:rgba(5,7,18,0.82);transition:all 0.25s;display:block;';
+    lft.style.cssText  = 'position:absolute;left:0;top:' + ry + 'px;width:' + rx + 'px;height:' + rh + 'px;background:rgba(5,7,18,0.82);transition:all 0.25s;display:block;';
+    rgt.style.cssText  = 'position:absolute;left:' + (rx+rw) + 'px;top:' + ry + 'px;width:' + (W-rx-rw) + 'px;height:' + rh + 'px;background:rgba(5,7,18,0.82);transition:all 0.25s;display:block;';
+    sp.style.cssText   = 'position:absolute;left:' + rx + 'px;top:' + ry + 'px;width:' + rw + 'px;height:' + rh + 'px;border:2px solid #FF3D6B;border-radius:9px;box-shadow:0 0 0 3px rgba(255,61,107,0.18);display:block;transition:all 0.25s;pointer-events:none;';
+  }
+
+  function positionBox(r) {
+    var box = document.getElementById('tut-box');
+    var H = window.innerHeight, W = window.innerWidth;
+    var bw = 224, pad = 8;
+    box.style.left = ((W - bw) / 2) + 'px';
+    if (!r) {
+      box.style.top = ((H - 160) / 2) + 'px';
+      return;
+    }
+    var below = r.bottom + pad + 8;
+    var above = r.top - pad - 170;
+    if (below + 160 < H) {
+      box.style.top = below + 'px';
+    } else if (above > 0) {
+      box.style.top = above + 'px';
+    } else {
+      box.style.top = Math.max(8, Math.min(r.top, H - 170)) + 'px';
+    }
+  }
+
+  function render() {
+    var s = TUT_STEPS[step];
+    var total = TUT_STEPS.length;
+    document.getElementById('tut-badge').textContent = 'Adım ' + (step + 1) + ' / ' + total;
+    document.getElementById('tut-title').textContent = s.title;
+    document.getElementById('tut-desc').innerHTML = s.desc;
+    var r = getRect(s.targetId);
+    setMasks(r);
+    positionBox(r);
+
+    var dots = document.querySelectorAll('.tut-dot');
+    dots.forEach(function(d, i) { d.className = 'tut-dot' + (i === step ? ' active' : ''); });
+
+    var nextBtn = document.getElementById('tut-next');
+    var prevBtn = document.getElementById('tut-prev');
+    var skipBtn = document.getElementById('tut-skip');
+    prevBtn.style.display = step === 0 ? 'none' : '';
+    if (step === total - 1) {
+      nextBtn.textContent = '✓ Tamamla';
+      nextBtn.className = 'tut-btn tut-btn-done';
+      skipBtn.style.display = 'none';
+    } else {
+      nextBtn.textContent = 'İleri ›';
+      nextBtn.className = 'tut-btn tut-btn-next';
+      skipBtn.style.display = '';
+    }
+  }
+
+  function closeTutorial(done) {
+    overlay.classList.remove('active');
+    if (done) chrome.storage.local.set({ tutorialDone: true });
+  }
+
+  document.getElementById('tut-next').onclick = function() {
+    if (step < TUT_STEPS.length - 1) { step++; render(); }
+    else { closeTutorial(true); }
+  };
+  document.getElementById('tut-prev').onclick = function() {
+    if (step > 0) { step--; render(); }
+  };
+  document.getElementById('tut-skip').onclick = function() { closeTutorial(true); };
+
+  overlay.classList.add('active');
+  render();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   checkForUpdates();
+
+  var btnTutorial = document.getElementById('btn-tutorial');
+  if (btnTutorial) btnTutorial.onclick = function() { startTutorial(false); };
+
+  chrome.storage.local.get(['tutorialDone'], function(data) {
+    if (!data.tutorialDone) {
+      setTimeout(function() { startTutorial(true); }, 300);
+    }
+  });
   var btnAuto      = document.getElementById('btn-auto');
   var btnSkip      = document.getElementById('btn-skip');
   var btnSkipPerm  = document.getElementById('btn-skip-perm');
