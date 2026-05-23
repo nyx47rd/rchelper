@@ -35,10 +35,11 @@ chrome.storage.local.get(['rcLang'], function(d) {
 });
 function _applyWidgetLang() {
   var els = {
-    'rc-game-label':     'w_game',
-    'rc-time-label':     'w_time',
-    'rc-per-hour-lbl':   'w_per_hour',
-    'rc-break-lbl':      'w_break',
+    'rc-game-label':      'w_game',
+    'rc-time-label':      'w_time',
+    'rc-now-playing-lbl': 'w_now_playing',
+    'rc-per-hour-lbl':    'w_per_hour',
+    'rc-break-lbl':       'w_break',
   };
   Object.keys(els).forEach(function(id) {
     var el = document.getElementById(id);
@@ -48,6 +49,8 @@ function _applyWidgetLang() {
   if (skipB) { skipB.title = cT('w_skip_title'); var s = skipB.querySelector('span'); if (s) s.lastChild.textContent = ' ' + cT('w_skip_btn'); }
   var permB = document.getElementById('rc-perm-btn');
   if (permB) { permB.title = cT('w_perm_title'); var s2 = permB.querySelector('span'); if (s2) s2.lastChild.textContent = ' ' + cT('w_perm_btn'); }
+  var statusLbl = document.getElementById('rc-status-lbl');
+  if (statusLbl) statusLbl.lastChild.textContent = ' ' + cT('w_now_playing');
   var sc = document.getElementById('rc-shortcut-row');
   if (sc) {
     var spans = sc.querySelectorAll('span[data-key]');
@@ -624,7 +627,18 @@ function createFloatButton() {
   `;
   wrapper.appendChild(statsCard);
 
-  /* rc-now-playing kaldırıldı — stats card'daki oyun sayacında zaten görünüyor */
+  /* ── Şu an oynanıyor kartı (gizli başlar) ── */
+  const nowPlayingCard = document.createElement('div');
+  nowPlayingCard.id = 'rc-now-playing';
+  nowPlayingCard.style.cssText = 'display:none; background:rgba(255,61,107,0.08); border:1px solid rgba(255,61,107,0.22); border-radius:9px; padding:7px 10px;';
+  nowPlayingCard.innerHTML = `
+    <div style="display:flex; align-items:center; gap:4px; color:#FF3D6B; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px;">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <span id="rc-now-playing-lbl">${cT('w_now_playing')}</span>
+    </div>
+    <div id="rc-now-playing-name" style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
+  `;
+  wrapper.appendChild(nowPlayingCard);
 
   /* ── Prediction ── */
   const predictCard = document.createElement('div');
@@ -765,7 +779,7 @@ function createStatusWidget() {
   const topBar = document.createElement('div');
   topBar.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom:1px solid #1E2545;';
   topBar.innerHTML = `
-    <div style="display:flex; align-items:center; gap:6px; color:#4A5568; font-size:9px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase;">${ICON_CTRL} Şu an oynanan</div>
+    <div id="rc-status-lbl" style="display:flex; align-items:center; gap:6px; color:#4A5568; font-size:9px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase;">${ICON_CTRL} ${cT('w_now_playing')}</div>
   `;
 
   const closeBtnStatus = document.createElement('button');
@@ -862,7 +876,7 @@ function updateSkippedDisplay() {
 
   const permanentGames = Object.keys(window.permanentSkippedGames);
   if (permanentGames.length > 0) {
-    items.push({ name: null, label: '\u267e\ufe0f ' + permanentGames.join(', ') });
+    permanentGames.forEach(g => items.push({ name: null, isPerm: true, label: '\u267e\ufe0f ' + g }));
   }
 
   if (items.length > 0) {
@@ -1215,8 +1229,16 @@ function checkGameTransitions() {
 }
 
 function updatePlayingIndicator(name) {
-  const countEl = document.getElementById('rc-games-count');
-  if (countEl) countEl.title = name || '';
+  const card = document.getElementById('rc-now-playing');
+  const nameEl = document.getElementById('rc-now-playing-name');
+  if (!card) return;
+  if (name) {
+    if (nameEl) nameEl.textContent = name;
+    card.style.display = 'block';
+  } else {
+    card.style.display = 'none';
+    if (nameEl) nameEl.textContent = '—';
+  }
 }
 
 function recordGameCompletion(name, durationMs) {
