@@ -6,7 +6,7 @@
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=220&section=header&text=RC%20Helper&fontSize=80&fontColor=ffffff&fontAlignY=45&animation=twinkling&desc=RollerCoin%20Power%20Otomasyonu&descAlignY=65&descSize=18&descColor=ffffff" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=220&section=header&text=RC%20Helper&fontSize=80&fontColor=ffffff&fontAlignY=45&animation=twinkling&desc=RollerCoin%20Power%20Automation&descAlignY=65&descSize=18&descColor=ffffff" width="100%"/>
 
 <img src="favicon.ico" width="48" height="48" alt="RC Helper Icon"/>
 
@@ -14,7 +14,7 @@
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Otomatik+oyun+secici+%E2%86%92+daha+fazla+guc;Power+toplama+otomasyonu;Ayarlanabilir+mola+hatirlaticisi;Oyun+istatistikleri+ve+canli+widget;Interaktif+tutorial+ile+kolay+baslangic;Klavye+kisayollari+ile+tam+kontrol;Auto-Play+ile+eller+serbest;Akilli+oyun+atlama+sistemi" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Auto+game+selector+%E2%86%92+more+power;Power+collection+automation;Customizable+break+reminder;Game+stats+%26+live+widget;Easy+start+with+interactive+tutorial;Full+control+with+keyboard+shortcuts;Hands-free+with+Auto-Play;Smart+game+skip+system" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -149,13 +149,13 @@ To close the widget, the upper right `✕` button can be pressed.To open it agai
 When the break reminder is on, the following loop runs:
 
 ```
-[Oyun oyna] ──(Oyun süresi doldu)──► [Tam ekran mola ekranı açılır]
-                                              │
-                                    (Mola süresi doldu veya
-                                     "Molayı Bitir" tıklandı)
-                                              │
-                                              ▼
-                                     [Otomatik devam]
+[Play games] ──(Session time reached)──► [Full-screen break opens]
+                                                       │
+                                           (Break time ends or
+                                            "End Break" clicked)
+                                                       │
+                                                       ▼
+                                              [Auto-resume]
 ```
 
 A large countdown timer and an "End Break" button appear on the **Break screen**.The hourly forecast calculation automatically deducts break times.
@@ -308,14 +308,14 @@ Refresh the page.The plugin is installed as a content script;It may start delaye
 
 ```
 📁 rchelper/
-├── 📄 manifest.json           ← Eklenti tanımı (Manifest v3)
-├── 📜 content.js              ← Sayfa içi otomasyon + widget UI + mola sistemi
-├── 📜 popup.js                ← Popup panel mantığı + istatistik okuma
-├── 🎨 popup.html              ← Popup panel arayüzü + stilleri
-├── 🎓 tutorial.js             ← İnteraktif tutorial adımları + spotlight mantığı
-├── 🎨 tutorial.css            ← Tutorial overlay stilleri
-├── ⚙️  background.js          ← Service worker (Manifest v3 zorunluluğu)
-├── 🐍 make_release_body.py    ← Commit logunu markdown release notuna çeviren script
+├── 📄 manifest.json           ← Extension definition (Manifest v3)
+├── 📜 content.js              ← In-page automation + widget UI + break system
+├── 📜 popup.js                ← Popup panel logic + stats reading
+├── 🎨 popup.html              ← Popup panel UI + styles
+├── 🎓 tutorial.js             ← Interactive tutorial steps + spotlight logic
+├── 🎨 tutorial.css            ← Tutorial overlay styles
+├── ⚙️  background.js          ← Service worker (Manifest v3 requirement)
+├── 🐍 make_release_body.py    ← Converts commit log to markdown release notes
 └── 🖼️  icon16/48/128.png      ← Eklenti ikonları
 ```
 
@@ -336,28 +336,28 @@ Refresh the page.The plugin is installed as a content script;It may start delaye
 
 ```mermaid
 graph TD
-    A([rollercoin.com yüklendi]) --> B{Sayfa türü?}
-    B -->|choose_game| C[Oyun listesini tara]
-    B -->|play_game| D[Oyun ekranında bekle]
-    B -->|Diğer| B
+    A([rollercoin.com loaded]) --> B{Page type?}
+    B -->|choose_game| C[Scan game list]
+    B -->|play_game| D[Wait on game screen]
+    B -->|Other| B
 
-    C --> E{Pas/Daima listesi?}
-    E -->|Evet| F[Filtrele ve tekrar seç]
-    E -->|Hayır| G[Rastgele seç & butona bas]
+    C --> E{Skip/Always list?}
+    E -->|Yes| F[Filter and reselect]
+    E -->|No| G[Random select & press button]
     F --> G
 
-    G --> H{URL play_game'e geçti mi?}
-    H -->|Evet| I[Oyun başladı: timer başlat]
-    H -->|Hayır| J[1.5sn bekle, tekrar dene]
+    G --> H{URL switched to play_game?}
+    H -->|Yes| I[Game started: start timer]
+    H -->|No| J[Wait 1.5s, retry]
     J --> G
 
-    D --> K[Gain Power / Collect tıkla]
-    I --> L{choose_game'e döndü mü?}
-    L -->|Evet| M[Sayaç +1, istatistik kaydet]
-    M --> N{Oyun süresi doldu mu?}
-    N -->|Evet| O[☕ Tam ekran mola aç]
-    N -->|Hayır| B
-    O --> P[Geri sayım — mola süresi]
+    D --> K[Click Gain Power / Collect]
+    I --> L{Returned to choose_game?}
+    L -->|Yes| M[Counter +1, save stats]
+    M --> N{Session time reached?}
+    N -->|Yes| O[☕ Open full-screen break]
+    N -->|No| B
+    O --> P[Countdown — break duration]
     P --> B
 ```
 
