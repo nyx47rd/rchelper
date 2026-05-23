@@ -302,17 +302,20 @@
       position: absolute;
       right: 0;
       top: -2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
       background: transparent;
       border: none;
       color: #4A5568;
       cursor: pointer;
       padding: 2px;
-      display: flex;
-      align-items: center;
       border-radius: 4px;
       transition: color 0.15s;
     }
     .stat-reset-btn:hover { color: #FF3D6B; }
+    .stat-reset-btn .stat-reset-lbl { display: none; font-size: 9px; font-weight: 600; }
+    .stat-reset-btn:hover .stat-reset-lbl { display: inline; }
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -532,7 +535,8 @@
     <div class="card-label">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
       <span data-i18n="card_stats_lbl">İstatistikler</span>
-      <button class="stat-reset-btn" id="btn-stats-reset" title="İstatistikleri Sıfırla">
+      <button class="stat-reset-btn" id="btn-stats-reset">
+        <span class="stat-reset-lbl" data-i18n="stat_reset_lbl">Sıfırla</span>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       </button>
     </div>
