@@ -224,30 +224,23 @@ function applyTranslations() {
   });
 }
 
-/** Dili değiştirir, kaydeder ve UI'ı yeniler */
+/** Dili değiştirir, kaydeder, content script'e bildirir ve popup'ı yeniler */
 function setLang(lang) {
-  RC_LANG = lang;
   chrome.storage.local.set({ rcLang: lang }, function() {
-    if (chrome.runtime.lastError) console.error('[i18n] storage.set failed:', chrome.runtime.lastError);
+    /* content script'e bildir */
+    try {
+      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        if (chrome.runtime.lastError) return;
+        if (tabs && tabs[0]) {
+          chrome.tabs.sendMessage(tabs[0].id, { action: 'setLang', lang: lang }, function() {
+            void chrome.runtime.lastError;
+          });
+        }
+      });
+    } catch(e) {}
+    /* popup'ı yeniden yükle — her şey sıfırdan güncellenir */
+    location.reload();
   });
-  applyTranslations();
-  if (typeof refreshDynamicTexts === 'function') refreshDynamicTexts();
-  var overlay = document.getElementById('tut-overlay');
-  if (overlay && overlay.classList.contains('active')) {
-    if (typeof renderTutStep === 'function') renderTutStep();
-  }
-  _updateLangBtn(lang);
-  /* content script'e dil değişimini bildir */
-  try {
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-      if (chrome.runtime.lastError) return;
-      if (tabs && tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'setLang', lang: lang }, function() {
-          if (chrome.runtime.lastError) { /* tab inject edilmemiş olabilir, normal */ }
-        });
-      }
-    });
-  } catch(e) {}
 }
 
 function _updateLangBtn(lang) {
