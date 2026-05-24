@@ -135,13 +135,11 @@ document.addEventListener('DOMContentLoaded', function() {
   var btnSkip      = document.getElementById('btn-skip');
   var btnSkipPerm  = document.getElementById('btn-skip-perm');
   var btnClear     = document.getElementById('btn-clear');
-  var chkChoose    = document.getElementById('chk-choose');
   var chkCollect   = document.getElementById('chk-collect');
   var chkBreak    = document.getElementById('chk-break');
 
-  chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'breakReminder'], (data) => {
+  chrome.storage.local.get(['autoPlay', 'autoCollect', 'breakReminder'], (data) => {
     autoPlayState = !!data.autoPlay;
-    chkChoose.checked  = data.autoChoose  !== false;
     chkCollect.checked = data.autoCollect !== false;
     chkBreak.checked = data.breakReminder !== false;
     updateAutoBtn(autoPlayState);
@@ -462,7 +460,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1500);
   };
 
-  chkChoose.onchange  = function() { chrome.storage.local.set({ autoChoose: chkChoose.checked }); sendMessage({ action: 'toggleChoose',  on: chkChoose.checked }); };
   chkCollect.onchange = function() { chrome.storage.local.set({ autoCollect: chkCollect.checked }); sendMessage({ action: 'toggleCollect', on: chkCollect.checked }); };
   chkBreak.onchange = function() {
     chrome.storage.local.set({ breakReminder: chkBreak.checked });
