@@ -3,7 +3,7 @@
   "name": "RollerCoin Auto Helper",
   "version": "2.2.17",
   "description": "Auto-play, auto-collect and break reminder helper for RollerCoin.",
-  "permissions": ["activeTab", "scripting", "tabs", "storage"],
+  "permissions": ["activeTab", "scripting", "tabs", "storage", "windows"],
   "host_permissions": ["*://*.rollercoin.com/*", "*://rollercoin.com/*"],
   "background": {
     "service_worker": "background.js"

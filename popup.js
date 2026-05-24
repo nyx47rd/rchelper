@@ -85,6 +85,24 @@ document.addEventListener('DOMContentLoaded', function() {
     setLang(cur === 'tr' ? 'en' : 'tr');
   };
 
+  /* ── Popout: ayrı pencerede aç ── */
+  var btnPopout = document.getElementById('btn-popout');
+  if (btnPopout) btnPopout.onclick = function() {
+    chrome.windows.create({
+      url: chrome.runtime.getURL('popup.html?popout=1'),
+      type: 'popup',
+      width: 340,
+      height: 640,
+      focused: true
+    });
+    window.close();
+  };
+
+  /* Popout modunda gizle (zaten ayrı pencerede) */
+  if (new URLSearchParams(location.search).get('popout') === '1' && btnPopout) {
+    btnPopout.style.display = 'none';
+  }
+
   /* ── Tutorial başlatıcı ── */
   var btnTutorial = document.getElementById('btn-tutorial');
   if (btnTutorial) btnTutorial.onclick = function() { startTutorial(); };

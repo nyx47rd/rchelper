@@ -313,6 +313,18 @@
       border-radius: 4px;
       transition: color 0.15s;
     }
+    .popout-btn {
+      background: transparent;
+      border: none;
+      color: #4A5568;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      transition: color 0.15s;
+    }
+    .popout-btn:hover { color: #FF3D6B; }
     .stat-reset-btn:hover { color: #FF3D6B; }
     .stat-reset-btn .stat-reset-lbl { display: none; font-size: 9px; font-weight: 600; }
     .stat-reset-btn:hover .stat-reset-lbl { display: inline; }
@@ -420,6 +432,9 @@
       </div>
     </div>
     <button class="lang-btn" id="btn-lang" data-lang="tr" title="Switch language"></button>
+    <button class="popout-btn" id="btn-popout" title="Ayrı pencerede aç">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><path d="M10 14L21 3"/><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/></svg>
+    </button>
     <button class="tut-help-btn" id="btn-tutorial" title="Nasıl Kullanılır?" data-i18n="tut_help_title" data-i18n-attr="title">?</button>
   </div>
 
