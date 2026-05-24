@@ -982,29 +982,21 @@ function isOnChooseGamePage() {
 }
 
 function getGameNameFromPage() {
-  /* 1) DOM selector'ları */
-  var selectors = [
-    'h1', '.game-name', '.game-title', '[class*="game-title"]',
-    '[class*="game-name"]', '[class*="GameTitle"]', '[class*="GameName"]',
-    '[class*="gameName"]', '[class*="gameTitle"]', '.game-page h2',
-    '[class*="title"]', 'h2',
-  ];
-  for (var i = 0; i < selectors.length; i++) {
-    var el = document.querySelector(selectors[i]);
-    var txt = el && el.innerText && el.innerText.trim();
-    if (txt && txt.length > 1 && txt.length < 60 && isValidGameName(txt)) {
-      return txt.substring(0, 40);
-    }
-  }
-  /* 2) document.title (genellikle "GameName | RollerCoin" formatında) */
+  /* Sadece play_game sayfasında çalış */
+  if (!window.location.href.includes('/play_game')) return null;
+
+  /* 1) document.title — "GameName | RollerCoin" formatında */
   var title = document.title || '';
   var titlePart = title.split('|')[0].split('-')[0].trim();
-  if (titlePart && titlePart.length > 1 && titlePart.toLowerCase() !== 'rollercoin') {
+  if (titlePart && titlePart.length > 1 && isValidGameName(titlePart)) {
     return titlePart.substring(0, 40);
   }
-  /* 3) URL'den slug */
+  /* 2) URL'den slug — /play_game/coinclick gibi */
   var m = window.location.pathname.match(/\/play_game\/([^/?#]+)/);
-  if (m) return decodeURIComponent(m[1]).replace(/-/g, ' ').substring(0, 40);
+  if (m) {
+    var slug = decodeURIComponent(m[1]).replace(/-/g, ' ').trim();
+    if (slug && isValidGameName(slug)) return slug.substring(0, 40);
+  }
   return null;
 }
 
@@ -1023,7 +1015,8 @@ function isOnPlayGamePage() {
   return isPlayGame;
 }
 
-const BADGE_WORDS = new Set(['new', 'hot', 'soon', 'coming soon', 'wait', 'beta', 'free']);
+const BADGE_WORDS = new Set(['new', 'hot', 'soon', 'coming soon', 'wait', 'beta', 'free',
+  'rollercoin', 'play games to rise your power', 'online bitcoin', 'play game', 'choose game']);
 
 function isValidGameName(text) {
   if (!text) return false;
@@ -1514,3 +1507,23 @@ if (document.readyState === 'loading') {
     createStatusWidget();
   }, 500);
 }
+
+/* ── Manuel tıklama interceptor: START butonuna tıklanınca oyun adını yakala ── */
+document.addEventListener('click', function(e) {
+  if (!window.location.href.includes('/choose_game')) return;
+  if (window.gameSelectionInProgress) return; /* auto-play zaten handle ediyor */
+  var btn = e.target.closest('button');
+  if (!btn) return;
+  var btnText = (btn.innerText || btn.textContent || '').trim().toUpperCase();
+  if (btnText !== 'START' && btnText !== 'PLAY') return;
+  /* START butonunun en yakın choose-game-item container'ını bul */
+  var item = btn.closest('.choose-game-item, .choose-game-item-container, [class*="choose-game-item"]');
+  if (!item) return;
+  var titleEl = item.querySelector('p.game-title, .game-title, [class*="game-title"]');
+  var name = titleEl && titleEl.innerText && titleEl.innerText.trim();
+  if (name && isValidGameName(name)) {
+    window.lastSelectedGame = name.substring(0, 40);
+    window.currentPlayingGame = window.lastSelectedGame;
+    console.log('[RC] ✓ Manuel seçim yakalandı:', window.lastSelectedGame);
+  }
+}, true); /* capture=true: tıklama DOM'a ulaşmadan önce yakala */
