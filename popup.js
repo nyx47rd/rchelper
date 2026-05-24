@@ -336,9 +336,35 @@ document.addEventListener('DOMContentLoaded', function() {
       setT('stat-total-time', formatDuration(totalMs));
       setT('stat-avg-time', formatDuration(avgMs));
       setT('stat-longest-time', formatDuration(stats.longestGameMs || 0));
-      setT('stat-fav-game', favGame === '-' ? '-' : favGame + (maxPlays ? ' (' + maxPlays + ')' : ''));
       setT('stat-last-game', stats.lastGame || '-');
       setT('stat-active-days', activeDays);
+
+      // Leaderboard
+      var lbList = document.getElementById('lb-list');
+      if (lbList) {
+        var perGame = stats.perGame || {};
+        var entries = Object.keys(perGame).map(function(name) {
+          return { name: name, plays: perGame[name].plays || 0 };
+        });
+        entries.sort(function(a, b) { return b.plays - a.plays; });
+        var top = entries.slice(0, 7);
+        if (top.length === 0) {
+          lbList.innerHTML = '<div class="lb-empty">' + t('lb_empty') + '</div>';
+        } else {
+          var maxP = top[0].plays;
+          var rankClass = ['gold', 'silver', 'bronze'];
+          lbList.innerHTML = top.map(function(e, i) {
+            var pct = maxP > 0 ? Math.round((e.plays / maxP) * 100) : 0;
+            var rc = rankClass[i] || '';
+            return '<div class="lb-row">' +
+              '<span class="lb-rank ' + rc + '">' + (i + 1) + '</span>' +
+              '<span class="lb-name">' + e.name + '</span>' +
+              '<div class="lb-bar-wrap"><div class="lb-bar" style="width:' + pct + '%"></div></div>' +
+              '<span class="lb-plays">' + e.plays + '</span>' +
+              '</div>';
+          }).join('');
+        }
+      }
     });
 
   }

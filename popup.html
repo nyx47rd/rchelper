@@ -381,6 +381,73 @@
       white-space: nowrap;
       text-align: right;
     }
+    .leaderboard {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #1E2545;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .lb-title {
+      font-size: 9px;
+      color: #4A5568;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 2px;
+    }
+    .lb-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      padding: 3px 4px;
+      border-radius: 5px;
+      background: #0D0F1A;
+      border: 1px solid #1E2545;
+    }
+    .lb-rank {
+      font-size: 9px;
+      font-weight: 700;
+      color: #4A5568;
+      min-width: 14px;
+      text-align: center;
+    }
+    .lb-rank.gold   { color: #F6D860; }
+    .lb-rank.silver { color: #A0AEC0; }
+    .lb-rank.bronze { color: #C97B3E; }
+    .lb-name {
+      flex: 1;
+      color: #CBD5E0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .lb-plays {
+      font-weight: 700;
+      color: #FF3D6B;
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+    .lb-bar-wrap {
+      width: 40px;
+      height: 4px;
+      background: #1E2545;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .lb-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: #FF3D6B;
+    }
+    .lb-empty {
+      font-size: 10px;
+      color: #4A5568;
+      text-align: center;
+      padding: 6px 0;
+    }
   </style>
 </head>
 <body>
@@ -576,10 +643,6 @@
     </div>
     <div class="stats-row">
       <div class="stat-detail">
-        <span class="stat-detail-label"><span data-i18n="stat_fav_label">En çok oynanan:</span></span>
-        <span class="stat-detail-value" id="stat-fav-game">-</span>
-      </div>
-      <div class="stat-detail">
         <span class="stat-detail-label"><span data-i18n="stat_last_label">Son oyun:</span></span>
         <span class="stat-detail-value" id="stat-last-game">-</span>
       </div>
@@ -587,6 +650,10 @@
         <span class="stat-detail-label"><span data-i18n="stat_active_label">Aktif gün:</span></span>
         <span class="stat-detail-value" id="stat-active-days">-</span>
       </div>
+    </div>
+    <div class="leaderboard">
+      <div class="lb-title"><span data-i18n="lb_title">En Çok Oynananlar</span></div>
+      <div id="lb-list"><div class="lb-empty"><span data-i18n="lb_empty">Henüz veri yok</span></div></div>
     </div>
   </div>
 
