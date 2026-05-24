@@ -275,15 +275,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /* ── İstatistikler ── */
   function formatDuration(ms) {
-    if (!ms || ms < 1000) return '0s';
+    var isTR = (typeof RC_LANG !== 'undefined' ? RC_LANG : 'tr') === 'tr';
+    var u = isTR ? { s: 'sn', m: 'dk', h: 'sa' } : { s: 's', m: 'm', h: 'h' };
+    if (!ms || ms < 1000) return '0' + u.s;
     const sec = Math.round(ms / 1000);
-    if (sec < 60) return sec + 's';
+    if (sec < 60) return sec + u.s;
     const min = Math.floor(sec / 60);
     const remSec = sec % 60;
-    if (min < 60) return remSec > 0 ? min + 'm ' + remSec + 's' : min + 'm';
+    if (min < 60) return remSec > 0 ? min + u.m + ' ' + remSec + u.s : min + u.m;
     const hr = Math.floor(min / 60);
     const remMin = min % 60;
-    return hr + 'h ' + remMin + 'm';
+    return hr + u.h + ' ' + remMin + u.m;
   }
 
   function getWeekKey(date) {

@@ -9,7 +9,9 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      width: 256px;
+      width: 100%;
+      min-width: 240px;
+      max-width: 360px;
       padding: 14px;
       font-family: 'Inter', system-ui, sans-serif;
       background: #0D0F1A;
@@ -343,14 +345,12 @@
       overflow: hidden;
     }
     .stat-value {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       color: #FF3D6B;
       line-height: 1.2;
       margin-bottom: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      word-break: break-all;
     }
     .stat-label {
       font-size: 8px;
@@ -432,7 +432,7 @@
       </div>
     </div>
     <button class="lang-btn" id="btn-lang" data-lang="tr" title="Switch language"></button>
-    <button class="popout-btn" id="btn-popout" title="Ayrı pencerede aç">
+    <button class="popout-btn" id="btn-popout" data-i18n="popout_title" data-i18n-attr="title" title="Ayrı pencerede aç">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><path d="M10 14L21 3"/><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/></svg>
     </button>
     <button class="tut-help-btn" id="btn-tutorial" title="Nasıl Kullanılır?" data-i18n="tut_help_title" data-i18n-attr="title">?</button>
