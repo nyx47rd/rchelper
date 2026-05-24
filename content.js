@@ -1008,7 +1008,6 @@ function isOnPlayGamePage() {
     var name = getGameNameFromPage();
     if (name && name !== window.currentPlayingGame) {
       window.currentPlayingGame = name;
-      if (window.updateRCStatus) window.updateRCStatus('[RC] 🎮 OYNANIYOR: ' + name);
     }
   }
 
@@ -1225,6 +1224,7 @@ function checkGameTransitions() {
     startGameTimer();
     window.pendingGameClick = null;
     updatePlayingIndicator(name);
+    if (window.updateRCStatus) window.updateRCStatus('[RC] 🎮 OYNANIYOR: ' + name);
     console.log('[RC] ✓ Oyun başladı:', name, '(sayaç oyun bitince artacak)');
     // Manuel oyun için: DOM yüklenince ismi oku ve güncelle (500ms + 2000ms)
     if (name === 'Unknown' || name === null) {
@@ -1236,6 +1236,7 @@ function checkGameTransitions() {
             window._activeGame.name = domName;
             window.currentPlayingGame = domName;
             updatePlayingIndicator(domName);
+            if (window.updateRCStatus) window.updateRCStatus('[RC] 🎮 OYNANIYOR: ' + domName);
             console.log('[RC] ✓ Manuel oyun ismi alındı:', domName);
           }
         }, delay);
