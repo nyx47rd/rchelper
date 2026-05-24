@@ -1209,6 +1209,20 @@ function checkGameTransitions() {
     window.pendingGameClick = null;
     updatePlayingIndicator(name);
     console.log('[RC] ✓ Oyun başladı:', name, '(sayaç oyun bitince artacak)');
+    // Manuel oyun için: DOM yüklenince başlığı oku ve güncelle
+    if (name === 'Unknown') {
+      setTimeout(function() {
+        var titleEl = document.querySelector(
+          'h1, [class*="game-title"], [class*="game-name"], [class*="GameTitle"], [class*="GameName"], .game-page h2'
+        );
+        var domName = titleEl && titleEl.innerText && titleEl.innerText.trim().substring(0, 40);
+        if (domName && domName.length > 1 && window._activeGame) {
+          window._activeGame.name = domName;
+          updatePlayingIndicator(domName);
+          console.log('[RC] ✓ Manuel oyun ismi DOM\'dan alındı:', domName);
+        }
+      }, 1500);
+    }
   } else if (wasPlaying && !nowPlaying) {
     // /play_game → ayrıldı: oyun BITTI → şimdi say
     if (window._activeGame) {
