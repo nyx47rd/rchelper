@@ -981,21 +981,45 @@ function isOnChooseGamePage() {
   return hasChooseInUrl || (hasChooseGameElement && hasChooseInH1);
 }
 
+function getGameNameFromPage() {
+  /* 1) DOM selector'ları */
+  var selectors = [
+    'h1', '.game-name', '.game-title', '[class*="game-title"]',
+    '[class*="game-name"]', '[class*="GameTitle"]', '[class*="GameName"]',
+    '[class*="gameName"]', '[class*="gameTitle"]', '.game-page h2',
+    '[class*="title"]', 'h2',
+  ];
+  for (var i = 0; i < selectors.length; i++) {
+    var el = document.querySelector(selectors[i]);
+    var txt = el && el.innerText && el.innerText.trim();
+    if (txt && txt.length > 1 && txt.length < 60 && isValidGameName(txt)) {
+      return txt.substring(0, 40);
+    }
+  }
+  /* 2) document.title (genellikle "GameName | RollerCoin" formatında) */
+  var title = document.title || '';
+  var titlePart = title.split('|')[0].split('-')[0].trim();
+  if (titlePart && titlePart.length > 1 && titlePart.toLowerCase() !== 'rollercoin') {
+    return titlePart.substring(0, 40);
+  }
+  /* 3) URL'den slug */
+  var m = window.location.pathname.match(/\/play_game\/([^/?#]+)/);
+  if (m) return decodeURIComponent(m[1]).replace(/-/g, ' ').substring(0, 40);
+  return null;
+}
+
 function isOnPlayGamePage() {
   const url = window.location.href;
   const isPlayGame = url.includes('/play_game') || document.querySelector('.game-page, .game-container, [class*="play-game"]');
-  
-  if (isPlayGame && window.updateRCStatus) {
-    const gameTitle = document.querySelector('h1, [class*="game-title"], [class*="game-name"], .game-name, .game-page h2');
-    if (gameTitle && gameTitle.innerText.trim()) {
-      const currentGame = gameTitle.innerText.trim().substring(0, 40);
-      if (currentGame && currentGame !== window.currentPlayingGame && !window.gameSelectionInProgress) {
-        window.currentPlayingGame = currentGame;
-        window.updateRCStatus('[RC] 🎮 OYNANIYOR: ' + currentGame);
-      }
+
+  if (isPlayGame && !window.gameSelectionInProgress) {
+    var name = getGameNameFromPage();
+    if (name && name !== window.currentPlayingGame) {
+      window.currentPlayingGame = name;
+      if (window.updateRCStatus) window.updateRCStatus('[RC] 🎮 OYNANIYOR: ' + name);
     }
   }
-  
+
   return isPlayGame;
 }
 
@@ -1209,19 +1233,20 @@ function checkGameTransitions() {
     window.pendingGameClick = null;
     updatePlayingIndicator(name);
     console.log('[RC] ✓ Oyun başladı:', name, '(sayaç oyun bitince artacak)');
-    // Manuel oyun için: DOM yüklenince başlığı oku ve güncelle
-    if (name === 'Unknown') {
-      setTimeout(function() {
-        var titleEl = document.querySelector(
-          'h1, [class*="game-title"], [class*="game-name"], [class*="GameTitle"], [class*="GameName"], .game-page h2'
-        );
-        var domName = titleEl && titleEl.innerText && titleEl.innerText.trim().substring(0, 40);
-        if (domName && domName.length > 1 && window._activeGame) {
-          window._activeGame.name = domName;
-          updatePlayingIndicator(domName);
-          console.log('[RC] ✓ Manuel oyun ismi DOM\'dan alındı:', domName);
-        }
-      }, 1500);
+    // Manuel oyun için: DOM yüklenince ismi oku ve güncelle (500ms + 2000ms)
+    if (name === 'Unknown' || name === null) {
+      [500, 2000].forEach(function(delay) {
+        setTimeout(function() {
+          if (!window._activeGame || window._activeGame.name !== 'Unknown') return;
+          var domName = getGameNameFromPage();
+          if (domName && domName.length > 1) {
+            window._activeGame.name = domName;
+            window.currentPlayingGame = domName;
+            updatePlayingIndicator(domName);
+            console.log('[RC] ✓ Manuel oyun ismi alındı:', domName);
+          }
+        }, delay);
+      });
     }
   } else if (wasPlaying && !nowPlaying) {
     // /play_game → ayrıldı: oyun BITTI → şimdi say
