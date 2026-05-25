@@ -15,6 +15,7 @@ var _RC_CONTENT_STRINGS = {
     break_next_suffix: 'sonra mola',
     w_skipped_prefix: '\u23f8 Pas',
     w_bot_playing: '🤖 Bot Oynuyor',
+    w_fullscreen_hint: 'Oyunu tam ekrana al',
   },
   en: {
     w_game: 'Game', w_time: 'Time', w_now_playing: 'Now Playing',
@@ -28,6 +29,7 @@ var _RC_CONTENT_STRINGS = {
     break_next_suffix: 'until break',
     w_skipped_prefix: '\u23f8 Skipped',
     w_bot_playing: '🤖 Bot Playing',
+    w_fullscreen_hint: 'Go fullscreen to start bot',
   },
 };
 function cT(key) {
@@ -656,9 +658,6 @@ function createFloatButton() {
       <span id="rc-now-playing-lbl">${cT('w_now_playing')}</span>
     </div>
     <div id="rc-now-playing-name" style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
-    <div id="rc-bot-playing-row" style="display:none; align-items:center; gap:5px; margin-top:5px; padding-top:5px; border-top:1px solid rgba(255,61,107,0.18);">
-      <span style="font-size:10px; font-weight:700; color:#FF3D6B; animation:rcBotPulse 1.5s ease-in-out infinite;" id="rc-bot-playing-lbl">${cT('w_bot_playing')}</span>
-    </div>
   `;
   wrapper.appendChild(nowPlayingCard);
 
@@ -732,6 +731,13 @@ function createFloatButton() {
   }, true);
 
   document.body.appendChild(wrapper);
+
+  /* ── Bot OSD (en alt ortada) ── */
+  const osd = document.createElement('div');
+  osd.id = 'rc-bot-osd';
+  osd.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:none; align-items:center; gap:8px; background:rgba(13,15,26,0.95); border:1px solid rgba(255,61,107,0.4); border-radius:8px; padding:8px 14px; z-index:999999; box-shadow:0 4px 20px rgba(0,0,0,0.4); font-family:Inter,system-ui,sans-serif;';
+  osd.innerHTML = `<span style="font-size:11px; font-weight:700; color:#FF3D6B; animation:rcBotPulse 1.5s ease-in-out infinite;">${cT('w_bot_playing')}</span>`;
+  document.body.appendChild(osd);
 
   /* ── Collapsed button ── */
   const showBtn = document.createElement('button');
@@ -1306,9 +1312,34 @@ function _updateBotPlayingWidget() {
     (window._rcHamster     && window._rcHamster.isActive())     ||
     (window._rc2048        && window._rc2048.isActive())
   );
-  var el = document.getElementById('rc-bot-playing-row');
+  var el = document.getElementById('rc-bot-osd');
   if (!el) return;
-  el.style.display = anyBotActive ? 'flex' : 'none';
+
+  /* Bot aktif mi kontrol et */
+  if (anyBotActive) {
+    el.style.display = 'flex';
+    el.querySelector('span').textContent = cT('w_bot_playing');
+    el.querySelector('span').style.animation = 'rcBotPulse 1.5s ease-in-out infinite';
+    return;
+  }
+
+  /* Bot kapalı ama oyun uygun mu? (tam ekran mesajı) */
+  var gameName = (window._activeGame && window._activeGame.name) || window.currentPlayingGame || window.lastSelectedGame || document.title || '';
+  var isBotGame = gameName.toLowerCase().includes('coin fisher') || gameName.toLowerCase().includes('coinfisher') ||
+                  gameName.toLowerCase().includes('hamster') ||
+                  gameName.toLowerCase().includes('2048');
+  var hasCanvas = !!document.querySelector('canvas');
+  var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botFisherEnabled'] === false &&
+                   window._rcBotEnabled['botHamsterEnabled'] === false &&
+                   window._rcBotEnabled['bot2048Enabled'] === false);
+
+  if (isBotGame && hasCanvas && enabled) {
+    el.style.display = 'flex';
+    el.querySelector('span').textContent = cT('w_fullscreen_hint');
+    el.querySelector('span').style.animation = 'none';
+  } else {
+    el.style.display = 'none';
+  }
 }
 
 function recordGameCompletion(name, durationMs) {
