@@ -61,10 +61,11 @@
 |🎯 **Now Playing** |The name of the active game and the session counter are displayed live on the widget |
 |📈 **Hourly Forecast** |With the EMA algorithm, it predicts how many games you will play per hour based on your current speed |
 |🛡️ **Update Protection** |In the old version, auto-play is automatically blocked;popup shows update alert |
-|🎓 **Interactive Tutorial** |10-step tour with spotlight on first boot;It can be reopened whenever you want with the `?` button |
+|🎓 **Interactive Tutorial** |11-step tour with spotlight on first boot;It can be reopened whenever you want with the `?` button |
 |⌨️ **Keyboard Shortcuts** |`S` = Pass · `P` = Always Skip |
 |🔊 **Sound Effects** |Different tones for play selection, passing, timeout start/end, automation on/off |
 |🗑️ **Clear Memory** |Reset all settings and statistics with one button |
+|🤖 **Game Bots** |Auto-play Coin Fisher, Hamster Climber & 2048 Coins when fullscreen. Toggle each bot individually from popup. OSD notification at bottom center shows bot status. |
 
 </div>
 
@@ -115,6 +116,7 @@ The popup that opens when the plugin icon is clicked is a 256px wide control pan
 |**Update Banner** |If there is a new version, it will be shown automatically, includes a download link |
 |**Settings** |Auto Select / Auto Collect / Break Reminder toggles |
 |**Break Settings** |Game time and break time numerical inputs |
+|**Game Bots** |Toggle Coin Fisher / Hamster Climber / 2048 Coins auto-play individually. Active bots show "PLAYING" badge. |
 |**Select from List** |Panel listing all known games (with Pass / Always Skip button) |
 |**Pass / Always / List** |Quick action buttons |
 |**Auto-Play** |Main on/off button |
@@ -200,7 +202,7 @@ Data is stored in `chrome.storage.local`.To reset, press the 🔄 icon in the ca
 
 It starts automatically on first installation.It can be reopened whenever you want with the **`?`** button in the popup header.
 
-**10 steps:**
+**11 steps:**
 
 |# |Target |Topic |
 |:---:|:---|:---|
@@ -213,7 +215,8 @@ It starts automatically on first installation.It can be reopened whenever you wa
 |7 |Always Skip button |Permanent block |
 |8 |List button |Management from list |
 |9 |Auto-Play button |Main control |
-|10 |Statistics card |Game tracking |
+|10 |Game Bots card |Bot toggle management |
+|11 |Statistics card |Game tracking |
 
 At each step, the target element is highlighted with a **red spotlight**.The description box is positioned automatically and the screen scrolls to the target element.
 
@@ -288,6 +291,9 @@ The "Clear Memory" button clears the entire `chrome.storage.local`.This button s
 
 **Widget does not appear on the page.**
 Refresh the page.The plugin is installed as a content script;It may start delayed on some pages.
+
+**Game bot doesn't start automatically.**
+Make sure the bot is enabled in Popup → Game Bots card. The bot only activates when you go fullscreen. An OSD notification at the bottom center will show "Go fullscreen → auto-play" or "🤖 Bot Playing".
 
 <br/>
 
