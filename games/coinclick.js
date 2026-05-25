@@ -9,7 +9,9 @@
   var _offscreen    = null;
   var _ctx          = null;
   var _lastHit      = 0;
-  var _cooldownMs   = 80;   /* CoinClick hızlı tıklama gerektirir */
+  var _cooldownMs   = 80;
+  var _debugUntil   = 0;   /* debug log bitis zamani */
+  var _TOL          = 15;  /* renk toleransi: +/-15 */
 
   function _isGame() {
     var sources = [
@@ -46,24 +48,21 @@
     } catch (e) { return false; }
   }
 
-  /* Renk eşleşme — Python kodundaki tam değerler */
+  function _near(a, t) { return Math.abs(a - t) <= _TOL; }
+
+  /* Renk eşleşme — toleranslı */
   function _isCoin(r, g, b) {
-    /* DASH */
-    if (b === 183 && r === 0)                        return true;
-    /* DOGE */
-    if (b === 64  && r === 200)                      return true;
-    /* BTC */
-    if (b === 33  && r === 231)                      return true;
-    /* LTC */
-    if (b === 230 && r === 230)                      return true;
-    /* ETH */
-    if (b === 207 && r === 66 && g === 105)          return true;
+    if (_near(r,0)   && _near(b,183))               return true; /* DASH */
+    if (_near(r,200) && _near(b,64))                return true; /* DOGE */
+    if (_near(r,231) && _near(b,33))                return true; /* BTC  */
+    if (_near(r,230) && _near(b,230) && _near(r,g)) return true; /* LTC  */
+    if (_near(r,66)  && _near(g,105) && _near(b,207)) return true; /* ETH */
     return false;
   }
 
-  /* Oyun sonu rengi: r=3, g=225, b=228 */
+  /* Oyun sonu: mavi-yeşil çerçeve rengi */
   function _isGameOver(r, g, b) {
-    return r === 3 && g === 225 && b === 228;
+    return _near(r,3) && _near(g,225) && _near(b,228);
   }
 
   function _clickCanvas(canvas, cx, cy) {
@@ -95,30 +94,39 @@
     try { data = _ctx.getImageData(0, 0, w, h).data; }
     catch (e) { return; }
 
+    var debugNow = Date.now() < _debugUntil;
+    var sampleColors = [];
+
     for (var x = 0; x < w; x += step) {
       for (var y = 0; y < h; y += step) {
         var idx = (y * w + x) * 4;
         var r = data[idx], g = data[idx + 1], b = data[idx + 2];
 
-        if (_isGameOver(r, g, b)) {
-          _stop();
-          return;
+        /* Debug: ilk 5 saniyede farkli renkleri topla */
+        if (debugNow && sampleColors.length < 8) {
+          var key = Math.round(r/30)*30+','+Math.round(g/30)*30+','+Math.round(b/30)*30;
+          if (!sampleColors.includes(key)) sampleColors.push(key);
         }
 
+        if (_isGameOver(r, g, b)) { _stop(); return; }
         if (_isCoin(r, g, b)) {
           _lastHit = Date.now();
           _clickCanvas(canvas, x, y);
-          console.log('[RC-CC] 🪙 Coin tıklandı:', x, y);
-          return; /* bir frame'de tek tıklama */
+          console.log('[RC-CC] 🪙 Coin tıklandı:', x, y, 'rgb('+r+','+g+','+b+')');
+          return;
         }
       }
+    }
+    if (debugNow && sampleColors.length > 0) {
+      console.log('[RC-CC] 🔍 Canvasta görülen renkler (~30 yuvarlak):', sampleColors.join(' | '));
     }
   }
 
   function _start() {
     if (_botActive) return;
     _botActive = true;
-    console.log('[RC-CC] ✅ CoinClick bot BAŞLADI');
+    _debugUntil = Date.now() + 10000; /* 10 sn debug */
+    console.log('[RC-CC] ✅ CoinClick bot BAŞLADI (10sn debug aktif)');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🪙 CoinClick Bot aktif');
     _loopId = setInterval(_scan, 50);
   }

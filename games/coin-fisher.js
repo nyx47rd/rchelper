@@ -74,15 +74,8 @@
     canvas.dispatchEvent(new MouseEvent('mouseup',   opts));
     canvas.dispatchEvent(new MouseEvent('click',     opts));
     console.log('[RC-CF] 🪙 Coin tıklandı:', cx, cy);
-
-    var existing = _cfBlocked.find(function (b) {
-      return Math.abs(b.x - cx) < _cfBlockRadius && Math.abs(b.y - cy) < _cfBlockRadius;
-    });
-    if (existing) {
-      existing.until = Date.now() + _cfBlockMs;
-    } else {
-      setTimeout(function () { _blockCoord(cx, cy); }, _cfCooldownMs + 50);
-    }
+    /* Aninda blokla — setTimeout yoktu, gecikme nedeniyle ayni nokta tekrar seçiliyordu */
+    _blockCoord(cx, cy);
   }
 
   function _cfScan() {
