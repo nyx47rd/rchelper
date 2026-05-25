@@ -21,7 +21,7 @@
   "content_scripts": [
     {
       "matches": ["*://*.rollercoin.com/*", "*://rollercoin.com/*"],
-      "js": ["content.js", "games/coin-fisher.js", "games/coinclick.js", "games/hamster-climber.js"],
+      "js": ["content.js", "games/coin-fisher.js", "games/hamster-climber.js"],
       "run_at": "document_end"
     }
   ]
