@@ -1,4 +1,4 @@
-const RC_VERSION = '2.2.28';
+const RC_VERSION = '2.2.29';
 
 /* ── i18n (content script) ── */
 var _RC_LANG_CONTENT = 'tr';

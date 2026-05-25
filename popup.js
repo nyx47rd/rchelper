@@ -1,5 +1,5 @@
 var autoPlayState = false;
-var CURRENT_VERSION = '2.2.28';
+var CURRENT_VERSION = '2.2.29';
 var updateAvailable = false;
 var latestReleaseUrl = 'https://github.com/nyx47rd/rchelper/releases/latest';
 
