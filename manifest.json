@@ -26,7 +26,7 @@
     },
     {
       "matches": ["*://*.rollercoin.com/game/play_game*", "*://rollercoin.com/game/play_game*"],
-      "js": ["games/coin-fisher.js"],
+      "js": ["games/coin-fisher.js", "games/coinclick.js", "games/hamster-climber.js"],
       "run_at": "document_end"
     }
   ]
