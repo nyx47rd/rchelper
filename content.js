@@ -15,7 +15,7 @@ var _RC_CONTENT_STRINGS = {
     break_next_suffix: 'sonra mola',
     w_skipped_prefix: '\u23f8 Pas',
     w_bot_playing: '🤖 Bot Oynuyor',
-    w_fullscreen_hint: 'Oyunu tam ekrana al',
+    w_fullscreen_hint: 'Tam ekrana al → otomatik oynanacak',
   },
   en: {
     w_game: 'Game', w_time: 'Time', w_now_playing: 'Now Playing',
@@ -29,7 +29,7 @@ var _RC_CONTENT_STRINGS = {
     break_next_suffix: 'until break',
     w_skipped_prefix: '\u23f8 Skipped',
     w_bot_playing: '🤖 Bot Playing',
-    w_fullscreen_hint: 'Go fullscreen to start bot',
+    w_fullscreen_hint: 'Go fullscreen → auto-play',
   },
 };
 function cT(key) {
@@ -735,8 +735,8 @@ function createFloatButton() {
   /* ── Bot OSD (en alt ortada) ── */
   const osd = document.createElement('div');
   osd.id = 'rc-bot-osd';
-  osd.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:none; align-items:center; gap:8px; background:rgba(13,15,26,0.95); border:1px solid rgba(255,61,107,0.4); border-radius:8px; padding:8px 14px; z-index:999999; box-shadow:0 4px 20px rgba(0,0,0,0.4); font-family:Inter,system-ui,sans-serif;';
-  osd.innerHTML = `<span style="font-size:11px; font-weight:700; color:#FF3D6B; animation:rcBotPulse 1.5s ease-in-out infinite;">${cT('w_bot_playing')}</span>`;
+  osd.style.cssText = 'position:fixed; bottom:30px; left:50%; transform:translateX(-50%); display:none; align-items:center; gap:10px; background:rgba(13,15,26,0.96); border:1.5px solid rgba(255,61,107,0.5); border-radius:12px; padding:12px 20px; z-index:999999; box-shadow:0 6px 30px rgba(0,0,0,0.5),0 0 0 1px rgba(255,61,107,0.15); font-family:Inter,system-ui,sans-serif; opacity:0; transition:opacity 0.3s ease-out;';
+  osd.innerHTML = `<span style="font-size:13px; font-weight:700; color:#FF3D6B; animation:rcBotPulse 1.5s ease-in-out infinite;">${cT('w_bot_playing')}</span>`;
   document.body.appendChild(osd);
 
   /* ── Collapsed button ── */
@@ -772,6 +772,7 @@ function createStatusWidget() {
   style.textContent = `
     @keyframes rcFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
     @keyframes rcBotPulse { 0%,100% { opacity:1; } 50% { opacity:0.45; } }
+    @keyframes rcOsdFadeIn { from { opacity:0; transform:translate(-50%, 10px); } to { opacity:1; transform:translate(-50%, 0); } }
     #rc-status-widget, #rc-status-widget * { box-sizing:border-box; font-family:'Inter',system-ui,sans-serif !important; }
     #rc-log-container::-webkit-scrollbar { width:3px; }
     #rc-log-container::-webkit-scrollbar-thumb { background:#1E2545; border-radius:2px; }
@@ -1318,6 +1319,7 @@ function _updateBotPlayingWidget() {
   /* Bot aktif mi kontrol et */
   if (anyBotActive) {
     el.style.display = 'flex';
+    el.style.animation = 'rcOsdFadeIn 0.3s ease-out forwards';
     el.querySelector('span').textContent = cT('w_bot_playing');
     el.querySelector('span').style.animation = 'rcBotPulse 1.5s ease-in-out infinite';
     return;
@@ -1335,10 +1337,12 @@ function _updateBotPlayingWidget() {
 
   if (isBotGame && hasCanvas && enabled) {
     el.style.display = 'flex';
+    el.style.animation = 'rcOsdFadeIn 0.3s ease-out forwards';
     el.querySelector('span').textContent = cT('w_fullscreen_hint');
     el.querySelector('span').style.animation = 'none';
   } else {
     el.style.display = 'none';
+    el.style.animation = 'none';
   }
 }
 
