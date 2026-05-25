@@ -14,24 +14,36 @@
       (window._activeGame && window._activeGame.name) || '',
       window.currentPlayingGame || '',
       window.lastSelectedGame   || '',
-      document.title            || ''
+      document.title            || '',
+      window.location.href      || ''
     ];
     return sources.some(function (s) {
       var n = s.toLowerCase();
-      return n.includes('2048') || n.includes('coins2048') || n.includes('coin2048');
+      return n.includes('2048');
     });
   }
 
-  function _isBigCanvas() {
-    var c = document.querySelector('#phaserGame canvas') || document.querySelector('canvas');
-    if (!c) return false;
-    return c.getBoundingClientRect().width > window.innerWidth * 0.6;
+  function _isOnPlayPage() {
+    return window.location.href.includes('/play_game');
+  }
+
+  function _getCanvas() {
+    return document.querySelector('#phaserGame canvas') || document.querySelector('canvas');
   }
 
   function _pressKey(key) {
-    var opts = { key: key, code: key, bubbles: true, cancelable: true };
-    document.dispatchEvent(new KeyboardEvent('keydown', opts));
-    document.dispatchEvent(new KeyboardEvent('keyup',   opts));
+    var opts = { key: key, code: key, keyCode: 0, which: 0,
+                 bubbles: true, cancelable: true };
+    /* keyCode değerlerini de set et */
+    var codes = { ArrowLeft: 37, ArrowRight: 39, ArrowUp: 38, ArrowDown: 40 };
+    opts.keyCode = codes[key]; opts.which = codes[key];
+    var canvas = _getCanvas();
+    /* window, document ve canvas'a gönder */
+    [window, document, canvas].forEach(function(t) {
+      if (!t) return;
+      t.dispatchEvent(new KeyboardEvent('keydown', opts));
+      t.dispatchEvent(new KeyboardEvent('keyup',   opts));
+    });
   }
 
   function _tick() {
@@ -57,9 +69,9 @@
   }
 
   setInterval(function () {
-    var big = _isBigCanvas() && _isGame();
-    if (big && !_botActive)  _start();
-    if (!big && _botActive)  _stop();
+    var active = _isOnPlayPage() && _isGame() && !!_getCanvas();
+    if (active && !_botActive)  _start();
+    if (!active && _botActive)  _stop();
   }, 500);
 
   window._rc2048 = { start: _start, stop: _stop, isActive: function () { return _botActive; } };
