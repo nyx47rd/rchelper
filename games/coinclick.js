@@ -104,10 +104,19 @@
 
   function _clickCanvas(canvas, cx, cy) {
     var rect    = canvas.getBoundingClientRect();
-    var clientX = rect.left + cx * (rect.width  / canvas.width);
-    var clientY = rect.top  + cy * (rect.height / canvas.height);
-    var mOpts = { bubbles: true, cancelable: true, clientX: clientX, clientY: clientY };
-    var pOpts = { bubbles: true, cancelable: true, clientX: clientX, clientY: clientY,
+    var scaleX  = rect.width  / canvas.width;
+    var scaleY  = rect.height / canvas.height;
+    var clientX = rect.left + cx * scaleX;
+    var clientY = rect.top  + cy * scaleY;
+    /* Phaser pointer koordinatı: canvas sol-üst köşesinden offset */
+    var canvasX = cx * scaleX;
+    var canvasY = cy * scaleY;
+    var mOpts = { bubbles: true, cancelable: true,
+                  clientX: clientX, clientY: clientY,
+                  offsetX: canvasX, offsetY: canvasY };
+    var pOpts = { bubbles: true, cancelable: true,
+                  clientX: clientX, clientY: clientY,
+                  offsetX: canvasX, offsetY: canvasY,
                   pointerId: 1, pointerType: 'mouse', isPrimary: true };
     canvas.dispatchEvent(new PointerEvent('pointerdown', pOpts));
     canvas.dispatchEvent(new MouseEvent('mousedown', mOpts));
