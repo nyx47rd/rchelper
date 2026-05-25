@@ -14,7 +14,7 @@
   var _cooldownMs   = 80;
   var _debugUntil   = 0;
   var _TOL          = 12;   /* renk toleransi */
-  var _MARGIN       = 60;   /* canvas kenarinda bu kadar piksel tarama disi */
+  var _MARGIN       = 100;  /* canvas kenarinda bu kadar piksel tarama disi */
 
   function _isGame() {
     var sources = [
@@ -68,19 +68,30 @@
 
   function _near(a, t) { return Math.abs(a - t) <= _TOL; }
 
+  /* Gokyuzu/arka plan renklerini ele: turuncu(226,137,79), kahve, gri tas */
+  function _isBackground(r, g, b) {
+    /* Turuncu gokyuzu: R yuksek, G orta, B orta-yuksek (>60) */
+    if (r > 180 && g > 80 && g < 180 && b > 50 && b < 140) return true;
+    /* Gri tas/duvar: hepsi 80-160 arasi */
+    if (r > 70 && r < 170 && g > 60 && g < 160 && b > 50 && b < 150 &&
+        Math.max(r,g,b) - Math.min(r,g,b) < 50) return true;
+    return false;
+  }
+
   /* Coin tipi dondur, null ise coin degil */
   function _coinType(r, g, b) {
-    /* MAVI oval (ETH/DASH): B baskın, R düşük */
-    if (b > r + 80 && b > g && b > 120)           return 'BLUE';
-    /* TURUNCU oval (BTC): R baskın, B çok düşük */
-    if (r > g + 60 && r > b + 120 && r > 150)     return 'BTC';
-    /* ALTIN/SARI (DOGE): R ve G yüksek, B düşük */
-    if (r > 150 && g > 130 && b < 80 && r > b + 80) return 'DOGE';
-    /* GUMUS/BEYAZ (LTC): hepsi yüksek, fark az */
-    if (r > 160 && g > 160 && b > 160 &&
-        Math.max(r,g,b) - Math.min(r,g,b) < 40)  return 'LTC';
-    /* MOR/ETH karışımı */
-    if (b > 140 && r > 40 && r < 130 && g > 60 && g < 160) return 'ETH';
+    if (_isBackground(r, g, b)) return null;
+    /* MAVI oval (ETH/DASH): B cok baskın */
+    if (b > r + 90 && b > g + 30 && b > 140)       return 'BLUE';
+    /* TURUNCU oval (BTC): R baskın, B COK dusuk (<50) - gokyuzunden fark bu */
+    if (r > 180 && r > g + 60 && b < 50)           return 'BTC';
+    /* ALTIN/SARI (DOGE): R ve G yuksek, B cok dusuk */
+    if (r > 170 && g > 140 && b < 60)              return 'DOGE';
+    /* GUMUS/BEYAZ (LTC): hepsi 200+ ve birbirine cok yakin */
+    if (r > 200 && g > 200 && b > 200 &&
+        Math.max(r,g,b) - Math.min(r,g,b) < 25)   return 'LTC';
+    /* ETH mor-mavi */
+    if (b > 150 && r > 40 && r < 120 && g > 60 && g < 150) return 'ETH';
     return null;
   }
 
