@@ -1514,12 +1514,15 @@ if (document.readyState === 'loading') {
    Tetikleyici: play_game sayfası + canvas tam ekran yapılınca başlar
    ══════════════════════════════════════════════════════════════════ */
 (function() {
-  var _cfBotActive = false;
-  var _cfLoopId    = null;
-  var _cfOffscreen = null; /* OffscreenCanvas veya regular canvas */
-  var _cfCtx       = null;
-  var _cfLastHit   = 0;
-  var _cfCooldownMs = 500; /* tıklamalar arası minimum bekleme */
+  var _cfBotActive  = false;
+  var _cfLoopId     = null;
+  var _cfOffscreen  = null;
+  var _cfCtx        = null;
+  var _cfLastHit    = 0;
+  var _cfCooldownMs = 500;   /* tıklamalar arası minimum bekleme */
+  var _cfBlocked    = [];    /* { x, y, until } — geçici blok listesi */
+  var _cfBlockMs    = 1500;  /* bir koordinat kaç ms bloklu kalır */
+  var _cfBlockRadius = 20;   /* piksel: bu yarıçap içindeki aynı noktayı blokla */
 
   /* Coin Fisher oyununda mıyız? lastSelectedGame veya currentPlayingGame'e bak */
   function _isCoinFisher() {
@@ -1562,9 +1565,21 @@ if (document.readyState === 'loading') {
     return false;
   }
 
+  /* Süresi dolmuş blokları temizle ve koordinatın bloklu olup olmadığını kontrol et */
+  function _isBlocked(x, y) {
+    var now = Date.now();
+    _cfBlocked = _cfBlocked.filter(function(b) { return b.until > now; });
+    return _cfBlocked.some(function(b) {
+      return Math.abs(b.x - x) < _cfBlockRadius && Math.abs(b.y - y) < _cfBlockRadius;
+    });
+  }
+
+  function _blockCoord(x, y) {
+    _cfBlocked.push({ x: x, y: y, until: Date.now() + _cfBlockMs });
+  }
+
   /* Canvas'a tıkla: gerçek koordinat = CSS boyutuna orantılı */
   function _clickCanvas(canvas, cx, cy) {
-    /* cx,cy: canvas internal piksel (960x800) → CSS piksel'e çevir */
     var rect = canvas.getBoundingClientRect();
     var scaleX = rect.width  / canvas.width;
     var scaleY = rect.height / canvas.height;
@@ -1574,54 +1589,74 @@ if (document.readyState === 'loading') {
     canvas.dispatchEvent(new MouseEvent('mousedown', opts));
     canvas.dispatchEvent(new MouseEvent('mouseup',   opts));
     canvas.dispatchEvent(new MouseEvent('click',     opts));
-    console.log('[RC-CF] 🪙 Coin tıklandı:', cx, cy, '(client:', Math.round(clientX), Math.round(clientY) + ')');
+    console.log('[RC-CF] 🪙 Coin tıklandı:', cx, cy);
+    /* 2 deneme sonrası bu konumu blokla */
+    var existing = _cfBlocked.find(function(b) {
+      return Math.abs(b.x - cx) < _cfBlockRadius && Math.abs(b.y - cy) < _cfBlockRadius;
+    });
+    if (existing) {
+      /* zaten bir kez denendi → bloğu uzat (artık atlanacak) */
+      existing.until = Date.now() + _cfBlockMs;
+    } else {
+      /* ilk deneme → kısa süre sonra blokla ki 2. denemede de geçilsin */
+      setTimeout(function() { _blockCoord(cx, cy); }, _cfCooldownMs + 50);
+    }
   }
 
-  /* Ana tarama döngüsü — requestAnimationFrame yerine setInterval (daha kararlı) */
+  /* Ana tarama döngüsü */
   function _cfScan() {
     if (!_cfBotActive) return;
 
     var canvas = _getCanvas();
     if (!canvas || !canvas.width || !canvas.height) return;
 
-    /* Cooldown: tıklamadan sonra kısa bekle */
     var now = Date.now();
     if (now - _cfLastHit < _cfCooldownMs) return;
 
     if (!_ensureOffscreen(canvas.width, canvas.height)) return;
 
-    /* WebGL canvas'ı drawImage ile 2D ctx'e kopyala */
     try {
       _cfCtx.drawImage(canvas, 0, 0);
     } catch(e) {
-      /* taint edilmiş canvas — erişim yok */
       console.warn('[RC-CF] Canvas okunamıyor (tainted):', e.message);
       _cfStop();
       return;
     }
 
-    var step = 7; /* her 7 pikselde bir tara — Python ile aynı */
+    var step = 7;
     var w = canvas.width, h = canvas.height;
     var data;
     try {
       data = _cfCtx.getImageData(0, 0, w, h).data;
     } catch(e) { return; }
 
-    var found = false;
-    outer:
+    /* Tüm coin adaylarını topla, sonra bloklu olmayanı seç */
+    var candidates = [];
     for (var x = 0; x < w; x += step) {
       for (var y = 0; y < h; y += step) {
         var idx = (y * w + x) * 4;
         var r = data[idx], g = data[idx+1], b = data[idx+2];
         if (_isCoin(r, g, b)) {
-          _cfLastHit = Date.now();
-          _clickCanvas(canvas, x, y);
-          found = true;
-          break outer;
+          candidates.push({ x: x, y: y });
         }
       }
     }
-    if (!found) { /* sessiz */ }
+
+    /* Bloklu olmayanları filtrele */
+    var available = candidates.filter(function(c) { return !_isBlocked(c.x, c.y); });
+
+    /* Tüm adaylar bloklu → tüm blokları temizle ve ilk adayı dene */
+    if (available.length === 0 && candidates.length > 0) {
+      _cfBlocked = [];
+      available = candidates;
+    }
+
+    if (available.length > 0) {
+      /* En yakın adayı seç (sol-üst öncelikli, sıralı) */
+      var target = available[0];
+      _cfLastHit = Date.now();
+      _clickCanvas(canvas, target.x, target.y);
+    }
   }
 
   function _cfStart() {
