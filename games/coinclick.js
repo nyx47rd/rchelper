@@ -9,9 +9,12 @@
   var _offscreen    = null;
   var _ctx          = null;
   var _lastHit      = 0;
+  var _startedAt    = 0;    /* bot ne zaman baslatildi */
+  var _warmupMs     = 3000; /* ilk 3sn tiklama yapma, sayim bekleniyor */
   var _cooldownMs   = 80;
-  var _debugUntil   = 0;   /* debug log bitis zamani */
-  var _TOL          = 15;  /* renk toleransi: +/-15 */
+  var _debugUntil   = 0;
+  var _TOL          = 12;   /* renk toleransi */
+  var _MARGIN       = 60;   /* canvas kenarinda bu kadar piksel tarama disi */
 
   function _isGame() {
     var sources = [
@@ -52,11 +55,11 @@
 
   /* Renk eşleşme — toleranslı */
   function _isCoin(r, g, b) {
-    if (_near(r,0)   && _near(b,183))               return true; /* DASH */
-    if (_near(r,200) && _near(b,64))                return true; /* DOGE */
-    if (_near(r,231) && _near(b,33))                return true; /* BTC  */
-    if (_near(r,230) && _near(b,230) && _near(r,g)) return true; /* LTC  */
-    if (_near(r,66)  && _near(g,105) && _near(b,207)) return true; /* ETH */
+    if (_near(r,0)   && _near(b,183) && g < 100)    return true; /* DASH: koyu mavi */
+    if (_near(r,200) && _near(b,64)  && g > 140)    return true; /* DOGE: altin */
+    if (_near(r,231) && _near(b,33)  && g > 100 && g < 160) return true; /* BTC: turuncu */
+    if (_near(r,230) && _near(b,230) && _near(r,g)) return true; /* LTC: gumus */
+    if (_near(r,66)  && _near(g,105) && _near(b,207)) return true; /* ETH: mavi-mor */
     return false;
   }
 
@@ -94,11 +97,15 @@
     try { data = _ctx.getImageData(0, 0, w, h).data; }
     catch (e) { return; }
 
+    /* Warmup: sayim bitmeden tiklamayin */
+    if (Date.now() - _startedAt < _warmupMs) return;
+
     var debugNow = Date.now() < _debugUntil;
     var sampleColors = [];
+    var margin = _MARGIN;
 
-    for (var x = 0; x < w; x += step) {
-      for (var y = 0; y < h; y += step) {
+    for (var x = margin; x < w - margin; x += step) {
+      for (var y = margin; y < h - margin; y += step) {
         var idx = (y * w + x) * 4;
         var r = data[idx], g = data[idx + 1], b = data[idx + 2];
 
@@ -125,7 +132,8 @@
   function _start() {
     if (_botActive) return;
     _botActive = true;
-    _debugUntil = Date.now() + 10000; /* 10 sn debug */
+    _startedAt  = Date.now();
+    _debugUntil = Date.now() + 13000; /* warmup bittikten sonra 10sn debug */
     console.log('[RC-CC] ✅ CoinClick bot BAŞLADI (10sn debug aktif)');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🪙 CoinClick Bot aktif');
     _loopId = setInterval(_scan, 50);

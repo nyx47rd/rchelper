@@ -92,14 +92,14 @@
       return;
     }
 
-    var w = canvas.width, h = canvas.height, step = 18;
+    var w = canvas.width, h = canvas.height, step = 18, margin = 50;
     var data;
     try { data = _cfCtx.getImageData(0, 0, w, h).data; }
     catch (e) { return; }
 
     var candidates = [];
-    for (var x = 0; x < w; x += step) {
-      for (var y = 0; y < h; y += step) {
+    for (var x = margin; x < w - margin; x += step) {
+      for (var y = margin; y < h - margin; y += step) {
         var idx = (y * w + x) * 4;
         if (_isCoin(data[idx], data[idx + 1], data[idx + 2])) {
           candidates.push({ x: x, y: y });
