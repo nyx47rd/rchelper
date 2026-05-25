@@ -9,9 +9,9 @@
   var _cfOffscreen   = null;
   var _cfCtx         = null;
   var _cfLastHit     = 0;
-  var _cfCooldownMs  = 200;  /* ms: tıklamalar arası bekleme */
+  var _cfCooldownMs  = 80;   /* ms: tıklamalar arası bekleme */
   var _cfBlocked     = [];   /* { x, y, until } */
-  var _cfBlockMs     = 800;  /* ms: bir nokta ne kadar bloklu kalır */
+  var _cfBlockMs     = 400;  /* ms: bir nokta ne kadar bloklu kalır */
   var _cfBlockRadius = 25;   /* piksel yarıçap */
 
   /* Coin Fisher oyununda mıyız? */
@@ -125,7 +125,7 @@
     _cfBotActive = true;
     console.log('[RC-CF] ✅ Coin Fisher bot BAŞLADI');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🎣 Coin Fisher Bot aktif');
-    _cfLoopId = setInterval(_cfScan, 100);
+    _cfLoopId = setInterval(_cfScan, 30);
   }
 
   function _cfStop() {
