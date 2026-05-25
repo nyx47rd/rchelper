@@ -61,10 +61,11 @@
 | 🎯 **Şu An Oynanıyor** | Widget'ta aktif oyunun adı ve oturum sayacı canlı olarak gösterilir |
 | 📈 **Saatlik Tahmin** | EMA algoritmasıyla o anki hızına göre saatte kaç oyun oynayacağını tahmin eder |
 | 🛡️ **Güncelleme Koruması** | Eski sürümde auto-play otomatik engellenir; popup'ta güncelleme uyarısı gösterilir |
-| 🎓 **İnteraktif Tutorial** | İlk açılışta spotlight'lı 10 adımlık tur; `?` butonuyla istediğin zaman tekrar açılır |
+| 🎓 **İnteraktif Tutorial** | İlk açılışta spotlight'lı 11 adımlık tur; `?` butonuyla istediğin zaman tekrar açılır |
 | ⌨️ **Klavye Kısayolları** | `S` = Pas Geç · `P` = Daima Atla |
 | 🔊 **Ses Efektleri** | Oyun seçimi, pas geçme, mola başlangıcı/bitişi, otomasyon açma/kapama için farklı tonlar |
 | 🗑️ **Hafızayı Temizle** | Tüm ayarları ve istatistikleri tek butonda sıfırla |
+| 🤖 **Oyun Botları** | Coin Fisher, Hamster Climber ve 2048 Coins oyunlarını tam ekranda otomatik oynatır. Popup'tan her birini ayrı ayrı açıp kapatabilirsin. Alt ortadaki OSD bildirimi bot durumunu gösterir. |
 
 </div>
 
@@ -115,6 +116,7 @@ Eklenti ikonu tıklandığında açılan popup 256px genişliğinde bir kontrol 
 | **Güncelleme Banner'ı** | Yeni sürüm varsa otomatik gösterilir, indirme bağlantısı içerir |
 | **Ayarlar** | Otomatik Seç / Otomatik Topla / Mola Hatırlatıcısı toggle'ları |
 | **Mola Ayarları** | Oyun süresi ve mola süresi sayısal inputları |
+| **Oyun Botları** | Coin Fisher / Hamster Climber / 2048 Coins botlarını ayrı ayrı açıp kapatma. Aktif botlar "OYNUYOR" rozeti gösterir. |
 | **Listeden Seç** | Tüm bilinen oyunları listeleyen panel (Pas Geç / Daima Atla butonlu) |
 | **Pas Geç / Daima / Liste** | Hızlı aksiyon butonları |
 | **Auto-Play** | Ana aç/kapat butonu |
@@ -200,7 +202,7 @@ Veriler `chrome.storage.local`'da saklanır. Sıfırlamak için kart başlığı
 
 İlk kurulumda otomatik başlar. Popup başlığındaki **`?`** butonu ile istediğin zaman tekrar açılır.
 
-**10 adım:**
+**11 adım:**
 
 | # | Hedef | Konu |
 |:---:|:---|:---|
@@ -213,7 +215,8 @@ Veriler `chrome.storage.local`'da saklanır. Sıfırlamak için kart başlığı
 | 7 | Daima Atla butonu | Kalıcı engelleme |
 | 8 | Liste butonu | Listeden yönetim |
 | 9 | Auto-Play butonu | Ana kontrol |
-| 10 | İstatistikler kartı | Oyun takibi |
+| 10 | Oyun Botları kartı | Bot toggle yönetimi |
+| 11 | İstatistikler kartı | Oyun takibi |
 
 Her adımda hedef element **kırmızı spotlight** ile vurgulanır. Açıklama kutusu otomatik konumlanır ve ekran hedef elemente scroll eder.
 
@@ -288,6 +291,9 @@ Popup → Mola Ayarları kartından oyun süresini artır veya azalt.
 
 **Widget sayfada görünmüyor.**
 Sayfayı yenile. Eklenti bir content script olarak yüklenir; bazı sayfalarda gecikmeli başlayabilir.
+
+**Oyun botu otomatik başlamıyor.**
+Popup → Oyun Botları kartından botun açık olduğundan emin ol. Bot yalnızca tam ekrana alındığında devreye girer. Alt ortadaki OSD bildirimi "Tam ekrana al → otomatik oynanacak" veya "🤖 Bot Oynuyor" mesajını gösterir.
 
 <br/>
 
