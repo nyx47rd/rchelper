@@ -51,21 +51,47 @@
     } catch (e) { return false; }
   }
 
+  /* 3x3 bolge ortalamasini al - gurultu azalt */
+  function _avgPixel(data, w, h, cx, cy) {
+    var sr = 0, sg = 0, sb = 0, cnt = 0;
+    for (var dx = -2; dx <= 2; dx++) {
+      for (var dy = -2; dy <= 2; dy++) {
+        var px = cx + dx, py = cy + dy;
+        if (px < 0 || py < 0 || px >= w || py >= h) continue;
+        var i = (py * w + px) * 4;
+        sr += data[i]; sg += data[i+1]; sb += data[i+2];
+        cnt++;
+      }
+    }
+    return cnt ? { r: sr/cnt|0, g: sg/cnt|0, b: sb/cnt|0 } : null;
+  }
+
   function _near(a, t) { return Math.abs(a - t) <= _TOL; }
 
-  /* Renk eşleşme — toleranslı */
+  /* Coin tespiti - ekran goruntusuyle uyumlu renkler:
+     ETH/DASH : parlak mavi oval   — yuksek B, dusuk R
+     BTC      : turuncu oval       — yuksek R, dusuk B, G orta
+                AMA arka plan da turuncu! Fark: coin cok parlak (r>200)
+                ve B deger dusuk (<60)
+     LTC      : acik gri/gumus     — R,G,B hepsi yuksek ve esit
+     DOGE     : altin sari         — yuksek R+G, dusuk B        */
   function _isCoin(r, g, b) {
-    if (_near(r,0)   && _near(b,183) && g < 100)    return true; /* DASH: koyu mavi */
-    if (_near(r,200) && _near(b,64)  && g > 140)    return true; /* DOGE: altin */
-    if (_near(r,231) && _near(b,33)  && g > 100 && g < 160) return true; /* BTC: turuncu */
-    if (_near(r,230) && _near(b,230) && _near(r,g)) return true; /* LTC: gumus */
-    if (_near(r,66)  && _near(g,105) && _near(b,207)) return true; /* ETH: mavi-mor */
+    /* ETH/mavi oval: R dusuk, B cok yuksek */
+    if (r < 80 && b > 160 && g > 80 && g < 220)   return true;
+    /* DASH/koyu mavi */
+    if (r < 30 && b > 140 && g < 120)             return true;
+    /* BTC/turuncu: R cok yuksek (>200), G orta (80-160), B cok dusuk (<60) */
+    if (r > 200 && g > 80 && g < 170 && b < 60)   return true;
+    /* LTC/gumus: hepsi > 180 ve birbirine yakin */
+    if (r > 180 && g > 180 && b > 180 && Math.max(r,g,b)-Math.min(r,g,b) < 30) return true;
+    /* DOGE/altin: R+G yuksek, B dusuk */
+    if (r > 170 && g > 150 && b < 80)             return true;
     return false;
   }
 
-  /* Oyun sonu: mavi-yeşil çerçeve rengi */
+  /* Oyun sonu: parlak mavi-yesil cerceve */
   function _isGameOver(r, g, b) {
-    return _near(r,3) && _near(g,225) && _near(b,228);
+    return r < 20 && g > 200 && b > 200;
   }
 
   function _clickCanvas(canvas, cx, cy) {
@@ -83,6 +109,7 @@
     var canvas = _getCanvas();
     if (!canvas || !canvas.width || !canvas.height) return;
     if (Date.now() - _lastHit < _cooldownMs) return;
+    if (Date.now() - _startedAt < _warmupMs) return;
     if (!_ensureOffscreen(canvas.width, canvas.height)) return;
 
     try { _ctx.drawImage(canvas, 0, 0); }
@@ -92,28 +119,19 @@
       return;
     }
 
-    var w = canvas.width, h = canvas.height, step = 5;
+    var w = canvas.width, h = canvas.height, step = 8;
     var data;
     try { data = _ctx.getImageData(0, 0, w, h).data; }
     catch (e) { return; }
 
-    /* Warmup: sayim bitmeden tiklamayin */
-    if (Date.now() - _startedAt < _warmupMs) return;
-
     var debugNow = Date.now() < _debugUntil;
-    var sampleColors = [];
     var margin = _MARGIN;
 
     for (var x = margin; x < w - margin; x += step) {
       for (var y = margin; y < h - margin; y += step) {
-        var idx = (y * w + x) * 4;
-        var r = data[idx], g = data[idx + 1], b = data[idx + 2];
-
-        /* Debug: ilk 5 saniyede farkli renkleri topla */
-        if (debugNow && sampleColors.length < 8) {
-          var key = Math.round(r/30)*30+','+Math.round(g/30)*30+','+Math.round(b/30)*30;
-          if (!sampleColors.includes(key)) sampleColors.push(key);
-        }
+        var px = _avgPixel(data, w, h, x, y);
+        if (!px) continue;
+        var r = px.r, g = px.g, b = px.b;
 
         if (_isGameOver(r, g, b)) { _stop(); return; }
         if (_isCoin(r, g, b)) {
@@ -124,8 +142,19 @@
         }
       }
     }
-    if (debugNow && sampleColors.length > 0) {
-      console.log('[RC-CC] 🔍 Canvasta görülen renkler (~30 yuvarlak):', sampleColors.join(' | '));
+    if (debugNow) {
+      /* Her 2sn'de bir ornek piksel logla */
+      var sample = [];
+      for (var sx = margin; sx < w - margin; sx += 40) {
+        for (var sy = margin; sy < h - margin; sy += 40) {
+          var sp = _avgPixel(data, w, h, sx, sy);
+          if (sp) {
+            var key = sp.r+','+sp.g+','+sp.b;
+            if (sample.length < 6 && !sample.includes(key)) sample.push(key);
+          }
+        }
+      }
+      if (sample.length) console.log('[RC-CC] 🔍 Ornek renkler:', sample.join(' | '));
     }
   }
 
