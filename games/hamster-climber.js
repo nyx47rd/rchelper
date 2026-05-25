@@ -119,6 +119,7 @@
     _botActive = true;
     console.log('[RC-HC] ✅ Hamster Climber bot BAŞLADI');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🐹 Hamster Climber Bot aktif');
+    if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
     _loopId = setInterval(_scan, 50);
   }
 
@@ -128,6 +129,7 @@
     if (_loopId) { clearInterval(_loopId); _loopId = null; }
     console.log('[RC-HC] ⏹ Hamster Climber bot DURDU');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🐹 Hamster Climber Bot durdu');
+    if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
   }
 
   document.addEventListener('fullscreenchange', function () {
@@ -136,10 +138,12 @@
   });
 
   setInterval(function () {
-    var big = _isBigCanvas() && _isGame();
+    var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botHamsterEnabled'] === false);
+    var big = _isBigCanvas() && _isGame() && enabled;
     if (big && !_botActive)  _start();
     if (!big && _botActive)  _stop();
   }, 500);
 
   window._rcHamsterClimber = { start: _start, stop: _stop, isActive: function () { return _botActive; } };
+  window._rcHamster = window._rcHamsterClimber;
 })();

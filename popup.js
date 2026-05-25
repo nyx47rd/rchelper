@@ -158,6 +158,46 @@ document.addEventListener('DOMContentLoaded', function() {
     btnAuto.classList.toggle('active', state);
   }
 
+  /* ── Bot toggle yönetimi ── */
+  var BOT_KEYS = {
+    'chk-bot-fisher':  'botFisherEnabled',
+    'chk-bot-hamster': 'botHamsterEnabled',
+    'chk-bot-2048':    'bot2048Enabled'
+  };
+
+  chrome.storage.local.get(Object.values(BOT_KEYS), function(data) {
+    Object.keys(BOT_KEYS).forEach(function(chkId) {
+      var el = document.getElementById(chkId);
+      if (!el) return;
+      var key = BOT_KEYS[chkId];
+      el.checked = data[key] !== false; /* default: açık */
+      el.addEventListener('change', function() {
+        var upd = {};
+        upd[key] = el.checked;
+        chrome.storage.local.set(upd);
+        sendMessage({ action: 'setBotEnabled', bot: key, enabled: el.checked });
+      });
+    });
+  });
+
+  /* Bot aktif badge'ini güncelle — content script'ten mesaj gelince */
+  function updateBotBadges(activeBots) {
+    var map = { fisher: 'badge-fisher', hamster: 'badge-hamster', '2048': 'badge-2048' };
+    Object.keys(map).forEach(function(k) {
+      var el = document.getElementById(map[k]);
+      if (el) el.style.display = (activeBots && activeBots[k]) ? '' : 'none';
+    });
+  }
+
+  /* Content script'ten bot durumu iste */
+  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+    if (!tabs || !tabs[0]) return;
+    chrome.tabs.sendMessage(tabs[0].id, { action: 'getBotStatus' }, function(resp) {
+      if (chrome.runtime.lastError) return;
+      if (resp && resp.bots) updateBotBadges(resp.bots);
+    });
+  });
+
   function updateSkippedGamesList(skippedGames) {
     var listEl = document.getElementById('skipped-games-list');
     if (!listEl) return;

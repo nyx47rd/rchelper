@@ -52,7 +52,7 @@ var TUT_STEPS = [
     desc: 'Oynadığın <strong>toplam oyun</strong>, bugün, bu hafta, toplam süre, ortalama süre, en çok oynadığın oyun ve şu an oynadığın oyunu burada görürsün.',
   },
 ];
-var TUT_TARGET_IDS = [null,'row-choose','row-collect','row-break','break-settings-card','btn-skip','btn-skip-perm','btn-list','btn-auto','stats-card'];
+var TUT_TARGET_IDS = [null,'row-choose','row-collect','row-break','break-settings-card','btn-skip','btn-skip-perm','btn-list','btn-auto','bots-card','stats-card'];
 function getTutSteps() {
   return TUT_TARGET_IDS.map(function(id, i) {
     return { targetId: id, title: t('tut_step_'+i+'_title'), desc: t('tut_step_'+i+'_desc') };

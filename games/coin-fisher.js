@@ -125,6 +125,7 @@
     _cfBotActive = true;
     console.log('[RC-CF] ✅ Coin Fisher bot BAŞLADI');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🎣 Coin Fisher Bot aktif');
+    if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
     _cfLoopId = setInterval(_cfScan, 30);
   }
 
@@ -134,6 +135,7 @@
     if (_cfLoopId) { clearInterval(_cfLoopId); _cfLoopId = null; }
     console.log('[RC-CF] ⏹ Coin Fisher bot DURDU');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🎣 Coin Fisher Bot durdu');
+    if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
   }
 
   /* Canvas "büyük" mü? — fullscreen API yerine boyut kontrolü */
@@ -153,7 +155,8 @@
 
   /* Ana tetikleyici: canvas büyüdüğünde başlat, küçüldüğünde durdur */
   setInterval(function () {
-    var big = _isBigCanvas() && _isCoinFisher();
+    var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botFisherEnabled'] === false);
+    var big = _isBigCanvas() && _isCoinFisher() && enabled;
     if (big && !_cfBotActive)  _cfStart();
     if (!big && _cfBotActive)  _cfStop();
   }, 500);

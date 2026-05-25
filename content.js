@@ -14,6 +14,7 @@ var _RC_CONTENT_STRINGS = {
     break_worked: 'dakika çalıştın —', break_rest: 'dakika dinlen.',
     break_next_suffix: 'sonra mola',
     w_skipped_prefix: '\u23f8 Pas',
+    w_bot_playing: '🤖 Bot Oynuyor',
   },
   en: {
     w_game: 'Game', w_time: 'Time', w_now_playing: 'Now Playing',
@@ -26,6 +27,7 @@ var _RC_CONTENT_STRINGS = {
     break_worked: 'minutes worked —', break_rest: 'minutes rest.',
     break_next_suffix: 'until break',
     w_skipped_prefix: '\u23f8 Skipped',
+    w_bot_playing: '🤖 Bot Playing',
   },
 };
 function cT(key) {
@@ -199,9 +201,14 @@ window.nextBreakTime = null;
 var mainTimer = null;
 var breakCheckTimer = null;
 
-chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak'], (data) => {
+chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled'], (data) => {
   window.autoCollect = data.autoCollect !== false;
   window.autoChoose  = data.autoChoose  !== false;
+  window._rcBotEnabled = {
+    botFisherEnabled:  data.botFisherEnabled  !== false,
+    botHamsterEnabled: data.botHamsterEnabled !== false,
+    bot2048Enabled:    data.bot2048Enabled    !== false
+  };
   window.breakReminderEnabled = data.breakReminder !== false;
   if (data.breakSessionMin)  window.breakSessionMinutes  = parseFloat(data.breakSessionMin);
   if (data.breakDurationMin) window.breakDurationMinutes = parseFloat(data.breakDurationMin);
@@ -649,6 +656,9 @@ function createFloatButton() {
       <span id="rc-now-playing-lbl">${cT('w_now_playing')}</span>
     </div>
     <div id="rc-now-playing-name" style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
+    <div id="rc-bot-playing-row" style="display:none; align-items:center; gap:5px; margin-top:5px; padding-top:5px; border-top:1px solid rgba(255,61,107,0.18);">
+      <span style="font-size:10px; font-weight:700; color:#FF3D6B; animation:rcBotPulse 1.5s ease-in-out infinite;" id="rc-bot-playing-lbl">${cT('w_bot_playing')}</span>
+    </div>
   `;
   wrapper.appendChild(nowPlayingCard);
 
@@ -755,6 +765,7 @@ function createStatusWidget() {
   const style = document.createElement('style');
   style.textContent = `
     @keyframes rcFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes rcBotPulse { 0%,100% { opacity:1; } 50% { opacity:0.45; } }
     #rc-status-widget, #rc-status-widget * { box-sizing:border-box; font-family:'Inter',system-ui,sans-serif !important; }
     #rc-log-container::-webkit-scrollbar { width:3px; }
     #rc-log-container::-webkit-scrollbar-thumb { background:#1E2545; border-radius:2px; }
@@ -1286,6 +1297,18 @@ function updatePlayingIndicator(name) {
     card.style.display = 'none';
     if (nameEl) nameEl.textContent = '—';
   }
+  _updateBotPlayingWidget();
+}
+
+function _updateBotPlayingWidget() {
+  var anyBotActive = (
+    (window._rcCoinFisher  && window._rcCoinFisher.isActive())  ||
+    (window._rcHamster     && window._rcHamster.isActive())     ||
+    (window._rc2048        && window._rc2048.isActive())
+  );
+  var el = document.getElementById('rc-bot-playing-row');
+  if (!el) return;
+  el.style.display = anyBotActive ? 'flex' : 'none';
 }
 
 function recordGameCompletion(name, durationMs) {
@@ -1444,6 +1467,26 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       chrome.storage.local.set({ permanentSkippedGames: window.permanentSkippedGames });
       updateSkippedDisplay();
     }
+    sendResponse({ ok: true });
+    return true;
+  }
+  else if (msg.action === 'getBotStatus') {
+    sendResponse({
+      bots: {
+        fisher:  !!(window._rcCoinFisher  && window._rcCoinFisher.isActive()),
+        hamster: !!(window._rcHamster     && window._rcHamster.isActive()),
+        '2048':  !!(window._rc2048        && window._rc2048.isActive())
+      }
+    });
+    return true;
+  }
+  else if (msg.action === 'setBotEnabled') {
+    window._rcBotEnabled = window._rcBotEnabled || {};
+    window._rcBotEnabled[msg.bot] = msg.enabled;
+    /* Bot'u direkt durdur/başlat */
+    if (msg.bot === 'botFisherEnabled'  && window._rcCoinFisher)  { if (!msg.enabled) window._rcCoinFisher.stop(); }
+    if (msg.bot === 'botHamsterEnabled' && window._rcHamster)     { if (!msg.enabled) window._rcHamster.stop(); }
+    if (msg.bot === 'bot2048Enabled'    && window._rc2048)        { if (!msg.enabled) window._rc2048.stop(); }
     sendResponse({ ok: true });
     return true;
   }
