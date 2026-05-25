@@ -12,10 +12,22 @@
   var _cooldownMs   = 80;   /* CoinClick hızlı tıklama gerektirir */
 
   function _isGame() {
-    var name = (window._activeGame && window._activeGame.name) ||
-               window.currentPlayingGame || window.lastSelectedGame || '';
-    var n = name.toLowerCase();
-    return n.includes('coinclick') || n.includes('coin click');
+    var sources = [
+      (window._activeGame && window._activeGame.name) || '',
+      window.currentPlayingGame || '',
+      window.lastSelectedGame || '',
+      document.title || ''
+    ];
+    return sources.some(function(s) {
+      var n = s.toLowerCase();
+      return n.includes('coinclick') || n.includes('coin click');
+    });
+  }
+
+  function _isBigCanvas() {
+    var c = _getCanvas();
+    if (!c) return false;
+    return c.getBoundingClientRect().width > window.innerWidth * 0.6;
   }
 
   function _getCanvas() {
@@ -121,14 +133,14 @@
 
   document.addEventListener('fullscreenchange', function () {
     if (!!document.fullscreenElement && _isGame()) _start();
-    else _stop();
+    else if (!document.fullscreenElement) _stop();
   });
 
   setInterval(function () {
-    var isFS = !!document.fullscreenElement;
-    if (isFS && _isGame() && !_botActive)   _start();
-    if ((!isFS || !_isGame()) && _botActive) _stop();
-  }, 2000);
+    var big = _isBigCanvas() && _isGame();
+    if (big && !_botActive)  _start();
+    if (!big && _botActive)  _stop();
+  }, 500);
 
   window._rcCoinClick = { start: _start, stop: _stop, isActive: function () { return _botActive; } };
 })();

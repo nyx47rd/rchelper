@@ -16,10 +16,16 @@
 
   /* Coin Fisher oyununda mıyız? */
   function _isCoinFisher() {
-    var name = (window._activeGame && window._activeGame.name) ||
-               window.currentPlayingGame || window.lastSelectedGame || '';
-    return name.toLowerCase().includes('coin fisher') ||
-           name.toLowerCase().includes('coinfisher');
+    var sources = [
+      (window._activeGame && window._activeGame.name) || '',
+      window.currentPlayingGame || '',
+      window.lastSelectedGame || '',
+      document.title || ''
+    ];
+    return sources.some(function(s) {
+      var n = s.toLowerCase();
+      return n.includes('coin fisher') || n.includes('coinfisher');
+    });
   }
 
   function _getCanvas() {
@@ -135,19 +141,27 @@
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🎣 Coin Fisher Bot durdu');
   }
 
-  /* Fullscreen değişikliğini dinle */
+  /* Canvas "büyük" mü? — fullscreen API yerine boyut kontrolü */
+  function _isBigCanvas() {
+    var c = _getCanvas();
+    if (!c) return false;
+    var rect = c.getBoundingClientRect();
+    /* canvas genişliği viewport'un %60'ından büyükse aktif say */
+    return rect.width > window.innerWidth * 0.6;
+  }
+
+  /* Fullscreen API'yi de dinle (bazı tarayıcılarda çalışır) */
   document.addEventListener('fullscreenchange', function () {
-    var isFS = !!document.fullscreenElement;
-    if (isFS && _isCoinFisher()) _cfStart();
-    else _cfStop();
+    if (!!document.fullscreenElement && _isCoinFisher()) _cfStart();
+    else if (!document.fullscreenElement) _cfStop();
   });
 
-  /* Periyodik kontrol: sayfa zaten fullscreen'deyse veya oyun sonradan belli olursa */
+  /* Ana tetikleyici: canvas büyüdüğünde başlat, küçüldüğünde durdur */
   setInterval(function () {
-    var isFS = !!document.fullscreenElement;
-    if (isFS && _isCoinFisher() && !_cfBotActive)  _cfStart();
-    if ((!isFS || !_isCoinFisher()) && _cfBotActive) _cfStop();
-  }, 2000);
+    var big = _isBigCanvas() && _isCoinFisher();
+    if (big && !_cfBotActive)  _cfStart();
+    if (!big && _cfBotActive)  _cfStop();
+  }, 500);
 
   window._rcCoinFisher = {
     start:    _cfStart,
