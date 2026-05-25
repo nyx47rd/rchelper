@@ -1,13 +1,17 @@
 /* ══════════════════════════════════════════════════════════════════
    RC Helper — 2048 Coins Auto-Bot
-   Ok tuşlarına rastgele basarak oyunu oynar
+   Strateji: Sağ alt köşeyi tut, sıralı döngü (sol→aşağı→sağ→aşağı), yukarı nadiren
    ══════════════════════════════════════════════════════════════════ */
 (function () {
   var _botActive = false;
   var _loopId    = null;
-  var _INTERVAL  = 150; /* her kaç ms'de bir tuşa bassın */
+  var _INTERVAL  = 200; /* her kaç ms'de bir tuşa bassın */
+  var _lastKey   = null;
+  var _cycleIdx  = 0;
+  var _upCounter = 0;
 
-  var KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+  /* Sıralı döngü: sol → aşağı → sağ → aşağı (yukarı nadiren) */
+  var CYCLE = ['ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowDown'];
 
   function _isGame() {
     var sources = [
@@ -48,7 +52,18 @@
 
   function _tick() {
     if (!_botActive) return;
-    var key = KEYS[Math.floor(Math.random() * KEYS.length)];
+    var key;
+    /* Her 8 hamlede bir yukarı tuşuna bas (reset için) */
+    _upCounter++;
+    if (_upCounter >= 8) {
+      key = 'ArrowUp';
+      _upCounter = 0;
+      _cycleIdx = 0; /* döngüyü sıfırla */
+    } else {
+      key = CYCLE[_cycleIdx];
+      _cycleIdx = (_cycleIdx + 1) % CYCLE.length;
+    }
+    _lastKey = key;
     _pressKey(key);
   }
 
