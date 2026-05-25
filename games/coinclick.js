@@ -72,9 +72,9 @@
   function _isBackground(r, g, b) {
     /* Turuncu gokyuzu: R yuksek, G orta, B orta-yuksek (>60) */
     if (r > 180 && g > 80 && g < 180 && b > 50 && b < 140) return true;
-    /* Gri tas/duvar: hepsi 80-160 arasi */
-    if (r > 70 && r < 170 && g > 60 && g < 160 && b > 50 && b < 150 &&
-        Math.max(r,g,b) - Math.min(r,g,b) < 50) return true;
+    /* Gri tas/duvar: hepsi 80-235 arasi ve birbirine yakin (207,206,203 gibi) */
+    if (r > 70 && g > 60 && b > 50 &&
+        Math.max(r,g,b) - Math.min(r,g,b) < 15) return true;
     return false;
   }
 
@@ -87,9 +87,9 @@
     if (r > 180 && r > g + 60 && b < 50)           return 'BTC';
     /* ALTIN/SARI (DOGE): R ve G yuksek, B cok dusuk */
     if (r > 170 && g > 140 && b < 60)              return 'DOGE';
-    /* GUMUS/BEYAZ (LTC): hepsi 200+ ve birbirine cok yakin */
-    if (r > 200 && g > 200 && b > 200 &&
-        Math.max(r,g,b) - Math.min(r,g,b) < 25)   return 'LTC';
+    /* GUMUS/BEYAZ (LTC): hepsi 220+ ve cok parlak - duvar dokusundan (207,206,203) ayri */
+    if (r > 220 && g > 220 && b > 220 &&
+        Math.max(r,g,b) - Math.min(r,g,b) < 20)   return 'LTC';
     /* ETH mor-mavi */
     if (b > 150 && r > 40 && r < 120 && g > 60 && g < 150) return 'ETH';
     return null;
@@ -106,10 +106,14 @@
     var rect    = canvas.getBoundingClientRect();
     var clientX = rect.left + cx * (rect.width  / canvas.width);
     var clientY = rect.top  + cy * (rect.height / canvas.height);
-    var opts = { bubbles: true, cancelable: true, clientX: clientX, clientY: clientY };
-    canvas.dispatchEvent(new MouseEvent('mousedown', opts));
-    canvas.dispatchEvent(new MouseEvent('mouseup',   opts));
-    canvas.dispatchEvent(new MouseEvent('click',     opts));
+    var mOpts = { bubbles: true, cancelable: true, clientX: clientX, clientY: clientY };
+    var pOpts = { bubbles: true, cancelable: true, clientX: clientX, clientY: clientY,
+                  pointerId: 1, pointerType: 'mouse', isPrimary: true };
+    canvas.dispatchEvent(new PointerEvent('pointerdown', pOpts));
+    canvas.dispatchEvent(new MouseEvent('mousedown', mOpts));
+    canvas.dispatchEvent(new PointerEvent('pointerup',   pOpts));
+    canvas.dispatchEvent(new MouseEvent('mouseup',   mOpts));
+    canvas.dispatchEvent(new MouseEvent('click',     mOpts));
   }
 
   function _scan() {
