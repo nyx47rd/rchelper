@@ -102,22 +102,60 @@
     return r < 20 && g > 200 && b > 200;
   }
 
+  /* Phaser game instance'ını bul */
+  function _getPhaserGame() {
+    /* Phaser 3: canvas.__gameInstance veya window.game */
+    var c = _getCanvas();
+    if (c && c.__gameInstance) return c.__gameInstance;
+    if (window.game && window.game.input) return window.game;
+    /* Phaser global registry */
+    if (window.Phaser && window.Phaser.GameObjects) {
+      var keys = Object.keys(window).filter(function(k) {
+        try { return window[k] && window[k].input && window[k].input.manager; } catch(e) { return false; }
+      });
+      if (keys.length) return window[keys[0]];
+    }
+    return null;
+  }
+
   function _clickCanvas(canvas, cx, cy) {
     var rect    = canvas.getBoundingClientRect();
     var scaleX  = rect.width  / canvas.width;
     var scaleY  = rect.height / canvas.height;
     var clientX = rect.left + cx * scaleX;
     var clientY = rect.top  + cy * scaleY;
-    /* Phaser pointer koordinatı: canvas sol-üst köşesinden offset */
-    var canvasX = cx * scaleX;
-    var canvasY = cy * scaleY;
-    var mOpts = { bubbles: true, cancelable: true,
-                  clientX: clientX, clientY: clientY,
-                  offsetX: canvasX, offsetY: canvasY };
+
+    /* Yontem 1: Phaser input manager'a direkt yaz */
+    var game = _getPhaserGame();
+    if (game && game.input && game.input.manager) {
+      var mgr = game.input.manager;
+      /* Pointer'i belirli konuma tasi ve down/up tetikle */
+      try {
+        var ptr = game.input.activePointer || game.input.pointer1;
+        if (ptr) {
+          ptr.x = cx; ptr.y = cy;
+          ptr.worldX = cx; ptr.worldY = cy;
+          ptr.isDown = true;
+          if (ptr.downCallback) ptr.downCallback(ptr);
+          if (game.input.emit) {
+            game.input.emit('pointerdown', ptr);
+            game.input.emit('pointerup',   ptr);
+          }
+          ptr.isDown = false;
+          console.log('[RC-CC] 🎯 Phaser direct input:', cx, cy);
+          return;
+        }
+      } catch(e) { /* fallback */ }
+    }
+
+    /* Yontem 2: DOM event dispatch */
     var pOpts = { bubbles: true, cancelable: true,
                   clientX: clientX, clientY: clientY,
-                  offsetX: canvasX, offsetY: canvasY,
+                  offsetX: cx * scaleX, offsetY: cy * scaleY,
                   pointerId: 1, pointerType: 'mouse', isPrimary: true };
+    var mOpts = { bubbles: true, cancelable: true,
+                  clientX: clientX, clientY: clientY,
+                  offsetX: cx * scaleX, offsetY: cy * scaleY };
     canvas.dispatchEvent(new PointerEvent('pointerdown', pOpts));
     canvas.dispatchEvent(new MouseEvent('mousedown', mOpts));
     canvas.dispatchEvent(new PointerEvent('pointerup',   pOpts));
