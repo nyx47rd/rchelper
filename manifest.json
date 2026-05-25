@@ -23,6 +23,11 @@
       "matches": ["*://*.rollercoin.com/*", "*://rollercoin.com/*"],
       "js": ["content.js"],
       "run_at": "document_end"
+    },
+    {
+      "matches": ["*://*.rollercoin.com/game/play_game*", "*://rollercoin.com/game/play_game*"],
+      "js": ["games/coin-fisher.js"],
+      "run_at": "document_end"
     }
   ]
 }
