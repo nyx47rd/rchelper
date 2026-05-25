@@ -1509,6 +1509,163 @@ if (document.readyState === 'loading') {
   }, 500);
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   Coin Fisher Auto-Bot
+   Tetikleyici: play_game sayfası + canvas tam ekran yapılınca başlar
+   ══════════════════════════════════════════════════════════════════ */
+(function() {
+  var _cfBotActive = false;
+  var _cfLoopId    = null;
+  var _cfOffscreen = null; /* OffscreenCanvas veya regular canvas */
+  var _cfCtx       = null;
+  var _cfLastHit   = 0;
+  var _cfCooldownMs = 500; /* tıklamalar arası minimum bekleme */
+
+  /* Coin Fisher oyununda mıyız? lastSelectedGame veya currentPlayingGame'e bak */
+  function _isCoinFisher() {
+    var name = (window._activeGame && window._activeGame.name) ||
+               window.currentPlayingGame || window.lastSelectedGame || '';
+    return name.toLowerCase().includes('coin fisher') ||
+           name.toLowerCase().includes('coinfisher');
+  }
+
+  /* Canvas elementini bul */
+  function _getCanvas() {
+    return document.querySelector('#phaserGame canvas') ||
+           document.querySelector('canvas');
+  }
+
+  /* Piksel okuma için offscreen 2D canvas hazırla */
+  function _ensureOffscreen(w, h) {
+    if (_cfOffscreen && _cfOffscreen.width === w && _cfOffscreen.height === h) return true;
+    try {
+      _cfOffscreen = document.createElement('canvas');
+      _cfOffscreen.width  = w;
+      _cfOffscreen.height = h;
+      _cfCtx = _cfOffscreen.getContext('2d', { willReadFrequently: true });
+      return !!_cfCtx;
+    } catch(e) { return false; }
+  }
+
+  /* Renk eşleşme: Python kodundaki coin renkleri */
+  function _isCoin(r, g, b) {
+    /* 1. BTC – turuncu */
+    if (r > 240 && g > 130 && g < 170 && b < 50) return true;
+    /* 2. DOGE / GOLD – sarı-altın */
+    if (r > 220 && g > 190 && b > 80 && b < 120) return true;
+    /* 3. ETH – mavi-mor */
+    if (r > 110 && r < 150 && g > 130 && g < 180 && b > 240) return true;
+    /* 4. LTC – gümüş/beyaz (R≈G≈B, hepsi 210+, mavi su'dan ayırt için |R-B|<5) */
+    if (r > 210 && g > 210 && b > 210 && Math.abs(r - b) < 5) return true;
+    /* 5. DASH – koyu mavi */
+    if (r < 50 && g > 100 && g < 150 && b > 190 && b < 230) return true;
+    return false;
+  }
+
+  /* Canvas'a tıkla: gerçek koordinat = CSS boyutuna orantılı */
+  function _clickCanvas(canvas, cx, cy) {
+    /* cx,cy: canvas internal piksel (960x800) → CSS piksel'e çevir */
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = rect.width  / canvas.width;
+    var scaleY = rect.height / canvas.height;
+    var clientX = rect.left + cx * scaleX;
+    var clientY = rect.top  + cy * scaleY;
+    var opts = { bubbles: true, cancelable: true, clientX: clientX, clientY: clientY };
+    canvas.dispatchEvent(new MouseEvent('mousedown', opts));
+    canvas.dispatchEvent(new MouseEvent('mouseup',   opts));
+    canvas.dispatchEvent(new MouseEvent('click',     opts));
+    console.log('[RC-CF] 🪙 Coin tıklandı:', cx, cy, '(client:', Math.round(clientX), Math.round(clientY) + ')');
+  }
+
+  /* Ana tarama döngüsü — requestAnimationFrame yerine setInterval (daha kararlı) */
+  function _cfScan() {
+    if (!_cfBotActive) return;
+
+    var canvas = _getCanvas();
+    if (!canvas || !canvas.width || !canvas.height) return;
+
+    /* Cooldown: tıklamadan sonra kısa bekle */
+    var now = Date.now();
+    if (now - _cfLastHit < _cfCooldownMs) return;
+
+    if (!_ensureOffscreen(canvas.width, canvas.height)) return;
+
+    /* WebGL canvas'ı drawImage ile 2D ctx'e kopyala */
+    try {
+      _cfCtx.drawImage(canvas, 0, 0);
+    } catch(e) {
+      /* taint edilmiş canvas — erişim yok */
+      console.warn('[RC-CF] Canvas okunamıyor (tainted):', e.message);
+      _cfStop();
+      return;
+    }
+
+    var step = 7; /* her 7 pikselde bir tara — Python ile aynı */
+    var w = canvas.width, h = canvas.height;
+    var data;
+    try {
+      data = _cfCtx.getImageData(0, 0, w, h).data;
+    } catch(e) { return; }
+
+    var found = false;
+    outer:
+    for (var x = 0; x < w; x += step) {
+      for (var y = 0; y < h; y += step) {
+        var idx = (y * w + x) * 4;
+        var r = data[idx], g = data[idx+1], b = data[idx+2];
+        if (_isCoin(r, g, b)) {
+          _cfLastHit = Date.now();
+          _clickCanvas(canvas, x, y);
+          found = true;
+          break outer;
+        }
+      }
+    }
+    if (!found) { /* sessiz */ }
+  }
+
+  function _cfStart() {
+    if (_cfBotActive) return;
+    _cfBotActive = true;
+    console.log('[RC-CF] ✅ Coin Fisher bot BAŞLADI (fullscreen tetiklendi)');
+    if (window.updateRCStatus) window.updateRCStatus('[RC] 🎣 Coin Fisher Bot aktif');
+    _cfLoopId = setInterval(_cfScan, 100); /* ~10 fps tarama */
+  }
+
+  function _cfStop() {
+    if (!_cfBotActive) return;
+    _cfBotActive = false;
+    if (_cfLoopId) { clearInterval(_cfLoopId); _cfLoopId = null; }
+    console.log('[RC-CF] ⏹ Coin Fisher bot DURDU');
+    if (window.updateRCStatus) window.updateRCStatus('[RC] 🎣 Coin Fisher Bot durdu');
+  }
+
+  /* Fullscreen değişikliğini dinle */
+  document.addEventListener('fullscreenchange', function() {
+    var isFS = !!document.fullscreenElement;
+    var onPlayPage = window.location.href.includes('/play_game');
+    if (isFS && onPlayPage && _isCoinFisher()) {
+      _cfStart();
+    } else {
+      _cfStop();
+    }
+  });
+
+  /* Sayfa zaten fullscreen ile açıldıysa veya oyun sonradan tespit edilirse */
+  setInterval(function() {
+    var isFS = !!document.fullscreenElement;
+    var onPlayPage = window.location.href.includes('/play_game');
+    if (isFS && onPlayPage && _isCoinFisher() && !_cfBotActive) {
+      _cfStart();
+    } else if ((!isFS || !onPlayPage || !_isCoinFisher()) && _cfBotActive) {
+      _cfStop();
+    }
+  }, 2000);
+
+  /* Dışarıdan erişim (debug) */
+  window._rcCoinFisher = { start: _cfStart, stop: _cfStop, isActive: function() { return _cfBotActive; } };
+})();
+
 /* ── Manuel tıklama interceptor: START butonuna tıklanınca oyun adını yakala ── */
 document.addEventListener('click', function(e) {
   if (!window.location.href.includes('/choose_game')) return;
