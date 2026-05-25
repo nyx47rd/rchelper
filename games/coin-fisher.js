@@ -9,10 +9,10 @@
   var _cfOffscreen   = null;
   var _cfCtx         = null;
   var _cfLastHit     = 0;
-  var _cfCooldownMs  = 500;
+  var _cfCooldownMs  = 200;  /* ms: tıklamalar arası bekleme */
   var _cfBlocked     = [];   /* { x, y, until } */
-  var _cfBlockMs     = 1500;
-  var _cfBlockRadius = 20;
+  var _cfBlockMs     = 800;  /* ms: bir nokta ne kadar bloklu kalır */
+  var _cfBlockRadius = 25;   /* piksel yarıçap */
 
   /* Coin Fisher oyununda mıyız? */
   function _isCoinFisher() {
@@ -92,7 +92,7 @@
       return;
     }
 
-    var w = canvas.width, h = canvas.height, step = 7;
+    var w = canvas.width, h = canvas.height, step = 18;
     var data;
     try { data = _cfCtx.getImageData(0, 0, w, h).data; }
     catch (e) { return; }
@@ -113,8 +113,10 @@
       available = candidates;
     }
     if (available.length > 0) {
+      /* Rastgele aday seç — hep sol üstten başlamayı önle */
+      var pick = available[Math.floor(Math.random() * available.length)];
       _cfLastHit = Date.now();
-      _clickCanvas(canvas, available[0].x, available[0].y);
+      _clickCanvas(canvas, pick.x, pick.y);
     }
   }
 
