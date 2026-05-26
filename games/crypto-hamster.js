@@ -110,27 +110,6 @@
     return c.getBoundingClientRect().width > window.innerWidth * 0.6;
   }
 
-  /* Canvas köşe renklerini örnekleyerek Crypto Hamster arka planını doğrula
-     Baskın renk #414a59 (65,74,89) ise bu oyun */
-  function _isCryptoHamsterCanvas() {
-    var c = _getCanvas();
-    if (!c || c.width < 100 || c.height < 100) return false;
-    if (!_ensureOffscreen(c.width, c.height)) return false;
-    try { _ctx.drawImage(c, 0, 0); } catch(e) { return false; }
-    var matches = 0;
-    var samplePoints = [
-      [10, 10], [c.width - 10, 10], [10, c.height - 10],
-      [c.width - 10, c.height - 10], [Math.floor(c.width/2), Math.floor(c.height*0.1)]
-    ];
-    try {
-      samplePoints.forEach(function(p) {
-        var d = _ctx.getImageData(p[0], p[1], 1, 1).data;
-        var diff = Math.abs(d[0] - BG_R) + Math.abs(d[1] - BG_G) + Math.abs(d[2] - BG_B);
-        if (diff < 40) matches++;
-      });
-    } catch(e) { return false; }
-    return matches >= 2;
-  }
 
   function _ensureOffscreen(w, h) {
     if (_offscreen && _offscreen.width === w && _offscreen.height === h) return true;
@@ -237,7 +216,7 @@
 
   setInterval(function() {
     var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botCryptoHamsterEnabled'] === false);
-    var active  = _isOnPlayPage() && _isBigCanvas() && _isCryptoHamsterCanvas() && enabled;
+    var active  = _isOnPlayPage() && _isBigCanvas() && enabled;
     if (active  && !_botActive) _start();
     if (!active && _botActive)  _stop();
   }, 500);
