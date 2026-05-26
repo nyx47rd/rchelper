@@ -1,74 +1,99 @@
 /* ══════════════════════════════════════════════════════════════════
-   RC Helper — Crypto Hamster Auto-Bot
-   Mekanik: ArrowLeft / ArrowRight ile karakter hareket eder
-   Strateji: Canvas frame diff ile engel yönünü tespit et,
-             karakterin önündeki alanı tara, boş tarafa kaç
-   Canvas: 960x720, karakter merkezi ~x=464, y=290
+   RC Helper — Crypto Hamster Auto-Bot v2
+   Mekanik: Doodle Jump benzeri — karakter sürekli zıplar,
+            ArrowLeft/Right ile yatay hareket
+   Strateji: Canvas'tan karakter x'i ve altındaki platform x'ini
+             tespit et, platform merkezine doğru yönlen
+   Canvas: 960x720 (analiz raporundan)
    ══════════════════════════════════════════════════════════════════ */
 (function () {
   var _botActive  = false;
   var _loopId     = null;
-  var _INTERVAL   = 80;   /* ms — hızlı tepki gerekli */
+  var _INTERVAL   = 60;   /* ms — hızlı tepki */
 
   var _offscreen  = null;
   var _ctx        = null;
-  var _prevData   = null; /* önceki frame piksel verisi */
 
-  /* Canvas bilgileri (analiz raporundan) */
-  var _CW = 960, _CH = 720;
+  /* Arka plan rengi: #414a59 rgb(65,74,89) — analiz raporundan */
+  var BG_R = 65, BG_G = 74, BG_B = 89;
 
-  /* Karakter bölgesi: analiz raporunda x=464-480, y=256-320 */
-  var _CHAR_X = 464, _CHAR_Y = 288;
-  var _CHAR_W = 32,  _CHAR_H = 48;
-
-  /* Tehlike tespiti için tarama bandı:
-     Karakterin soluna ve sağına bak (engel var mı?) */
-  var _SCAN_Y1     = 200;  /* tarama üst sınır */
-  var _SCAN_Y2     = 400;  /* tarama alt sınır */
-  var _SCAN_MARGIN = 120;  /* karakterin ne kadar soluna/sağına bak */
-
-  /* Arka plan renkleri (analiz: #414a59 ve #242636) */
-  function _isBg(r, g, b) {
-    /* Ana arka plan #414a59 */
-    if (r > 50 && r < 80 && g > 60 && g < 90 && b > 75 && b < 105) return true;
-    /* Koyu #242636 */
-    if (r < 50 && g < 55 && b < 70) return true;
-    /* Mavi-gri zemin tonları */
-    if (r > 80 && r < 110 && g > 95 && g < 120 && b > 120 && b < 155) return true;
+  /* Platform renkleri (analiz: gri #adadad, kahve #8a745c, açık gri #c0c0c0) */
+  function _isPlatform(r, g, b) {
+    /* Gri platform: #adadad */
+    if (r > 150 && r < 200 && g > 150 && g < 200 && b > 150 && b < 200 &&
+        Math.abs(r-g) < 25 && Math.abs(g-b) < 25) return true;
+    /* Kahverengi platform: #8a745c #6c5b48 #9d866d */
+    if (r > 90 && r < 180 && g > 70 && g < 160 && b > 50 && b < 120 &&
+        r > g && g > b) return true;
+    /* Açık gri: #c0c0c0 */
+    if (r > 175 && r < 215 && g > 175 && g < 215 && b > 175 && b < 215) return true;
     return false;
   }
 
-  /* Engel var mı? (non-bg piksel yoğunluğu) */
-  function _obstacleScore(data, w, x1, x2, y1, y2) {
-    var score = 0;
-    var step  = 4;
-    for (var y = y1; y < y2; y += step) {
-      for (var x = x1; x < x2; x += step) {
-        if (x < 0 || x >= w || y < 0 || y >= _CH) continue;
-        var idx = (y * w + x) * 4;
-        var r = data[idx], g = data[idx+1], b = data[idx+2];
-        if (!_isBg(r, g, b)) score++;
-      }
-    }
-    return score;
+  /* Arka plan mı? */
+  function _isBg(r, g, b) {
+    var diff = Math.abs(r - BG_R) + Math.abs(g - BG_G) + Math.abs(b - BG_B);
+    return diff < 35;
   }
 
-  /* Hareket eden engelleri tespit et (frame diff) */
-  function _motionScore(prevData, currData, w, x1, x2, y1, y2) {
-    if (!prevData) return 0;
-    var score = 0;
-    var step  = 4;
-    for (var y = y1; y < y2; y += step) {
-      for (var x = x1; x < x2; x += step) {
-        if (x < 0 || x >= w || y < 0 || y >= _CH) continue;
+  /* ── Karakter x konumunu bul ──
+     Karakteri canvas'ın ortasında ara: y=180~500, x=her yer
+     Arka plandan en farklı & en yoğun renk kümesinin merkezi */
+  function _findCharX(data, w, h) {
+    var colScore = new Float32Array(w);
+    var y1 = Math.floor(h * 0.25), y2 = Math.floor(h * 0.75);
+    for (var y = y1; y < y2; y += 3) {
+      for (var x = 0; x < w; x += 3) {
         var idx = (y * w + x) * 4;
-        var dr = Math.abs(currData[idx]   - prevData[idx]);
-        var dg = Math.abs(currData[idx+1] - prevData[idx+1]);
-        var db = Math.abs(currData[idx+2] - prevData[idx+2]);
-        if (dr + dg + db > 40) score++;
+        var r = data[idx], g = data[idx+1], b = data[idx+2];
+        if (!_isBg(r, g, b) && !_isPlatform(r, g, b)) {
+          /* Arka plan ve platform dışı = karakter pikseli */
+          colScore[x]++;
+        }
       }
     }
-    return score;
+    /* En yoğun sütun bölgesini bul (sliding window 40px) */
+    var winW = 40, bestX = -1, bestScore = 0;
+    for (var x2 = 0; x2 < w - winW; x2++) {
+      var s = 0;
+      for (var dx = 0; dx < winW; dx++) s += colScore[x2 + dx];
+      if (s > bestScore) { bestScore = s; bestX = x2 + winW / 2; }
+    }
+    return bestX > 0 ? bestX : Math.floor(w / 2);
+  }
+
+  /* ── Karakterin altındaki en yakın platform x merkezini bul ──
+     charX etrafında ±300px, charY'nin altında ara */
+  function _findPlatformBelow(data, w, h, charX, charY) {
+    /* Platformlar karakterin hemen altında veya biraz aşağıda */
+    var searchY1 = Math.min(h - 1, charY + 10);
+    var searchY2 = Math.min(h - 1, charY + 200);
+    var searchX1 = Math.max(0, charX - 350);
+    var searchX2 = Math.min(w - 1, charX + 350);
+
+    /* Her satırda platform piksel sayısını say */
+    var bestRow = -1, bestRowScore = 0;
+    for (var y = searchY1; y < searchY2; y += 2) {
+      var rowScore = 0;
+      for (var x = searchX1; x < searchX2; x += 3) {
+        var idx = (y * w + x) * 4;
+        if (_isPlatform(data[idx], data[idx+1], data[idx+2])) rowScore++;
+      }
+      if (rowScore > bestRowScore) { bestRowScore = rowScore; bestRow = y; }
+    }
+
+    if (bestRow < 0 || bestRowScore < 3) return -1;
+
+    /* O satırdaki platform x aralığını bul */
+    var minX = w, maxX = 0;
+    for (var x3 = searchX1; x3 < searchX2; x3 += 2) {
+      var idx2 = (bestRow * w + x3) * 4;
+      if (_isPlatform(data[idx2], data[idx2+1], data[idx2+2])) {
+        if (x3 < minX) minX = x3;
+        if (x3 > maxX) maxX = x3;
+      }
+    }
+    return Math.round((minX + maxX) / 2);
   }
 
   function _isGame() {
@@ -101,24 +126,37 @@
     return !!_ctx;
   }
 
-  function _pressKey(key) {
+  /* Tuşa basılı tut (keydown sürekli) */
+  var _heldKey = null;
+  function _holdKey(key) {
+    if (_heldKey === key) return;
+    _releaseKey();
+    _heldKey = key;
     var codes = { ArrowLeft: 37, ArrowRight: 39 };
-    var opts  = { key: key, code: key, keyCode: codes[key], which: codes[key],
-                  bubbles: true, cancelable: true };
     var canvas = _getCanvas();
+    var opts = { key: key, code: key, keyCode: codes[key], which: codes[key],
+                 bubbles: true, cancelable: true };
     [window, document, canvas].forEach(function(t) {
-      if (!t) return;
-      t.dispatchEvent(new KeyboardEvent('keydown', opts));
-      setTimeout(function() {
-        t.dispatchEvent(new KeyboardEvent('keyup', opts));
-      }, 40);
+      if (t) t.dispatchEvent(new KeyboardEvent('keydown', opts));
     });
   }
 
-  var _lastMove    = 0;
-  var _moveCooldown = 120; /* ms — aynı yöne çok hızlı basma */
-  var _lastDir     = null;
-  var _stuckCount  = 0;
+  function _releaseKey() {
+    if (!_heldKey) return;
+    var codes = { ArrowLeft: 37, ArrowRight: 39 };
+    var canvas = _getCanvas();
+    var opts = { key: _heldKey, code: _heldKey,
+                 keyCode: codes[_heldKey], which: codes[_heldKey],
+                 bubbles: true, cancelable: true };
+    [window, document, canvas].forEach(function(t) {
+      if (t) t.dispatchEvent(new KeyboardEvent('keyup', opts));
+    });
+    _heldKey = null;
+  }
+
+  /* Fallback: platform bulunamazsa sağa-sola sallan */
+  var _fallbackDir = 'ArrowRight';
+  var _fallbackCount = 0;
 
   function _tick() {
     if (!_botActive) return;
@@ -128,67 +166,45 @@
     var w = canvas.width, h = canvas.height;
     if (!_ensureOffscreen(w, h)) return;
 
-    var currData;
+    var data;
     try {
       _ctx.drawImage(canvas, 0, 0);
-      currData = _ctx.getImageData(0, 0, w, h).data;
+      data = _ctx.getImageData(0, 0, w, h).data;
     } catch(e) { return; }
 
-    var now = Date.now();
+    /* Karakter x'ini bul */
+    var charX = _findCharX(data, w, h);
+    /* Karakter y'si: ortanın biraz altı (analiz: y=264-352 arası) */
+    var charY = Math.floor(h * 0.42);
 
-    /* Karakterin solundaki ve sağındaki tehlike skorları */
-    var charLeft  = Math.max(0, _CHAR_X - _SCAN_MARGIN);
-    var charRight = Math.min(w - 1, _CHAR_X + _CHAR_W + _SCAN_MARGIN);
-    var charMidL  = _CHAR_X;
-    var charMidR  = _CHAR_X + _CHAR_W;
+    /* Altındaki platform merkezini bul */
+    var platX = _findPlatformBelow(data, w, h, charX, charY);
 
-    /* Sol bölge: karakter sol kenarından sola */
-    var leftObstacle  = _obstacleScore(currData, w, charLeft, charMidL, _SCAN_Y1, _SCAN_Y2);
-    var leftMotion    = _motionScore(_prevData, currData, w, charLeft, charMidL, _SCAN_Y1, _SCAN_Y2);
-
-    /* Sağ bölge: karakter sağ kenarından sağa */
-    var rightObstacle = _obstacleScore(currData, w, charMidR, charRight, _SCAN_Y1, _SCAN_Y2);
-    var rightMotion   = _motionScore(_prevData, currData, w, charMidR, charRight, _SCAN_Y1, _SCAN_Y2);
-
-    /* Yakında engel var mı? (hareket + varlık birlikte) */
-    var leftDanger  = leftObstacle  * 0.4 + leftMotion  * 0.6;
-    var rightDanger = rightObstacle * 0.4 + rightMotion * 0.6;
-
-    var dir = null;
-
-    if (leftDanger > 20 && rightDanger > 20) {
-      /* Her iki taraf tehlikeli → daha az tehlikeli olanı seç */
-      dir = (leftDanger < rightDanger) ? 'ArrowLeft' : 'ArrowRight';
-    } else if (leftDanger > 20) {
-      dir = 'ArrowRight'; /* soldan tehlike → sağa kaç */
-    } else if (rightDanger > 20) {
-      dir = 'ArrowLeft';  /* sağdan tehlike → sola kaç */
-    }
-
-    /* Takılma koruması: uzun süre aynı yönde gidiyorsa ters dön */
-    if (dir === _lastDir) {
-      _stuckCount++;
-      if (_stuckCount > 15) {
-        dir = (dir === 'ArrowLeft') ? 'ArrowRight' : 'ArrowLeft';
-        _stuckCount = 0;
+    if (platX >= 0) {
+      /* Platform bulundu: karakteri platform merkezine yönlendir */
+      var diff = platX - charX;
+      var deadZone = 20; /* bu kadar yakınsa tuş basma */
+      _fallbackCount = 0;
+      if (diff > deadZone) {
+        _holdKey('ArrowRight');
+      } else if (diff < -deadZone) {
+        _holdKey('ArrowLeft');
+      } else {
+        _releaseKey(); /* tam üstündeyiz */
       }
     } else {
-      _stuckCount = 0;
+      /* Platform bulunamadı → fallback: sağa-sola sallan */
+      _fallbackCount++;
+      if (_fallbackCount % 20 === 0) {
+        _fallbackDir = (_fallbackDir === 'ArrowRight') ? 'ArrowLeft' : 'ArrowRight';
+      }
+      _holdKey(_fallbackDir);
     }
-
-    if (dir && (now - _lastMove) >= _moveCooldown) {
-      _pressKey(dir);
-      _lastDir  = dir;
-      _lastMove = now;
-    }
-
-    _prevData = currData;
   }
 
   function _start() {
     if (_botActive) return;
     _botActive = true;
-    _prevData  = null;
     console.log('[RC-CH] ✅ Crypto Hamster bot BAŞLADI');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🐹 Crypto Hamster Bot aktif');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
@@ -198,7 +214,7 @@
   function _stop() {
     if (!_botActive) return;
     _botActive = false;
-    _prevData  = null;
+    _releaseKey();
     if (_loopId) { clearInterval(_loopId); _loopId = null; }
     console.log('[RC-CH] ⏹ Crypto Hamster bot DURDU');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🐹 Crypto Hamster Bot durdu');

@@ -54,27 +54,61 @@
       for (var x = 0; x < w; x += step) {
         var idx = (y * w + x) * 4;
         var r = data[idx], g = data[idx+1], b = data[idx+2];
-        /* Saf siyah/beyaz atla */
         if (r === 0 && g === 0 && b === 0) continue;
         var hex = _toHex(r, g, b);
         colorMap[hex] = (colorMap[hex] || 0) + 1;
       }
     }
 
-    /* Satır/sütun yoğunluğu — hareket eden obje tespiti için */
-    var rowBrightness = [];
-    for (var row = 0; row < h; row += 8) {
-      var sum = 0, cnt = 0;
-      for (var col = 0; col < w; col += 8) {
-        var i = (row * w + col) * 4;
-        sum += (data[i] + data[i+1] + data[i+2]) / 3;
-        cnt++;
+    /* ── PLATFORM TESPİTİ: Her sütunda renk değişim satırlarını bul ──
+       Platform = yatay çizgi, arka plandan farklı renk.
+       Her x sütununu tara, arka planla kontrast olan piksel satırlarını kaydet */
+    var platformRows = {}; /* y → o satırdaki platform piksel sayısı */
+    var BG_R = 65, BG_G = 74, BG_B = 89; /* #414a59 */
+    for (var py = 0; py < h; py += 2) {
+      var rowScore = 0;
+      for (var px = 0; px < w; px += 4) {
+        var pi = (py * w + px) * 4;
+        var pr = data[pi], pg = data[pi+1], pb = data[pi+2];
+        var diff = Math.abs(pr - BG_R) + Math.abs(pg - BG_G) + Math.abs(pb - BG_B);
+        if (diff > 60) rowScore++;
       }
-      rowBrightness.push({ y: row, avg: Math.round(sum / cnt) });
+      if (rowScore > 5) platformRows[py] = rowScore;
     }
+    /* En yoğun 20 satır → platform adayları */
+    var platformCandidates = Object.keys(platformRows).map(function(y) {
+      return { y: parseInt(y), score: platformRows[y] };
+    }).sort(function(a,b){ return b.score - a.score; }).slice(0, 20);
 
-    /* En parlak 5 satır (karakter/zemin olabilir) */
-    rowBrightness.sort(function(a,b){ return b.avg - a.avg; });
+    /* ── PLATFORM X KONUMU: Her platform satırı için merkez x bul ── */
+    var platformDetails = platformCandidates.map(function(p) {
+      var minX = w, maxX = 0;
+      for (var px2 = 0; px2 < w; px2 += 2) {
+        var pi2 = (p.y * w + px2) * 4;
+        var pr2 = data[pi2], pg2 = data[pi2+1], pb2 = data[pi2+2];
+        var diff2 = Math.abs(pr2 - BG_R) + Math.abs(pg2 - BG_G) + Math.abs(pb2 - BG_B);
+        if (diff2 > 60) { if (px2 < minX) minX = px2; if (px2 > maxX) maxX = px2; }
+      }
+      return { y: p.y, score: p.score, minX: minX, maxX: maxX,
+               centerX: Math.round((minX + maxX) / 2),
+               width: maxX - minX };
+    }).filter(function(p) { return p.width > 20 && p.width < w * 0.9; }); /* gerçek platform = orta genişlikte */
+
+    /* ── KARAKTERİ BUL: En fazla hareket eden bölge ── */
+    var charCandidates = [];
+    /* Canvas ortasına odaklan (karakter genellikle ortada) */
+    var cx0 = Math.floor(w * 0.2), cx1 = Math.floor(w * 0.8);
+    var cy0 = Math.floor(h * 0.3), cy1 = Math.floor(h * 0.8);
+    for (var cy = cy0; cy < cy1; cy += 8) {
+      for (var cx = cx0; cx < cx1; cx += 8) {
+        var ci = (cy * w + cx) * 4;
+        var cr = data[ci], cg = data[ci+1], cb2 = data[ci+2];
+        var cdiff = Math.abs(cr - BG_R) + Math.abs(cg - BG_G) + Math.abs(cb2 - BG_B);
+        if (cdiff > 80) charCandidates.push({ x: cx, y: cy, diff: cdiff });
+      }
+    }
+    charCandidates.sort(function(a,b){ return b.diff - a.diff; });
+    var charCenter = charCandidates.length > 0 ? charCandidates[0] : { x: Math.floor(w/2), y: Math.floor(h/2) };
 
     /* En sık 30 renk */
     var sorted = Object.keys(colorMap).map(function(hex) {
@@ -84,12 +118,12 @@
                b: parseInt(hex.slice(5,7),16) };
     }).sort(function(a,b){ return b.count - a.count; });
 
-    /* Hareket eden objeleri tespit için: önceki frame ile fark */
     return {
       ts: Date.now(),
       canvasW: w, canvasH: h,
       topColors: sorted.slice(0, 30),
-      brightRows: rowBrightness.slice(0, 5),
+      platformDetails: platformDetails.slice(0, 10),
+      charCenter: charCenter,
       rawData: data,
       w: w, h: h
     };
@@ -201,14 +235,19 @@
       }
     }
 
-    /* En parlak satırlar */
+    /* Platform tespiti */
     lines.push('');
-    lines.push('[ EN PARLAK SATIRLAR (karakter/zemin konumu tahmini) ]');
-    if (snaps[0]) {
-      snaps[0].brightRows.forEach(function(r) {
-        lines.push('  y=' + r.y + ' → ortalama parlaklık=' + r.avg);
-      });
-    }
+    lines.push('[ PLATFORM TESPİTİ (her snapshot) ]');
+    snaps.forEach(function(snap, si) {
+      lines.push('  Snapshot ' + (si+1) + ' | karakter: x=' + snap.charCenter.x + ' y=' + snap.charCenter.y);
+      if (snap.platformDetails.length === 0) {
+        lines.push('    Platform bulunamadı');
+      } else {
+        snap.platformDetails.slice(0, 5).forEach(function(p) {
+          lines.push('    Platform: y=' + p.y + ' x=' + p.minX + '~' + p.maxX + ' merkez=' + p.centerX + ' genişlik=' + p.width + ' skor=' + p.score);
+        });
+      }
+    });
 
     lines.push('');
     lines.push('═══════════════════════════════════════════════════════════');
