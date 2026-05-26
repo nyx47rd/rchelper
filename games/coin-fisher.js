@@ -11,8 +11,12 @@
   var _cfLastHit     = 0;
   var _cfCooldownMs  = 40;   /* ms: tıklamalar arası bekleme */
   var _cfBlocked     = [];   /* { x, y, until } */
-  var _cfBlockMs     = 200;  /* ms: bir nokta ne kadar bloklu kalır */
+  var _cfBlockMs     = 250;  /* ms: bir nokta ne kadar bloklu kalır */
   var _cfBlockRadius = 20;   /* piksel yarıçap */
+  var _cfClusterR    = 60;   /* piksel: küme yarıçapı */
+  /* Hareket takibi: { cx, cy, vx, vy, ts } */
+  var _cfTracked     = [];   /* son 5 framedeki coin konumları */
+  var _cfMaxTrack    = 6;    /* kaç frame geçmiş tutulsun */
 
   /* Coin Fisher oyununda mıyız? */
   function _isCoinFisher() {
@@ -65,6 +69,65 @@
     _cfBlocked.push({ x: x, y: y, until: Date.now() + _cfBlockMs });
   }
 
+  /* Adayları kümelere ayır; her küme için merkez + sayı döndür */
+  function _cluster(candidates) {
+    var clusters = [];
+    candidates.forEach(function (c) {
+      var found = null;
+      for (var i = 0; i < clusters.length; i++) {
+        var cl = clusters[i];
+        if (Math.abs(cl.cx - c.x) < _cfClusterR && Math.abs(cl.cy - c.y) < _cfClusterR) {
+          found = cl; break;
+        }
+      }
+      if (found) {
+        found.cx = Math.round((found.cx * found.count + c.x) / (found.count + 1));
+        found.cy = Math.round((found.cy * found.count + c.y) / (found.count + 1));
+        found.count++;
+      } else {
+        clusters.push({ cx: c.x, cy: c.y, count: 1 });
+      }
+    });
+    return clusters;
+  }
+
+  /* Hareket tahmini: coin in _cfTracked geçmişinden velocity hesapla */
+  function _predictHit(cx, cy) {
+    var now = Date.now();
+    /* Yakın geçmişteki bu coin için eşleşen kayıtlar */
+    var hist = _cfTracked.filter(function (t) {
+      return Math.abs(t.cx - cx) < _cfClusterR && Math.abs(t.cy - cy) < _cfClusterR;
+    });
+    if (hist.length < 2) return { px: cx, py: cy }; /* yeterli veri yok, olduğu yere tıkla */
+
+    /* Son iki kayıttan hız hesapla */
+    var a = hist[hist.length - 2];
+    var b = hist[hist.length - 1];
+    var dt = b.ts - a.ts;
+    if (dt <= 0) return { px: cx, py: cy };
+    var vx = (b.cx - a.cx) / dt; /* px/ms */
+    var vy = (b.cy - a.cy) / dt;
+
+    /* İnternet gecikme tahmini ~60ms + tıklama işleme ~40ms = 100ms */
+    var lag = 100;
+    return {
+      px: Math.round(cx + vx * lag),
+      py: Math.round(cy + vy * lag)
+    };
+  }
+
+  /* Mevcut frame coinlerini geçmiş listesine ekle */
+  function _trackCoins(clusters) {
+    var now = Date.now();
+    clusters.forEach(function (cl) {
+      _cfTracked.push({ cx: cl.cx, cy: cl.cy, ts: now });
+    });
+    /* Sadece son _cfMaxTrack * cluster_count kadar tut */
+    if (_cfTracked.length > _cfMaxTrack * 10) {
+      _cfTracked = _cfTracked.slice(-_cfMaxTrack * 10);
+    }
+  }
+
   function _clickCanvas(canvas, cx, cy) {
     var rect    = canvas.getBoundingClientRect();
     var clientX = rect.left + cx * (rect.width  / canvas.width);
@@ -107,17 +170,38 @@
       }
     }
 
-    var available = candidates.filter(function (c) { return !_isBlocked(c.x, c.y); });
-    if (available.length === 0 && candidates.length > 0) {
+    if (candidates.length === 0) return;
+
+    /* Küme analizi yap */
+    var clusters = _cluster(candidates);
+
+    /* Hareket geçmişine kaydet */
+    _trackCoins(clusters);
+
+    /* En büyük kümeyi (en çok coin bir arada) seç */
+    clusters.sort(function (a, b) { return b.count - a.count; });
+
+    /* Bloklu olmayan en büyük kümeyi bul */
+    var best = null;
+    for (var i = 0; i < clusters.length; i++) {
+      if (!_isBlocked(clusters[i].cx, clusters[i].cy)) {
+        best = clusters[i];
+        break;
+      }
+    }
+    if (!best) {
       _cfBlocked = [];
-      available = candidates;
+      best = clusters[0];
     }
-    if (available.length > 0) {
-      /* Rastgele aday seç — hep sol üstten başlamayı önle */
-      var pick = available[Math.floor(Math.random() * available.length)];
-      _cfLastHit = Date.now();
-      _clickCanvas(canvas, pick.x, pick.y);
-    }
+
+    /* Hareket tahminiyle hedef koordinatı hesapla */
+    var predicted = _predictHit(best.cx, best.cy);
+    /* Sınır dışına çıkma */
+    predicted.px = Math.max(margin, Math.min(w - margin, predicted.px));
+    predicted.py = Math.max(margin, Math.min(h - margin, predicted.py));
+
+    _cfLastHit = Date.now();
+    _clickCanvas(canvas, predicted.px, predicted.py);
   }
 
   function _cfStart() {
