@@ -1,0 +1,117 @@
+═══════════════════════════════════════════════════════════
+RC Helper — Crypto Hamster Canvas Analyzer
+Generated: 2026-05-26T11:34:43.534Z
+Canvas boyutu: 960x720
+═══════════════════════════════════════════════════════════
+
+[ OYUN BİLGİSİ ]
+window.currentPlayingGame: yok
+window.lastSelectedGame:   yok
+window._activeGame:        yok
+document.title:            RollerCoin – Online Bitcoin Mining Simulator Game
+URL:                       https://rollercoin.com/game/play_game
+
+[ YAKALANAN KLAVYE EVENTLERİ ]
+  key=ArrowLeft code=ArrowLeft keyCode=37
+  key=ArrowRight code=ArrowRight keyCode=39
+  key=ArrowRight code=ArrowRight keyCode=39
+  key=ArrowRight code=ArrowRight keyCode=39
+  key=ArrowRight code=ArrowRight keyCode=39
+  key=ArrowLeft code=ArrowLeft keyCode=37
+  key=ArrowLeft code=ArrowLeft keyCode=37
+
+[ YAKALANAN MOUSE CLICK EVENTLERİ ]
+  Hiç click eventi yakalanmadı
+
+[ EN SIK RENKLER (tüm framelerden birleşik) ]
+  1. #414a59  rgb(65,74,89)  ×546921
+  2. #242636  rgb(36,38,54)  ×43319
+  3. #adadad  rgb(173,173,173)  ×19964
+  4. #757575  rgb(117,117,117)  ×15730
+  5. #5b678b  rgb(91,103,139)  ×13770
+  6. #979797  rgb(151,151,151)  ×12773
+  7. #606060  rgb(96,96,96)  ×10192
+  8. #8a745c  rgb(138,116,92)  ×8987
+  9. #98a7af  rgb(152,167,175)  ×8850
+  10. #6c5b48  rgb(108,91,72)  ×7732
+  11. #343b5f  rgb(52,59,95)  ×5020
+  12. #a6917a  rgb(166,145,122)  ×4861
+  13. #828282  rgb(130,130,130)  ×3905
+  14. #493d31  rgb(73,61,49)  ×3125
+  15. #9d866d  rgb(157,134,109)  ×3019
+  16. #594a3b  rgb(89,74,59)  ×2812
+  17. #c0c0c0  rgb(192,192,192)  ×2657
+  18. #788990  rgb(120,137,144)  ×1945
+  19. #718086  rgb(113,128,134)  ×1808
+  20. #515a5d  rgb(81,90,93)  ×1796
+  21. #505050  rgb(80,80,80)  ×1441
+  22. #a6a6a6  rgb(166,166,166)  ×1402
+  23. #93221a  rgb(147,34,26)  ×846
+  24. #575859  rgb(87,88,89)  ×770
+  25. #616059  rgb(97,96,89)  ×651
+
+[ HAREKET BÖLGELERI (frame diff, en aktif) ]
+  Frame 1→2:
+    x=48 y=288 aktiflik=64
+    x=912 y=304 aktiflik=64
+    x=912 y=320 aktiflik=64
+    x=896 y=400 aktiflik=64
+    x=944 y=400 aktiflik=64
+  Frame 2→3:
+    x=464 y=304 aktiflik=64
+    x=480 y=304 aktiflik=64
+    x=464 y=320 aktiflik=64
+    x=480 y=320 aktiflik=64
+    x=912 y=320 aktiflik=64
+  Frame 3→4:
+    x=0 y=96 aktiflik=64
+    x=16 y=96 aktiflik=64
+    x=32 y=96 aktiflik=64
+    x=464 y=256 aktiflik=64
+    x=480 y=256 aktiflik=64
+  Frame 4→5:
+    x=32 y=112 aktiflik=64
+    x=464 y=256 aktiflik=64
+    x=480 y=256 aktiflik=64
+    x=464 y=272 aktiflik=64
+    x=480 y=272 aktiflik=64
+  Frame 5→6:
+    x=32 y=128 aktiflik=64
+    x=592 y=288 aktiflik=64
+    x=608 y=288 aktiflik=64
+    x=624 y=288 aktiflik=64
+    x=608 y=304 aktiflik=64
+  Frame 6→7:
+    x=32 y=144 aktiflik=64
+    x=672 y=240 aktiflik=64
+    x=688 y=240 aktiflik=64
+    x=672 y=256 aktiflik=64
+    x=688 y=256 aktiflik=64
+  Frame 7→8:
+    x=48 y=80 aktiflik=64
+    x=144 y=80 aktiflik=64
+    x=160 y=80 aktiflik=64
+    x=176 y=80 aktiflik=64
+    x=192 y=80 aktiflik=64
+  Frame 8→9:
+    x=0 y=80 aktiflik=64
+    x=16 y=80 aktiflik=64
+    x=32 y=80 aktiflik=64
+    x=48 y=80 aktiflik=64
+    x=336 y=80 aktiflik=64
+  Frame 9→10:
+    x=0 y=80 aktiflik=64
+    x=16 y=80 aktiflik=64
+    x=32 y=80 aktiflik=64
+    x=336 y=80 aktiflik=64
+    x=352 y=80 aktiflik=64
+
+[ EN PARLAK SATIRLAR (karakter/zemin konumu tahmini) ]
+  y=0 → ortalama parlaklık=164
+  y=64 → ortalama parlaklık=163
+  y=8 → ortalama parlaklık=112
+  y=200 → ortalama parlaklık=98
+  y=328 → ortalama parlaklık=96
+
+═══════════════════════════════════════════════════════════
+Rapor tamamlandı.
