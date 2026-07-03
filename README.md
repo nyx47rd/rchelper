@@ -1,12 +1,12 @@
 <div align="right">
 
-[![🇬🇧 English](https://img.shields.io/badge/🇬🇧-English-4285F4?style=flat-square)](README.en.md)
+[![🇹🇷 Türkçe](https://img.shields.io/badge/🇹🇷-Türkçe-E30A17?style=flat-square)](README.tr.md)
 
 </div>
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=220&section=header&text=RC%20Helper&fontSize=80&fontColor=ffffff&fontAlignY=45&animation=twinkling&desc=RollerCoin%20Power%20Otomasyonu&descAlignY=65&descSize=18&descColor=ffffff" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=220&section=header&text=RC%20Helper&fontSize=80&fontColor=ffffff&fontAlignY=45&animation=twinkling&desc=RollerCoin%20Power%20Automation&descAlignY=65&descSize=18&descColor=ffffff" width="100%"/>
 
 <img src="favicon.ico" width="48" height="48" alt="RC Helper Icon"/>
 
@@ -14,7 +14,7 @@
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Otomatik+oyun+secici+%E2%86%92+daha+fazla+guc;Power+toplama+otomasyonu;Ayarlanabilir+mola+hatirlaticisi;Oyun+istatistikleri+ve+canli+widget;Interaktif+tutorial+ile+kolay+baslangic;Klavye+kisayollari+ile+tam+kontrol;Auto-Play+ile+eller+serbest;Akilli+oyun+atlama+sistemi" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=22&pause=1200&color=FF3D6B&center=true&vCenter=true&width=600&lines=Auto+game+selector+%E2%86%92+more+power;Power+collection+automation;Customizable+break+reminder;Game+stats+%26+live+widget;Easy+start+with+interactive+tutorial;Full+control+with+keyboard+shortcuts;Hands-free+with+Auto-Play;Smart+game+skip+system" alt="Typing SVG" />
 
 <br/><br/>
 
@@ -34,40 +34,40 @@
 
 ---
 
-## 🚀 Nedir?
+## 🚀 What is it?
 
-**RC Helper**, [RollerCoin](https://rollercoin.com) platformu için geliştirilmiş, oyun otomasyonu ve güç toplama kolaylığı sağlayan açık kaynaklı bir Chrome eklentisidir (**RollerCoin Helper & Bot**). Eklenti, oyunları sizin yerinize robotik olarak oynamaz; bunun yerine oyun seçim ekranında en uygun oyunu otomatik olarak seçer, başlatır ve oyun bitiminde kazandığınız gücü (*Gain Power*) otomatik toplar.
+**RC Helper** is an open-source Chrome extension developed for the [RollerCoin](https://rollercoin.com) platform, providing game automation and power collection convenience (**RollerCoin Helper & Bot**). It does not **play** the games robotically for you — instead, it automatically selects and starts the most suitable game on the game selection screen, and automatically harvests your power (*Gain Power*) when the game is over.
 
-Bu araç; güvenli bir RollerCoin asistanı, otomatik oyun seçici, otomatik güç toplayıcı (*auto collect*) ve akıllı mola hatırlatıcısı görevi görür.
+This tool acts as a safe RollerCoin assistant, auto game selector, automatic power collector (*auto collect*), and smart break reminder.
 
-> ⚠️ **Önemli:** RC Helper bir hile/hack aracı değildir. Yalnızca oyun *seçim* ve *toplama* işlemlerini otomatikleştirerek zaman kazandırır, RollerCoin kurallarını ihlal etmez.
+> ⚠️ **Important:** RC Helper is not a cheat or hack tool. It only automates the game *selection* and *collection* processes to save you time and does not violate RollerCoin rules.
 
 <br/>
 
 ---
 
-## ✨ Özellikler
+## ✨ Features
 
 <div align="center">
 
-| ⚡ Özellik | 📖 Açıklama |
+|⚡ Feature |📖 Description |
 |:---:|:---|
-| 🎮 **Otomatik Oyun Seç** | Pas geçilmeyenler arasından rastgele oyun seçer, butona basar ve başlatır |
-| 💰 **Otomatik Topla** | Oyun bitince çıkan *Gain Power* ve *Collect* butonlarına otomatik basar |
-| ⏸ **Pas Geç** | Seçili oyunu **10 dakika** boyunca atlar; süre dolunca listeye otomatik geri döner |
-| 🚫 **Daima Atla** | Oyunu **kalıcı olarak** engeller; bir daha asla seçilmez |
-| 📋 **Listeden Yönet** | Popup'tan tüm oyunları görerek tek tıkla pas geç veya daima atla listesine ekle/çıkar |
-| ☕ **Mola Hatırlatıcısı** | Belirlenen süre sonunda tam ekran mola sayacı açılır; bittikten sonra otomatik devam eder |
-| ⚙️ **Mola Ayarları** | Oyun süresi (1–120 dk) ve mola süresini (0.5–60 dk) popup'tan serbestçe ayarla |
-| 📊 **İstatistikler** | Toplam/günlük/haftalık oyun sayısı, toplam süre, ort. süre, en çok oynanan ve daha fazlası |
-| 🎯 **Şu An Oynanıyor** | Widget'ta aktif oyunun adı ve oturum sayacı canlı olarak gösterilir |
-| 📈 **Saatlik Tahmin** | EMA algoritmasıyla o anki hızına göre saatte kaç oyun oynayacağını tahmin eder |
-| 🛡️ **Güncelleme Koruması** | Eski sürümde auto-play otomatik engellenir; popup'ta güncelleme uyarısı gösterilir |
-| 🎓 **İnteraktif Tutorial** | İlk açılışta spotlight'lı 11 adımlık tur; `?` butonuyla istediğin zaman tekrar açılır |
-| ⌨️ **Klavye Kısayolları** | `S` = Pas Geç · `P` = Daima Atla |
-| 🔊 **Ses Efektleri** | Oyun seçimi, pas geçme, mola başlangıcı/bitişi, otomasyon açma/kapama için farklı tonlar |
-| 🗑️ **Hafızayı Temizle** | Tüm ayarları ve istatistikleri tek butonda sıfırla |
-| 🤖 **Oyun Botları** | Coin Fisher, Hamster Climber ve 2048 Coins oyunlarını tam ekranda otomatik oynatır. Popup'tan her birini ayrı ayrı açıp kapatabilirsin. Alt ortadaki OSD bildirimi bot durumunu gösterir. |
+|🎮 **Auto Select Game** |Randomly selects a non-skipped game, presses the button and starts it.
+|💰 **Auto Collect** |Automatically presses the *Gain Power* and *Collect* buttons that appear when the game is over |
+|⏸ **Pass** |Skips the selected game for **10 minutes**;automatically returns to the list when time expires |
+|🚫 **Always Skip** |**Permanently** blocks the game;will never be selected again |
+|📋 **Manage from List** |See all games from the popup and add/remove them to the pass or always skip list with one click |
+|☕ **Break Reminder** |At the end of the specified time, the full-screen break timer opens;continues automatically after it finishes |
+|⚙️ **Break Settings** |Set game duration (1–120 min) and break time (0.5–60 min) freely from popup |
+|📊 **Statistics** |Total/daily/weekly number of games, total time, avg.duration, most played and more |
+|🎯 **Now Playing** |The name of the active game and the session counter are displayed live on the widget |
+|📈 **Hourly Forecast** |With the EMA algorithm, it predicts how many games you will play per hour based on your current speed |
+|🛡️ **Update Protection** |In the old version, auto-play is automatically blocked;popup shows update alert |
+|🎓 **Interactive Tutorial** |11-step tour with spotlight on first boot;It can be reopened whenever you want with the `?` button |
+|⌨️ **Keyboard Shortcuts** |`S` = Pass · `P` = Always Skip |
+|🔊 **Sound Effects** |Different tones for play selection, passing, timeout start/end, automation on/off |
+|🗑️ **Clear Memory** |Reset all settings and statistics with one button |
+|🤖 **Game Bots** |Auto-play Coin Fisher, Hamster Climber & 2048 Coins when fullscreen. Toggle each bot individually from popup. OSD notification at bottom center shows bot status. |
 
 </div>
 
@@ -75,198 +75,198 @@ Bu araç; güvenli bir RollerCoin asistanı, otomatik oyun seçici, otomatik gü
 
 ---
 
-## 📦 Kurulum
+## 📦 Installation
 
-### Adım 1 — Dosyaları İndirin
+### Step 1 — Download Files
 
-[![Download ZIP](https://img.shields.io/badge/⬇_Son_Sürümü_İndir-FF3D6B?style=for-the-badge)](https://github.com/nyx47rd/rchelper/releases/latest)
+[![Download ZIP](https://img.shields.io/badge/⬇_INSTALL_LATEST_VERSION-FF3D6B?style=for-the-badge)](https://github.com/nyx47rd/rchelper/releases/latest)
 
-Releases sayfasından `rchelper-vX.X.X.zip` dosyasını indirip bir klasöre çıkartın.
-
----
-
-### Adım 2 — Chrome'a Yükleyin
-
-1. Adres çubuğuna `chrome://extensions` yazın
-2. Sağ üst köşeden **Geliştirici Modu**'nu açın
-3. **"Paketlenmemiş öğe yükle"** butonuna basın
-4. Çıkardığınız `rchelper` klasörünü seçin
-5. ✅ Listede **RC Helper** görünürse kurulum tamamdır
+Download the `rchelper-vX.X.X.zip` file from the Releases page and extract it to a folder.
 
 ---
 
-### Adım 3 — Kullanmaya Başlayın
+### Step 2 — Install on Chrome
 
-1. [rollercoin.com](https://rollercoin.com) adresine gidin
-2. Sağ üst köşedeki eklenti ikonuna tıklayın
-3. İlk açılışta **interaktif tutorial** otomatik başlar
-4. **Auto-Play: KAPALI** butonuna basın → **Auto-Play: AÇIK** 🟢
+1. Type `chrome://extensions` in the address bar
+2. Turn on **Developer Mode** from the top right corner
+3. Press the **"Load unpackaged item"** button
+4. Select the `rchelper` folder you extracted
+5. ✅ If **RC Helper** appears in the list, the installation is complete
 
-> Sayfanın sol üstünde canlı istatistik widget'ı belirir.
+---
+
+### Step 3 — Get Started
+
+1. Go to [rollercoin.com](https://rollercoin.com)
+2. Click on the plugin icon in the upper right corner
+3. **interactive tutorial** starts automatically at first startup
+4. Press the **Auto-Play: OFF** button → **Auto-Play: ON** 🟢
+
+> Live statistics widget appears at the top left of the page.
 
 <br/>
 
 ---
 
-## 🖥️ Popup Paneli
+## 🖥️ Popup Panel
 
-Eklenti ikonu tıklandığında açılan popup 256px genişliğinde bir kontrol panelidir. Bölümler:
+The popup that opens when the plugin icon is clicked is a 256px wide control panel.Sections:
 
-| Bölüm | İçerik |
+|Section |Content |
 |:---|:---|
-| **Başlık** | RC Helper logosu, sürüm bilgisi, `?` tutorial butonu |
-| **Güncelleme Banner'ı** | Yeni sürüm varsa otomatik gösterilir, indirme bağlantısı içerir |
-| **Ayarlar** | Otomatik Seç / Otomatik Topla / Mola Hatırlatıcısı toggle'ları |
-| **Mola Ayarları** | Oyun süresi ve mola süresi sayısal inputları |
-| **Oyun Botları** | Coin Fisher / Hamster Climber / 2048 Coins botlarını ayrı ayrı açıp kapatma. Aktif botlar "OYNUYOR" rozeti gösterir. |
-| **Listeden Seç** | Tüm bilinen oyunları listeleyen panel (Pas Geç / Daima Atla butonlu) |
-| **Pas Geç / Daima / Liste** | Hızlı aksiyon butonları |
-| **Auto-Play** | Ana aç/kapat butonu |
-| **Pas Geçilen · 10dk** | Geçici olarak atlanan oyunlar ve kalan süreleri |
-| **Daima Atlanan** | Kalıcı engel listesi — X butonu ile kaldırılabilir |
-| **İstatistikler** | 9 metriklik istatistik kartı + sıfırlama butonu |
-| **Hafızayı Temizle** | Tüm `chrome.storage.local` verisini temizler |
+|**Title** |RC Helper logo, version information, `?` tutorial button |
+|**Update Banner** |If there is a new version, it will be shown automatically, includes a download link |
+|**Settings** |Auto Select / Auto Collect / Break Reminder toggles |
+|**Break Settings** |Game time and break time numerical inputs |
+|**Game Bots** |Toggle Coin Fisher / Hamster Climber / 2048 Coins auto-play individually. Active bots show "PLAYING" badge. |
+|**Select from List** |Panel listing all known games (with Pass / Always Skip button) |
+|**Pass / Always / List** |Quick action buttons |
+|**Auto-Play** |Main on/off button |
+|**Missed · 10min** |Temporarily skipped games and remaining times |
+|**Always Skipt** |Permanent block list — can be removed with the X button |
+|**Statistics** |9 metric stats card + reset button |
+|**Clear Memory** |Clears all `chrome.storage.local` data |
 
 <br/>
 
 ---
 
-## 📊 Sayfa İçi Widget
+## 📊 In-Page Widget
 
-Sayfanın **sol üst köşesinde** sabit bir kart görünür. İçerir:
+A fixed card appears in the **upper left corner** of the page.Includes:
 
-- **Oturum sayacı** — bu oturumda oynanan oyun sayısı
-- **Süre sayacı** — oturum başından itibaren geçen süre (mm:ss)
-- **Saatlik tahmin** — EMA bazlı "saatte ~X oyun" tahmini (en az 3 oyun sonra görünür)
-- **Break durumu** — mola aktifse kalan süre, değilse sonraki molaya kalan süre
-- **Şu an oynanıyor** — oyun başladığında oyunun adını gösterir, bitince gizlenir
-- **Konsol** — önemli sistem mesajlarını kırmızı renkte gösterir
+- **Session counter** — number of games played in this session
+- **Time counter** — time since the beginning of the session (mm:ss)
+- **Hourly prediction** — "~X games per hour" prediction based on EMA (appears after at least 3 games)
+- **Break status** — remaining time if the break is active, otherwise time until the next break
+- **Currently playing** — shows the name of the game when the game starts, hides it when it ends
+- **Console** — shows important system messages in red
 
-Widget'ı kapatmak için sağ üst `✕` butonuna basılabilir. Tekrar açmak için köşede belirecek küçük liste ikonuna tıklanır.
+To close the widget, the upper right `✕` button can be pressed.To open it again, click on the small list icon that will appear in the corner.
 
 <br/>
 
 ---
 
-## ☕ Mola Sistemi
+## ☕ Break System
 
-Mola hatırlatıcısı açık olduğunda şu döngü çalışır:
+When the break reminder is on, the following loop runs:
 
 ```
-[Oyun oyna] ──(Oyun süresi doldu)──► [Tam ekran mola ekranı açılır]
-                                              │
-                                    (Mola süresi doldu veya
-                                     "Molayı Bitir" tıklandı)
-                                              │
-                                              ▼
-                                     [Otomatik devam]
+[Play games] ──(Session time reached)──► [Full-screen break opens]
+                                                       │
+                                           (Break time ends or
+                                            "End Break" clicked)
+                                                       │
+                                                       ▼
+                                              [Auto-resume]
 ```
 
-**Mola ekranında** büyük bir geri sayım sayacı ve "Molayı Bitir" butonu görünür. Saatlik tahmin hesabı mola sürelerini otomatik olarak düşer.
+A large countdown timer and an "End Break" button appear on the **Break screen**.The hourly forecast calculation automatically deducts break times.
 
-**Mola Ayarları** popup'taki karttan değiştirilebilir:
+**Break Settings** can be changed from the card in the popup:
 
-| Ayar | Varsayılan | Aralık |
+|Setting |Default |December |
 |:---|:---:|:---:|
-| Oyun süresi | 10 dk | 1 – 120 dk |
-| Mola süresi | 2.5 dk | 0.5 – 60 dk |
+|Game time |10 min |1 – 120 min |
+|Break time |2.5 min |0.5 – 60 min |
 
-Değeri değiştirip inputtan çıkınca anında kaydedilir ve aktif sekmede geçerli olur.
+When you change the value and exit the input, it is saved immediately and becomes valid in the active tab.
 
 <br/>
 
 ---
 
-## 📈 İstatistikler
+## 📈 Statistics
 
-Popup'taki **İstatistikler** kartı her 3 saniyede otomatik güncellenir:
+The **Stats** card in the popup is automatically updated every 3 seconds:
 
-| Metrik | Açıklama |
+|Metric |Description |
 |:---|:---|
-| **Toplam Oyun** | Tüm zamanların toplam oyun sayısı |
-| **Bugün** | Gün bazında oynanan oyun sayısı |
-| **Bu Hafta** | Son 7 günün toplamı |
-| **Toplam Süre** | Tüm oyunların toplam süresi |
-| **Ort. Süre** | Oyun başına ortalama süre |
-| **En Uzun** | Tek seferde oynanan en uzun oyun |
-| **En Çok Oynanan** | Toplam oynama sayısına göre favori oyun |
-| **Son Oyun** | En son oynanan oyunun adı |
-| **Aktif Gün** | Kaç farklı günde oyun oynandığı |
-| **Şu An Oynanan** | Anlık aktif oyun (content script'ten sorgulanır) |
+|**Total Game** |Total games of all time |
+|**Today** |Number of games played per day |
+|**This Week** |Total of the last 7 days |
+|**Total Time** |Total time of all games |
+|**Avg.Duration** |Average time per game |
+|**Longest** |Longest game played in one go |
+|**Most Played** |Favorite game by total number of plays |
+|**Last Game** |Name of the last game played |
+|**Active Day** |On how many different days were games played?
+|**Currently Playing** |Instant active game (queried from content script) |
 
-Veriler `chrome.storage.local`'da saklanır. Sıfırlamak için kart başlığındaki 🔄 ikonuna basın.
+Data is stored in `chrome.storage.local`.To reset, press the 🔄 icon in the card header.
 
 <br/>
 
 ---
 
-## 🎓 İnteraktif Tutorial
+## 🎓 Interactive Tutorial
 
-İlk kurulumda otomatik başlar. Popup başlığındaki **`?`** butonu ile istediğin zaman tekrar açılır.
+It starts automatically on first installation.It can be reopened whenever you want with the **`?`** button in the popup header.
 
-**11 adım:**
+**11 steps:**
 
-| # | Hedef | Konu |
+|# |Target |Topic |
 |:---:|:---|:---|
-| 1 | — | Hoş geldin ekranı |
-| 2 | Otomatik Seç toggle | Oyun seçimi otomasyonu |
-| 3 | Otomatik Topla toggle | Power toplama otomasyonu |
-| 4 | Mola Hatırlatıcısı toggle | Mola sistemi |
-| 5 | Mola Ayarları kartı | Süre özelleştirme |
-| 6 | Pas Geç butonu | Geçici atlama |
-| 7 | Daima Atla butonu | Kalıcı engelleme |
-| 8 | Liste butonu | Listeden yönetim |
-| 9 | Auto-Play butonu | Ana kontrol |
-| 10 | Oyun Botları kartı | Bot toggle yönetimi |
-| 11 | İstatistikler kartı | Oyun takibi |
+|1 |— |Welcome screen |
+|2 |Auto Select toggle |Game selection automation |
+|3 |AutoCollect toggle |Power collection automation |
+|4 |Break Reminder toggle |Break system |
+|5 |Break Settings card |Duration customization |
+|6 |Pass button |Temporary jump |
+|7 |Always Skip button |Permanent block |
+|8 |List button |Management from list |
+|9 |Auto-Play button |Main control |
+|10 |Game Bots card |Bot toggle management |
+|11 |Statistics card |Game tracking |
 
-Her adımda hedef element **kırmızı spotlight** ile vurgulanır. Açıklama kutusu otomatik konumlanır ve ekran hedef elemente scroll eder.
-
-<br/>
-
----
-
-## 🛡️ Güncelleme Koruması
-
-RC Helper her açılışta GitHub API'den son sürümü kontrol eder. Eğer kullandığın sürüm eskiyse:
-
-- Auto-play **otomatik olarak engellenir**
-- Popup'ta turuncu bir **güncelleme banner'ı** belirir
-- Widget'ta ⚠️ uyarısı gösterilir
-
-Bu sayede eski bir sürümün bozuk davranış göstermesi önlenir.
+At each step, the target element is highlighted with a **red spotlight**.The description box is positioned automatically and the screen scrolls to the target element.
 
 <br/>
 
 ---
 
-## ⌨️ Klavye Kısayolları
+## 🛡️ Update Protection
+
+RC Helper checks for the latest version from the GitHub API at every launch.If the version you are using is old:
+
+- Auto-play **automatically blocked**
+- An orange **update banner** appears in the popup
+- ⚠️ alert shown on widget
+
+This prevents an older version from exhibiting corrupt behavior.
+
+<br/>
+
+---
+
+## ⌨️ Keyboard Shortcuts
 
 <div align="center">
 
-| Tuş | Eylem | Detay |
+|Key |Action |Detail |
 |:---:|:---|:---|
-| `S` | **Pas Geç** | Mevcut oyunu 10 dakika atlar |
-| `P` | **Daima Atla** | Mevcut oyunu kalıcı olarak engeller |
+|`S` |**Pass** |Skips current game by 10 minutes |
+|`P` |**Always Skip** |Permanently blocks the current game |
 
 </div>
 
-> Yalnızca `rollercoin.com` üzerinde, bir `input` veya `textarea` odakta değilken çalışır.
+> Only works on `rollercoin.com` when a `input` or `textarea` is not in focus.
 
 <br/>
 
 ---
 
-## 🔒 İzinler
+## 🔒 Permissions
 
 <div align="center">
 
-| İzin | Neden Gerekli |
+|Permission |Why Necessary |
 |:---:|:---|
-| `activeTab` | Aktif sekmede script çalıştırmak için |
-| `scripting` | Sayfaya content script enjekte etmek için |
-| `tabs` | Popup → sekme arası mesajlaşma için |
-| `storage` | Ayarları, istatistikleri ve atlanan oyunları kalıcı saklamak için |
+|`activeTab` |To run script in active tab |
+|`scripting` |To inject content script into the page |
+|`tabs` |Popup → for cross-tab messaging |
+|`storage` |To permanently save settings, statistics and skipped games |
 
 </div>
 
@@ -274,34 +274,34 @@ Bu sayede eski bir sürümün bozuk davranış göstermesi önlenir.
 
 ---
 
-## ❓ Sık Sorulan Sorular
+## ❓ Frequently Asked Questions
 
-**Auto-Play açılmıyor, ne yapmalıyım?**
-Eski sürüm kullanıyorsundur. Popup'ta güncelleme banner'ı çıktıysa son sürümü indirip yeniden yükle.
+**Auto-Play does not open, what should I do?**
+You are probably using an old version.If an update banner appears in the popup, download the latest version and reinstall it.
 
-**Oyunun adı "Game-XXXX" şeklinde görünüyor.**
-Oyun seçim sayfasındaki oyun henüz isim bilgisi yüklememiştir. Sayfa yenilenince düzelir.
+**The name of the game appears as "Game-XXXX".**
+The game on the game selection page has not yet loaded name information.It will be fixed when you refresh the page.
 
-**Pas geçtiğim oyun hâlâ seçiliyor.**
-Atlama listesi 10 dakika sonra otomatik temizlenir. Süre dolmadan önce seçilmesini istemiyorsan "Daima Atla" kullan.
+**The game I passed is still being selected.**
+The jump list is automatically cleared after 10 minutes.Use "Always Skip" if you don't want it to be selected before time runs out.
 
-**Mola ekranı çok sık/az açılıyor.**
-Popup → Mola Ayarları kartından oyun süresini artır veya azalt.
+**The break screen opens too often/less often.**
+Increase or decrease game time from the Popup → Break Settings card.
 
-**İstatistikler sıfırlandı / kayboldu.**
-"Hafızayı Temizle" butonu `chrome.storage.local`'ın tamamını siler. Bu butona dikkatli basılmalı.
+**Statistics reset / lost.**
+The "Clear Memory" button clears the entire `chrome.storage.local`.This button should be pressed carefully.
 
-**Widget sayfada görünmüyor.**
-Sayfayı yenile. Eklenti bir content script olarak yüklenir; bazı sayfalarda gecikmeli başlayabilir.
+**Widget does not appear on the page.**
+Refresh the page.The plugin is installed as a content script;It may start delayed on some pages.
 
-**Oyun botu otomatik başlamıyor.**
-Popup → Oyun Botları kartından botun açık olduğundan emin ol. Bot yalnızca tam ekrana alındığında devreye girer. Alt ortadaki OSD bildirimi "Tam ekrana al → otomatik oynanacak" veya "🤖 Bot Oynuyor" mesajını gösterir.
+**Game bot doesn't start automatically.**
+Make sure the bot is enabled in Popup → Game Bots card. The bot only activates when you go fullscreen. An OSD notification at the bottom center will show "Go fullscreen → auto-play" or "🤖 Bot Playing".
 
 <br/>
 
 ---
 
-## 🛠️ Teknoloji
+## 🛠️ Technology
 
 <div align="center">
 
@@ -316,56 +316,56 @@ Popup → Oyun Botları kartından botun açık olduğundan emin ol. Bot yalnız
 
 ```
 📁 rchelper/
-├── 📄 manifest.json           ← Eklenti tanımı (Manifest v3)
-├── 📜 content.js              ← Sayfa içi otomasyon + widget UI + mola sistemi
-├── 📜 popup.js                ← Popup panel mantığı + istatistik okuma
-├── 🎨 popup.html              ← Popup panel arayüzü + stilleri
-├── 🎓 tutorial.js             ← İnteraktif tutorial adımları + spotlight mantığı
-├── 🎨 tutorial.css            ← Tutorial overlay stilleri
-├── ⚙️  background.js          ← Service worker (Manifest v3 zorunluluğu)
-├── 🐍 make_release_body.py    ← Commit logunu markdown release notuna çeviren script
+├── 📄 manifest.json           ← Extension definition (Manifest v3)
+├── 📜 content.js              ← In-page automation + widget UI + break system
+├── 📜 popup.js                ← Popup panel logic + stats reading
+├── 🎨 popup.html              ← Popup panel UI + styles
+├── 🎓 tutorial.js             ← Interactive tutorial steps + spotlight logic
+├── 🎨 tutorial.css            ← Tutorial overlay styles
+├── ⚙️  background.js          ← Service worker (Manifest v3 requirement)
+├── 🐍 make_release_body.py    ← Converts commit log to markdown release notes
 └── 🖼️  icon16/48/128.png      ← Eklenti ikonları
 ```
 
-**Öne çıkan teknik detaylar:**
+**Technical highlights:**
 
-- **URL geçiş izleyici** (`checkGameTransitions`) — sayaç oyun *başladığında* değil, *bittiğinde* artar; böylece başarısız girişimlerde false-positive olmaz
-- **EMA** (Exponential Moving Average) bazlı saatlik tahmin — son 20 oyunun ağırlıklı ortalaması, mola sürelerini de hesaba katar
-- **4-maske spotlight sistemi** — tutorial overlay `position:absolute` + scroll-aware koordinat hesabıyla her çözünürlükte doğru çalışır
-- **Güncelleme koruması** — GitHub Releases API'den sürüm karşılaştırması, eski sürümde auto-play engeli
-- **Sıfır bağımlılık** — tüm UI vanilla JS + inline/harici CSS, hiçbir npm paketi yok
-- **Manifest v3** + Service Worker mimarisi
+- **URL traversal tracker** (`checkGameTransitions`) — the counter increments when the game *ends*, not when it *starts*;so that there are no false-positives in unsuccessful attempts
+- Hourly forecast based on **EMA** (Exponential Moving Average) — weighted average of the last 20 games, taking into account break times
+- **4-mask spotlight system** — tutorial overlay works correctly at any resolution with `position:absolute` + scroll-aware coordinate calculation
+- **Update protection** — Version comparison from GitHub Releases API, auto-play blocking on old version
+- **Zero dependencies** — all UI vanilla JS + inline/external CSS, no npm packages
+- **Manifest v3** + Service Worker architecture
 
 <br/>
 
 ---
 
-## 📈 Nasıl Çalışır?
+## 📈 How Does It Work?
 
 ```mermaid
 graph TD
-    A([rollercoin.com yüklendi]) --> B{Sayfa türü?}
-    B -->|choose_game| C[Oyun listesini tara]
-    B -->|play_game| D[Oyun ekranında bekle]
-    B -->|Diğer| B
+    A([rollercoin.com loaded]) --> B{Page type?}
+    B -->|choose_game| C[Scan game list]
+    B -->|play_game| D[Wait on game screen]
+    B -->|Other| B
 
-    C --> E{Pas/Daima listesi?}
-    E -->|Evet| F[Filtrele ve tekrar seç]
-    E -->|Hayır| G[Rastgele seç & butona bas]
+    C --> E{Skip/Always list?}
+    E -->|Yes| F[Filter and reselect]
+    E -->|No| G[Random select & press button]
     F --> G
 
-    G --> H{URL play_game'e geçti mi?}
-    H -->|Evet| I[Oyun başladı: timer başlat]
-    H -->|Hayır| J[1.5sn bekle, tekrar dene]
+    G --> H{URL switched to play_game?}
+    H -->|Yes| I[Game started: start timer]
+    H -->|No| J[Wait 1.5s, retry]
     J --> G
 
-    D --> K[Gain Power / Collect tıkla]
-    I --> L{choose_game'e döndü mü?}
-    L -->|Evet| M[Sayaç +1, istatistik kaydet]
-    M --> N{Oyun süresi doldu mu?}
-    N -->|Evet| O[☕ Tam ekran mola aç]
-    N -->|Hayır| B
-    O --> P[Geri sayım — mola süresi]
+    D --> K[Click Gain Power / Collect]
+    I --> L{Returned to choose_game?}
+    L -->|Yes| M[Counter +1, save stats]
+    M --> N{Session time reached?}
+    N -->|Yes| O[☕ Open full-screen break]
+    N -->|No| B
+    O --> P[Countdown — break duration]
     P --> B
 ```
 
@@ -375,7 +375,7 @@ graph TD
 
 <div align="center">
 
-### ⭐ Beğendiyseniz yıldız atmayı unutmayın!
+### ⭐ Don't forget to star if you liked it!
 
 [![Star](https://img.shields.io/github/stars/nyx47rd/rchelper?style=social)](https://github.com/nyx47rd/rchelper/stargazers)
 [![Fork](https://img.shields.io/github/forks/nyx47rd/rchelper?style=social)](https://github.com/nyx47rd/rchelper/network/members)
