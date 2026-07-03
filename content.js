@@ -732,12 +732,7 @@ function createFloatButton() {
 
   document.body.appendChild(wrapper);
 
-  /* ── Bot OSD (en alt ortada) ── */
-  const osd = document.createElement('div');
-  osd.id = 'rc-bot-osd';
-  osd.style.cssText = 'position:fixed; bottom:32px; left:50%; transform:translateX(-50%); white-space:nowrap; display:none; align-items:center; gap:10px; background:rgba(13,15,26,0.96); border:1.5px solid rgba(255,61,107,0.5); border-radius:12px; padding:14px 24px; z-index:2147483640; box-shadow:0 6px 30px rgba(0,0,0,0.5); font-family:Inter,system-ui,sans-serif;';
-  osd.innerHTML = `<span id="rc-osd-text" style="font-size:14px; font-weight:700; color:#FF3D6B;">${cT('w_bot_playing')}</span>`;
-  document.body.appendChild(osd);
+
 
   /* ── Collapsed button ── */
   const showBtn = document.createElement('button');
@@ -772,7 +767,6 @@ function createStatusWidget() {
   style.textContent = `
     @keyframes rcFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
     @keyframes rcBotPulse { 0%,100% { opacity:1; } 50% { opacity:0.45; } }
-    @keyframes rcOsdFadeIn { from { opacity:0; transform:translateX(-50%) translateY(10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
     #rc-status-widget, #rc-status-widget * { box-sizing:border-box; font-family:'Inter',system-ui,sans-serif !important; }
     #rc-log-container::-webkit-scrollbar { width:3px; }
     #rc-log-container::-webkit-scrollbar-thumb { background:#1E2545; border-radius:2px; }
@@ -1303,57 +1297,6 @@ function updatePlayingIndicator(name) {
   } else {
     card.style.display = 'none';
     if (nameEl) nameEl.textContent = '—';
-  }
-  _updateBotPlayingWidget();
-}
-
-function _updateBotPlayingWidget() {
-  var anyBotActive = (
-    (window._rcCoinFisher      && window._rcCoinFisher.isActive())      ||
-    (window._rcHamster         && window._rcHamster.isActive())         ||
-    (window._rc2048            && window._rc2048.isActive())
-  );
-  var el = document.getElementById('rc-bot-osd');
-  if (!el) return;
-
-  /* Bot aktif mi kontrol et */
-  var txt = document.getElementById('rc-osd-text');
-  if (!txt) return;
-
-  if (anyBotActive) {
-    txt.textContent = cT('w_bot_playing');
-    txt.style.animation = 'rcBotPulse 1.5s ease-in-out infinite';
-    if (el.style.display === 'none') {
-      el.style.animation = 'none';
-      el.style.display = 'flex';
-      /* reflow zorla, sonra animasyonu başlat */
-      void el.offsetWidth;
-      el.style.animation = 'rcOsdFadeIn 0.35s ease-out forwards';
-    }
-    return;
-  }
-
-  /* Bot kapalı ama bot destekli oyun açıksa → tam ekran ipucu */
-  var gameName = (window._activeGame && window._activeGame.name) || window.currentPlayingGame || window.lastSelectedGame || document.title || '';
-  var isBotGame = ['coin fisher','coinfisher','hamster','2048'].some(function(n){ return gameName.toLowerCase().includes(n); });
-  var hasCanvas = !!document.querySelector('canvas');
-  var allDisabled = window._rcBotEnabled &&
-                    window._rcBotEnabled['botFisherEnabled']        === false &&
-                    window._rcBotEnabled['botHamsterEnabled']       === false &&
-                    window._rcBotEnabled['bot2048Enabled']          === false;
-
-  if (isBotGame && hasCanvas && !allDisabled) {
-    txt.textContent = cT('w_fullscreen_hint');
-    txt.style.animation = 'none';
-    if (el.style.display === 'none') {
-      el.style.animation = 'none';
-      el.style.display = 'flex';
-      void el.offsetWidth;
-      el.style.animation = 'rcOsdFadeIn 0.35s ease-out forwards';
-    }
-  } else {
-    el.style.display = 'none';
-    el.style.animation = '';
   }
 }
 

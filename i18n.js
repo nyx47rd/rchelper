@@ -113,8 +113,6 @@ var RC_STRINGS = {
     bot_hamster: 'Hamster Climber',
     bot_2048: '2048 Coins',
     bot_active_badge: 'OYNUYOR',
-    w_bot_playing: '🤖 Bot Oynuyor',
-    w_fullscreen_hint: 'Tam ekrana al → otomatik oynanacak',
   },
   en: {
     auto_off: 'Auto-Play: OFF',
@@ -224,8 +222,6 @@ var RC_STRINGS = {
     bot_hamster: 'Hamster Climber',
     bot_2048: '2048 Coins',
     bot_active_badge: 'PLAYING',
-    w_bot_playing: '🤖 Bot Playing',
-    w_fullscreen_hint: 'Go fullscreen → auto-play',
   },
 };
 
