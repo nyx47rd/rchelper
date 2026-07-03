@@ -162,8 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var BOT_KEYS = {
     'chk-bot-fisher':         'botFisherEnabled',
     'chk-bot-hamster':        'botHamsterEnabled',
-    'chk-bot-2048':           'bot2048Enabled',
-    'chk-bot-crypto-hamster': 'botCryptoHamsterEnabled'
+    'chk-bot-2048':           'bot2048Enabled'
   };
 
   chrome.storage.local.get(Object.values(BOT_KEYS), function(data) {
@@ -183,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /* Bot aktif badge'ini güncelle — content script'ten mesaj gelince */
   function updateBotBadges(activeBots) {
-    var map = { fisher: 'badge-fisher', hamster: 'badge-hamster', '2048': 'badge-2048', cryptoHamster: 'badge-crypto-hamster' };
+    var map = { fisher: 'badge-fisher', hamster: 'badge-hamster', '2048': 'badge-2048' };
     Object.keys(map).forEach(function(k) {
       var el = document.getElementById(map[k]);
       if (el) el.style.display = (activeBots && activeBots[k]) ? '' : 'none';

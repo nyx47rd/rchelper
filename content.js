@@ -203,14 +203,13 @@ window.nextBreakTime = null;
 var mainTimer = null;
 var breakCheckTimer = null;
 
-chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled', 'botCryptoHamsterEnabled'], (data) => {
+chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled'], (data) => {
   window.autoCollect = data.autoCollect !== false;
   window.autoChoose  = data.autoChoose  !== false;
   window._rcBotEnabled = {
     botFisherEnabled:        data.botFisherEnabled        !== false,
     botHamsterEnabled:       data.botHamsterEnabled       !== false,
-    bot2048Enabled:          data.bot2048Enabled          !== false,
-    botCryptoHamsterEnabled: data.botCryptoHamsterEnabled !== false
+    bot2048Enabled:          data.bot2048Enabled          !== false
   };
   window.breakReminderEnabled = data.breakReminder !== false;
   if (data.breakSessionMin)  window.breakSessionMinutes  = parseFloat(data.breakSessionMin);
@@ -1312,8 +1311,7 @@ function _updateBotPlayingWidget() {
   var anyBotActive = (
     (window._rcCoinFisher      && window._rcCoinFisher.isActive())      ||
     (window._rcHamster         && window._rcHamster.isActive())         ||
-    (window._rc2048            && window._rc2048.isActive())            ||
-    (window._rcCryptoHamster   && window._rcCryptoHamster.isActive())
+    (window._rc2048            && window._rc2048.isActive())
   );
   var el = document.getElementById('rc-bot-osd');
   if (!el) return;
@@ -1337,13 +1335,12 @@ function _updateBotPlayingWidget() {
 
   /* Bot kapalı ama bot destekli oyun açıksa → tam ekran ipucu */
   var gameName = (window._activeGame && window._activeGame.name) || window.currentPlayingGame || window.lastSelectedGame || document.title || '';
-  var isBotGame = ['coin fisher','coinfisher','hamster','2048','crypto hamster','cryptohamster'].some(function(n){ return gameName.toLowerCase().includes(n); });
+  var isBotGame = ['coin fisher','coinfisher','hamster','2048'].some(function(n){ return gameName.toLowerCase().includes(n); });
   var hasCanvas = !!document.querySelector('canvas');
   var allDisabled = window._rcBotEnabled &&
                     window._rcBotEnabled['botFisherEnabled']        === false &&
                     window._rcBotEnabled['botHamsterEnabled']       === false &&
-                    window._rcBotEnabled['bot2048Enabled']          === false &&
-                    window._rcBotEnabled['botCryptoHamsterEnabled'] === false;
+                    window._rcBotEnabled['bot2048Enabled']          === false;
 
   if (isBotGame && hasCanvas && !allDisabled) {
     txt.textContent = cT('w_fullscreen_hint');
@@ -1524,8 +1521,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       bots: {
         fisher:        !!(window._rcCoinFisher    && window._rcCoinFisher.isActive()),
         hamster:       !!(window._rcHamster       && window._rcHamster.isActive()),
-        '2048':        !!(window._rc2048          && window._rc2048.isActive()),
-        cryptoHamster: !!(window._rcCryptoHamster && window._rcCryptoHamster.isActive())
+        '2048':        !!(window._rc2048          && window._rc2048.isActive())
       }
     });
     return true;
@@ -1537,7 +1533,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.bot === 'botFisherEnabled'        && window._rcCoinFisher)    { if (!msg.enabled) window._rcCoinFisher.stop(); }
     if (msg.bot === 'botHamsterEnabled'       && window._rcHamster)       { if (!msg.enabled) window._rcHamster.stop(); }
     if (msg.bot === 'bot2048Enabled'          && window._rc2048)          { if (!msg.enabled) window._rc2048.stop(); }
-    if (msg.bot === 'botCryptoHamsterEnabled' && window._rcCryptoHamster) { if (!msg.enabled) window._rcCryptoHamster.stop(); }
     sendResponse({ ok: true });
     return true;
   }

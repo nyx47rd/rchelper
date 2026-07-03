@@ -4,6 +4,7 @@ node_modules/
 .DS_Store
 Thumbs.db
 release.sh
+kitty_release.sh
 LICENSE
 .github/
 .windsurf/
