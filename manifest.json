@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "RollerCoin Auto Helper",
   "version": "2.2.56",
-  "description": "Auto-play, auto-collect and break reminder helper for RollerCoin.",
+  "description": "RollerCoin Helper: Auto-play selector, auto-collect gain power, and break reminder extension for RollerCoin.",
   "permissions": ["activeTab", "scripting", "tabs", "storage", "windows"],
   "host_permissions": ["*://*.rollercoin.com/*", "*://rollercoin.com/*"],
   "background": {

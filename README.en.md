@@ -36,9 +36,11 @@
 
 ## 🚀 What is it?
 
-**RC Helper** is a Chrome extension developed for the [RollerCoin](https://rollercoin.com) platform.It doesn't **play** the games for you — it automatically selects and starts the appropriate game on the game selection screen, and you do the rest.Automates power harvesting, break management, and stats tracking.
+**RC Helper** is an open-source Chrome extension developed for the [RollerCoin](https://rollercoin.com) platform, providing game automation and power collection convenience (**RollerCoin Helper & Bot**). It does not **play** the games robotically for you — instead, it automatically selects and starts the most suitable game on the game selection screen, and automatically harvests your power (*Gain Power*) when the game is over.
 
-> ⚠️ **Important:** RC Helper only automates game *selection*. It does not play games robotically and does not violate RollerCoin rules.
+This tool acts as a safe RollerCoin assistant, auto game selector, automatic power collector (*auto collect*), and smart break reminder.
+
+> ⚠️ **Important:** RC Helper is not a cheat or hack tool. It only automates the game *selection* and *collection* processes to save you time and does not violate RollerCoin rules.
 
 <br/>
 

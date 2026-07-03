@@ -36,9 +36,11 @@
 
 ## 🚀 Nedir?
 
-**RC Helper**, [RollerCoin](https://rollercoin.com) platformu için geliştirilmiş bir Chrome eklentisidir. Oyunları sizin yerinize **oynamaz** — oyun seçim ekranında uygun oyunu otomatik seçer ve başlatır, geri kalanını siz yaparsınız. Power toplamayı, mola yönetimini ve istatistik takibini otomatikleştirir.
+**RC Helper**, [RollerCoin](https://rollercoin.com) platformu için geliştirilmiş, oyun otomasyonu ve güç toplama kolaylığı sağlayan açık kaynaklı bir Chrome eklentisidir (**RollerCoin Helper & Bot**). Eklenti, oyunları sizin yerinize robotik olarak oynamaz; bunun yerine oyun seçim ekranında en uygun oyunu otomatik olarak seçer, başlatır ve oyun bitiminde kazandığınız gücü (*Gain Power*) otomatik toplar.
 
-> ⚠️ **Önemli:** RC Helper yalnızca oyun *seçimini* otomatikleştirir. Oyunları robotik biçimde oynamaz, RollerCoin kurallarını ihlal etmez.
+Bu araç; güvenli bir RollerCoin asistanı, otomatik oyun seçici, otomatik güç toplayıcı (*auto collect*) ve akıllı mola hatırlatıcısı görevi görür.
+
+> ⚠️ **Önemli:** RC Helper bir hile/hack aracı değildir. Yalnızca oyun *seçim* ve *toplama* işlemlerini otomatikleştirerek zaman kazandırır, RollerCoin kurallarını ihlal etmez.
 
 <br/>
 
