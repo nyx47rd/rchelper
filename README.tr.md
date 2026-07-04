@@ -305,57 +305,196 @@ Popup → Oyun Botları kartından botun açık olduğundan emin ol. Bot yalnız
 
 RC Helper, arayüzsüz (headless) bulut tabanlı otomasyon desteği sunar. Bu sayede bilgisayarınızı 7/24 açık bırakmanıza gerek kalmadan, Hugging Face Spaces (Docker + Selenium) ve bir cron-job servisi (örneğin cron-job.org) aracılığıyla RollerCoin bataryalarınızı 24 saatte bir otomatik olarak doldurabilirsiniz.
 
-### 📋 Gereksinimler
-1. **Hugging Face Hesabı:** Docker Space barındırmak için.
-2. **RollerCoin Session Cookie'si:** Arayüzsüz tarayıçada oturum açmak için.
-3. **Cron-job.org Hesabı:** Her 24 saatte bir tetikleme işlemi başlatmak için.
-4. **CSS Selector:** RollerCoin batarya doldurma (Recharge) butonunun güncel CSS selector değeri.
+### 1. Oturum Çerezi (Session Cookie) Nasıl Alınır? 🍪
+Arayüzsüz çalışan tarayıcının RollerCoin giriş ekranını aşarak sizin hesabınızla işlem yapabilmesi için aktif çerez (cookie) değerinize ihtiyacı vardır.
+1. Tarayıcınızdan [RollerCoin](https://rollercoin.com) sitesine gidin ve hesabınıza giriş yapın.
+2. Sayfada herhangi bir yere sağ tıklayıp **İncele** (Inspect) deyin veya klavyenizden **F12** tuşuna basarak Geliştirici Araçları'nı açın.
+3. Üstteki sekmelerden **Application** (Chrome/Edge kullanıyorsanız) veya **Storage** (Firefox kullanıyorsanız) sekmesine gidin.
+4. Sol menüdeki **Cookies** (Çerezler) seçeneğini genişletip altındaki `https://rollercoin.com` adresine tıklayın.
+5. Tabloda **`session`** isimli satırı bulun.
+6. Bu satırın **Value** (Değer) sütunundaki uzun harf ve sayı kombinasyonuna çift tıklayıp kopyalayın ve bir yere kaydedin.
+
+---
+
+### 2. Gerekli Dağıtım Dosyaları (Tam İçerikler) 📄
+Hugging Face Space ana dizininizde tam olarak **3 dosya** oluşturmanız gerekir. Aşağıdaki dosya içeriklerini hiçbir yerini değiştirmeden kopyalayıp yapıştırın:
+
+#### 📁 `requirements.txt`
+```text
+flask
+selenium
+webdriver-manager
+```
+
+#### 📁 `Dockerfile`
+```dockerfile
+FROM python:3.10-slim
+
+# Google Chrome için gerekli sistem bağımlılıklarını kur
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    unzip \
+    curl \
+    libglib2.0-0 \
+    libnss3 \
+    libgconf-2-4 \
+    libfontconfig1 \
+    libxss1 \
+    libxtst6 \
+    libxslt1.1 \
+    libxml2 \
+    libasound2 \
+    libgbm1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Google Chrome Stable sürümünü indir ve kur
+RUN curl -sSL https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable \
+    && rm -rf /var/lib/apt/lists/*
+
+# Çalışma dizinini ayarla
+WORKDIR /app
+
+# Gereksinimleri kopyala ve Python paketlerini kur
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Tüm proje dosyalarını (ve rchelper eklenti klasörünü) kopyala
+COPY . .
+
+# Flask'in Hugging Face üzerindeki varsayılan portunu aç (7860)
+EXPOSE 7860
+
+# Flask uygulamasını çalıştır
+CMD ["python", "app.py"]
+```
+
+#### 📁 `app.py`
+```python
+from flask import Flask, jsonify
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+import time
+import os
+
+app = Flask(__name__)
+
+# ROLLERCOIN OTURUM ÇEREZİ (COOKIE) YAPILANDIRMASI:
+# Aşağıdaki tırnak içerisine kopyaladığınız session çerezini doğrudan yapıştırabilirsiniz.
+# VEYA daha güvenli bir yöntem olarak, bu kodu aynen bırakıp Hugging Face panelinden:
+# Settings -> Variables and Secrets -> New Secret yolunu izleyerek Name = 'RC_SESSION' ve Value = 'çerez_değeriniz' şeklinde tanımlayabilirsiniz.
+SESSION_COOKIE_VALUE = os.environ.get("RC_SESSION", "PASTE_YOUR_SESSION_COOKIE_HERE")
+
+@app.route('/')
+def index():
+    return "RC Helper Bulut Sunucusu Aktif! Batarya doldurmayı tetiklemek için /tetikle-batarya adresini kullanın."
+
+@app.route('/tetikle-batarya', methods=['GET', 'POST'])
+def trigger_battery():
+    if SESSION_COOKIE_VALUE == "PASTE_YOUR_SESSION_COOKIE_HERE" or not SESSION_COOKIE_VALUE:
+        return jsonify({
+            "status": "error",
+            "message": "Session cookie is not configured. Please set RC_SESSION in Space Secrets or edit app.py."
+        }), 400
+
+    print("[Selenium] Chrome başlatılıyor...")
+    options = Options()
+    options.add_argument("--headless=new")  # Modern headless modu eklenti yüklemeyi destekler
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--load-extension=/app/rchelper")  # Docker içindeki eklenti klasörünün yolu
+
+    try:
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
+        
+        # 1. Çerez tanımlayabilmek için önce alan adına git
+        print("[Selenium] RollerCoin açılıyor...")
+        driver.get("https://rollercoin.com")
+        time.sleep(3)
+        
+        # 2. Oturum çerezini enjekte et
+        print("[Selenium] Oturum çerezi enjekte ediliyor...")
+        driver.add_cookie({
+            "name": "session",
+            "value": SESSION_COOKIE_VALUE,
+            "domain": ".rollercoin.com",
+            "path": "/"
+        })
+        
+        # 3. Batarya butonunun olduğu oyun ana sayfasına git
+        print("[Selenium] Oyun sayfasına gidiliyor...")
+        driver.get("https://rollercoin.com/game")
+        
+        # 4. Eklentinin battery_automator.js betiğinin çalışması ve tıklaması için 15 saniye bekle
+        print("[Selenium] Eklentinin bataryayı doldurması bekleniyor (15sn)...")
+        time.sleep(15)
+        
+        driver.quit()
+        print("[Selenium] İşlem tamamlandı.")
+        return jsonify({
+            "status": "success",
+            "message": "Battery recharge automation completed successfully."
+        }), 200
+
+    except Exception as e:
+        print(f"[Selenium] Hata oluştu: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": f"An error occurred: {str(e)}"
+        }), 500
+
+if __name__ == '__main__':
+    # Hugging Face varsayılan portu 7860'tır
+    app.run(host='0.0.0.0', port=7860)
+```
 
 > [!WARNING]
-> **Kritik Kurulum Notu:** Dağıtım yapmadan önce [battery_automator.js](file:///home/veilzon/rchelper-master/tools/battery_automator.js) dosyasındaki `BATTERY_BUTTON_SELECTOR` sabitini, RollerCoin sayfasındaki batarya butonunun güncel CSS selector'ı ile güncellemelisiniz.
+> **Kritik Kurulum Notu:** Dağıtım yapmadan önce yerel eklenti klasörünüzdeki [battery_automator.js](file:///home/veilzon/rchelper-master/tools/battery_automator.js) dosyasını açıp `BATTERY_BUTTON_SELECTOR` sabitini, RollerCoin sayfasındaki batarya şarj butonunun güncel CSS selector'ı ile kesinlikle güncellemelisiniz.
 > ```javascript
 > const BATTERY_BUTTON_SELECTOR = "button.your-recharge-button-class";
 > ```
 
-### 🚀 Dağıtım Adımları
+---
 
-1. **Hugging Face Space Oluşturma:**
-   * Hugging Face üzerinde **New Space** butonuna tıklayın.
-   * SDK olarak **Docker** seçin ve **Blank** şablonunu belirleyin.
-2. **Dosyaları Yükleme:**
-   * Eklenti klasörünü (`rchelper`), `Dockerfile` dosyasını ve Python kodlarınızı (`app.py`) yükleyin.
-3. **Selenium Konfigürasyonu (app.py):**
-   * Selenium webdriver ayarlarınıza `--load-extension` parametresiyle eklentiyi yükleyin. Örnek Python kodu:
-     ```python
-     from selenium import webdriver
-     from selenium.webdriver.chrome.options import Options
-     import time
+### 3. Hugging Face Space Dağıtım Adımları 🚀
+1. [Hugging Face](https://huggingface.co) sitesine gidin ve oturum açın.
+2. Sağ üst köşedeki profil resminize tıklayıp **New Space** seçeneğini seçin.
+3. İlgili alanları doldurun:
+   * **Space Name:** Bir isim verin (örn: `my-rc-battery-automator`).
+   * **License:** `mit` (veya dilediğinizi seçin).
+   * **Select Space SDK:** **Docker** seçeneğini işaretleyin.
+   * **Choose a Docker template:** **Blank** seçeneğini seçin.
+   * **Space Hardware:** Ücretsiz CPU temel katmanını seçin.
+   * **Privacy:** **Public** (Açık) veya **Private** (Gizli - Gizlilik için bu önerilir) seçin.
+4. **Create Space** butonuna tıklayın.
+5. Sayfa açıldığında **Files** (Dosyalar) sekmesine geçip şunları yükleyin:
+   * `rchelper` eklenti klasörünün tamamını (`tools/` ve `games/` alt klasörleriyle birlikte).
+   * `requirements.txt` dosyasını.
+   * `Dockerfile` dosyasını.
+   * `app.py` dosyasını.
+6. (İsteğe Bağlı/Önerilen): Space panelinden **Settings** (Ayarlar) sekmesine gidin, **Variables and Secrets** bölümüne inin, **New Secret** butonuna tıklayın. İsim olarak **`RC_SESSION`** girin, değer olarak ise kopyaladığınız session çerezini yapıştırıp kaydedin.
 
-     options = Options()
-     options.add_argument("--headless=new") # Modern headless modu eklentileri destekler
-     options.add_argument("--no-sandbox")
-     options.add_argument("--disable-dev-shm-usage")
-     options.add_argument("--load-extension=/app/rchelper") # Eklentinin yolu
+---
 
-     driver = webdriver.Chrome(options=options)
-
-     # 1. Oturum Çerezini Tanımla
-     driver.get("https://rollercoin.com")
-     driver.add_cookie({
-         "name": "session",
-         "value": "ROLLERCOIN_SESSION_CEREZINIZ",
-         "domain": ".rollercoin.com"
-     })
-
-     # 2. Bataryanın yer aldığı ana sayfaya git
-     driver.get("https://rollercoin.com/game")
-     time.sleep(10) # Eklentinin butonu bulup organik gecikmeyle tıklaması için bekle
-
-     driver.quit()
-     ```
-4. **Cron-Job Kurulumu:**
-   * [cron-job.org](https://cron-job.org) adresine üye olun.
-   * Hugging Face Space tetikleme URL'nize (örn: `https://your-space-url.hf.space/tetikle-batarya`) her 24 saatte bir çalışacak bir cron job kurun.
+### 4. Cron-job.org Otomatik Tetikleme Adımları ⏱️
+İşlemin 24 saatte bir otomatik olarak çalışması için ücretsiz bir cron işi kuracağız:
+1. Hugging Face Space uygulamanızın web URL adresini kopyalayın.
+   * *Not:* URL'yi Space menüsündeki **Embed this Space** altından bulabilir veya şu şablonla kendiniz oluşturabilirsiniz: `https://<kullanici-adiniz>-<space-adiniz>.hf.space`.
+2. Kopyaladığınız URL adresinin sonuna `/tetikle-batarya` ekleyin (örn: `https://veilzon-my-rc-battery-automator.hf.space/tetikle-batarya`).
+3. [cron-job.org](https://cron-job.org) adresine gidip ücretsiz üye olun.
+4. **Create Cronjob** butonuna tıklayın.
+5. Formu doldurun:
+   * **Title:** `RollerCoin Batarya Doldurma`
+   * **Address (URL):** Sonuna `/tetikle-batarya` eklediğiniz URL'yi yapıştırın.
+   * **Schedule:** **Every day** (Her gün) seçeneğini işaretleyin (ya da her 24 saatte bir çalışacak şekilde ayarlayın).
+6. **Create** butonuna basarak kaydedin.
 
 <br/>
 

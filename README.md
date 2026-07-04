@@ -303,60 +303,198 @@ Make sure the bot is enabled in Popup → Game Bots card. The bot only activates
 
 ## ☁️ Cloud-Based Battery Automator (Hugging Face & Selenium)
 
-RC Helper includes support for headless cloud-based automation. This allows you to automatically recharge your RollerCoin batteries 24/7 without keeping your computer running, utilizing Hugging Face Spaces (Docker + Selenium) and a cron-job service (e.g., cron-job.org).
+RC Helper supports headless cloud-based automation. This allows you to automatically recharge your RollerCoin batteries 24/7 without keeping your computer running, utilizing Hugging Face Spaces (Docker + Selenium) and a cron-job service (e.g., cron-job.org).
 
-### 📋 Prerequisites
-1. **Hugging Face Account:** To host the Docker Space.
-2. **RollerCoin Session Cookie:** To authenticate in the headless browser.
-3. **Cron-job.org Account:** To trigger the automation endpoint every 24 hours.
-4. **CSS Selector:** The current CSS selector of the RollerCoin battery recharge button.
+### 1. How to Retrieve Your Session Cookie 🍪
+The headless browser uses your active RollerCoin session cookie to bypass login forms.
+1. Open your browser and log into [RollerCoin](https://rollercoin.com).
+2. Press **F12** (or right-click anywhere and select **Inspect**) to open Developer Tools.
+3. Navigate to the **Application** tab (on Chrome/Edge) or **Storage** tab (on Firefox).
+4. In the left sidebar, expand **Cookies** and click on `https://rollercoin.com`.
+5. Find the row named **`session`** in the table.
+6. Double-click the **Value** column of this row, copy the entire string (e.g., a long sequence of letters and numbers), and save it.
+
+---
+
+### 2. Required Deployment Files (Full Contents) 📄
+You must create exactly **3 files** in the root directory of your Hugging Face Space. Copy and paste their full contents directly:
+
+#### 📁 `requirements.txt`
+```text
+flask
+selenium
+webdriver-manager
+```
+
+#### 📁 `Dockerfile`
+```dockerfile
+FROM python:3.10-slim
+
+# Install system dependencies for Google Chrome
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    unzip \
+    curl \
+    libglib2.0-0 \
+    libnss3 \
+    libgconf-2-4 \
+    libfontconfig1 \
+    libxss1 \
+    libxtst6 \
+    libxslt1.1 \
+    libxml2 \
+    libasound2 \
+    libgbm1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Google Chrome Stable
+RUN curl -sSL https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install python packages
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy all project files (including the rchelper extension folder)
+COPY . .
+
+# Expose Flask default port for Hugging Face (7860)
+EXPOSE 7860
+
+# Run the Flask app
+CMD ["python", "app.py"]
+```
+
+#### 📁 `app.py`
+```python
+from flask import Flask, jsonify
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+import time
+import os
+
+app = Flask(__name__)
+
+# ROLLERCOIN SESSION COOKIE CONFIGURATION:
+# You can paste your session cookie value below inside the quotes,
+# OR for better security, leave it as is and set it in your Space settings:
+# Settings -> Variables and Secrets -> New Secret: Name = 'RC_SESSION', Value = 'your_cookie_here'
+SESSION_COOKIE_VALUE = os.environ.get("RC_SESSION", "PASTE_YOUR_SESSION_COOKIE_HERE")
+
+@app.route('/')
+def index():
+    return "RC Helper Cloud Server is running! Trigger the battery recharge at /tetikle-batarya"
+
+@app.route('/tetikle-batarya', methods=['GET', 'POST'])
+def trigger_battery():
+    if SESSION_COOKIE_VALUE == "PASTE_YOUR_SESSION_COOKIE_HERE" or not SESSION_COOKIE_VALUE:
+        return jsonify({
+            "status": "error",
+            "message": "Session cookie is not configured. Please set RC_SESSION in Space Secrets or edit app.py."
+        }), 400
+
+    print("[Selenium] Starting Chrome Webdriver...")
+    options = Options()
+    options.add_argument("--headless=new")  # Modern headless mode supports extensions
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--load-extension=/app/rchelper")  # Path where the extension folder resides
+
+    try:
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
+        
+        # 1. Load domain to initialize cookies
+        print("[Selenium] Opening RollerCoin...")
+        driver.get("https://rollercoin.com")
+        time.sleep(3)
+        
+        # 2. Inject session cookie
+        print("[Selenium] Injecting session cookie...")
+        driver.add_cookie({
+            "name": "session",
+            "value": SESSION_COOKIE_VALUE,
+            "domain": ".rollercoin.com",
+            "path": "/"
+        })
+        
+        # 3. Navigate to game page where the battery button is located
+        print("[Selenium] Navigating to game page...")
+        driver.get("https://rollercoin.com/game")
+        
+        # 4. Wait 15 seconds for battery_automator.js to run, wait and click the button
+        print("[Selenium] Waiting for extension to automate battery recharge (15s)...")
+        time.sleep(15)
+        
+        driver.quit()
+        print("[Selenium] Recharge sequence complete.")
+        return jsonify({
+            "status": "success",
+            "message": "Battery recharge automation completed successfully."
+        }), 200
+
+    except Exception as e:
+        print(f"[Selenium] Error occurred: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": f"An error occurred: {str(e)}"
+        }), 500
+
+if __name__ == '__main__':
+    # Hugging Face default port is 7860
+    app.run(host='0.0.0.0', port=7860)
+```
 
 > [!WARNING]
-> **Critical Configuration:** You MUST edit [battery_automator.js](file:///home/veilzon/rchelper-master/tools/battery_automator.js) and update the `BATTERY_BUTTON_SELECTOR` constant with the current selector of the recharge button from the RollerCoin page before deploying.
+> **Critical Configuration:** You MUST edit [battery_automator.js](file:///home/veilzon/rchelper-master/tools/battery_automator.js) in your local extension folder and update the `BATTERY_BUTTON_SELECTOR` constant with the current selector of the recharge button from the RollerCoin page before packaging and deploying.
 > ```javascript
 > const BATTERY_BUTTON_SELECTOR = "button.your-recharge-button-class";
 > ```
 
-### 🚀 Deployment Steps
+---
 
-1. **Create Hugging Face Space:**
-   * Go to Hugging Face, click **New Space**.
-   * Select **Docker** as the SDK. Choose the **Blank** template.
-2. **Upload Files:**
-   * Upload the `rchelper` extension folder.
-   * Upload your `Dockerfile` and your python app file `app.py`.
-3. **Selenium Configuration (app.py):**
-   * Configure your Selenium webdriver to load the `rchelper` extension using `--load-extension`. Here is an example Python snippet:
-     ```python
-     from selenium import webdriver
-     from selenium.webdriver.chrome.options import Options
-     import time
+### 3. Hugging Face Deployment Steps 🚀
+1. Go to [Hugging Face](https://huggingface.co) and log in.
+2. Click on your profile picture in the top-right corner and select **New Space**.
+3. Fill out the fields:
+   * **Space Name:** Choose a name (e.g., `my-rc-battery-automator`).
+   * **License:** `mit` (or choose any).
+   * **Select Space SDK:** Select **Docker**.
+   * **Choose a Docker template:** Select **Blank**.
+   * **Space Hardware:** Select the free CPU basic tier.
+   * **Privacy:** Set to **Public** or **Private** (Private is recommended for privacy).
+4. Click **Create Space**.
+5. Once created, click on the **Files** tab and upload:
+   * The complete `rchelper` extension folder (including the `tools/` and `games/` subdirectories).
+   * The `requirements.txt` file.
+   * The `Dockerfile` file.
+   * The `app.py` file.
+6. (Optional/Recommended): Navigate to the Space **Settings** tab, scroll down to **Variables and Secrets**, click **New Secret**, name it **`RC_SESSION`**, and paste your copied session cookie value as the value.
 
-     options = Options()
-     options.add_argument("--headless=new") # Modern headless mode supports extensions
-     options.add_argument("--no-sandbox")
-     options.add_argument("--disable-dev-shm-usage")
-     options.add_argument("--load-extension=/app/rchelper") # Path to extension
+---
 
-     driver = webdriver.Chrome(options=options)
-
-     # 1. Set Session Cookie
-     driver.get("https://rollercoin.com")
-     driver.add_cookie({
-         "name": "session",
-         "value": "YOUR_ROLLERCOIN_SESSION_COOKIE",
-         "domain": ".rollercoin.com"
-     })
-
-     # 2. Go to game page where the battery resides
-     driver.get("https://rollercoin.com/game")
-     time.sleep(10) # Give the extension time to wait, delay, and click the button
-
-     driver.quit()
-     ```
-4. **Setup Cron-Job:**
-   * Register on [cron-job.org](https://cron-job.org).
-   * Create a cron job pointing to your Hugging Face Space trigger URL (e.g. `https://your-space-url.hf.space/trigger-battery`) configured to run every 24 hours.
+### 4. Cron-job.org Automation Steps ⏱️
+To automate this request so it triggers automatically every 24 hours:
+1. Copy your Hugging Face Space App URL.
+   * *Note:* You can find your app URL under **Embed this Space** in your Space menu, or form it like: `https://<your-username>-<your-space-name>.hf.space`.
+2. Append `/tetikle-batarya` to the end of the URL (e.g., `https://veilzon-my-rc-battery-automator.hf.space/tetikle-batarya`).
+3. Go to [cron-job.org](https://cron-job.org) and create a free account.
+4. Click **Create Cronjob**.
+5. Configure the job:
+   * **Title:** `RollerCoin Battery Recharge`
+   * **Address (URL):** Paste your URL with the `/tetikle-batarya` suffix.
+   * **Schedule:** Choose **Every day** (or set a custom hourly schedule, e.g., every 24 hours).
+6. Click **Create**.
 
 <br/>
 
