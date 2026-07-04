@@ -540,7 +540,6 @@ if __name__ == '__main__':
    * **Privacy:** **Public** (Açık) veya **Private** (Gizli - Gizlilik için bu önerilir) seçin.
 4. **Create Space** butonuna tıklayın.
 5. Sayfa açıldığında **Files** (Dosyalar) sekmesine geçip şunları yükleyin:
-   * `rchelper` eklenti klasörünün tamamını (`tools/` ve `games/` alt klasörleriyle birlikte).
    * `requirements.txt` dosyasını.
    * `Dockerfile` dosyasını.
    * `app.py` dosyasını.

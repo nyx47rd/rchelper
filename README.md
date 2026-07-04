@@ -539,7 +539,6 @@ if __name__ == '__main__':
    * **Privacy:** Set to **Public** or **Private** (Private is recommended for privacy).
 4. Click **Create Space**.
 5. Once created, click on the **Files** tab and upload:
-   * The complete `rchelper` extension folder (including the `tools/` and `games/` subdirectories).
    * The `requirements.txt` file.
    * The `Dockerfile` file.
    * The `app.py` file.
