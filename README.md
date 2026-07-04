@@ -305,8 +305,17 @@ Make sure the bot is enabled in Popup → Game Bots card. The bot only activates
 
 RC Helper supports headless cloud-based automation. This allows you to automatically recharge your RollerCoin batteries 24/7 without keeping your computer running, utilizing Hugging Face Spaces (Docker + Selenium) and a cron-job service (e.g., cron-job.org).
 
-### 1. Account Credentials 🔑
-You will need your **RollerCoin e-mail address** and **password**. The cloud server uses Selenium to log into your account automatically via the login form — no manual token extraction needed.
+### 1. How to Retrieve Your Authentication Tokens (Local Storage) 🔑
+RollerCoin uses JSON Web Tokens (JWT) stored in your browser's **Local Storage** for user authentication (rather than standard cookies).
+1. Open your browser and log into [RollerCoin](https://rollercoin.com).
+2. Press **F12** (or right-click anywhere and select **Inspect**) to open Developer Tools.
+3. Click the **Console** tab at the top.
+4. Copy and paste the following snippet into the console and press **Enter**:
+   ```javascript
+   console.log("RC_TOKEN:", localStorage.getItem("token"));
+   console.log("RC_REFRESH_TOKEN:", localStorage.getItem("refreshToken"));
+   ```
+5. Copy both printed strings (`RC_TOKEN` and `RC_REFRESH_TOKEN`).
 
 ---
 
@@ -388,8 +397,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import os
@@ -398,19 +405,18 @@ import json
 import zipfile
 import shutil
 import base64
-import random
 from datetime import datetime
 
 app = Flask(__name__)
 
-# ROLLERCOIN LOGIN CREDENTIALS:
-# You can paste your credentials below inside the quotes,
+# ROLLERCOIN AUTHENTICATION CONFIGURATION:
+# You can paste your token values below inside the quotes,
 # OR for better security, leave them as is and set them in your Space settings:
 # Settings -> Variables and Secrets -> New Secret:
-#   Name = 'RC_EMAIL', Value = 'your_email_here'
-#   Name = 'RC_PASSWORD', Value = 'your_password_here'
-RC_EMAIL = os.environ.get("RC_EMAIL", "PASTE_YOUR_EMAIL_HERE")
-RC_PASSWORD = os.environ.get("RC_PASSWORD", "PASTE_YOUR_PASSWORD_HERE")
+#   Name = 'RC_TOKEN', Value = 'your_token_here'
+#   Name = 'RC_REFRESH_TOKEN', Value = 'your_refresh_token_here'
+RC_TOKEN_VALUE = os.environ.get("RC_TOKEN", "PASTE_YOUR_TOKEN_HERE")
+RC_REFRESH_TOKEN_VALUE = os.environ.get("RC_REFRESH_TOKEN", "PASTE_YOUR_REFRESH_TOKEN_HERE")
 
 SCREENSHOTS_DIR = "/app/screenshots"
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
@@ -487,10 +493,10 @@ def index():
 def trigger_battery():
     global latest_run
     
-    if RC_EMAIL == "PASTE_YOUR_EMAIL_HERE" or RC_PASSWORD == "PASTE_YOUR_PASSWORD_HERE":
+    if RC_TOKEN_VALUE == "PASTE_YOUR_TOKEN_HERE" or RC_REFRESH_TOKEN_VALUE == "PASTE_YOUR_REFRESH_TOKEN_HERE":
         return jsonify({
             "status": "error",
-            "message": "Login credentials are not configured. Please set RC_EMAIL and RC_PASSWORD in Space Secrets or edit app.py."
+            "message": "Authentication tokens are not configured. Please set RC_TOKEN and RC_REFRESH_TOKEN in Space Secrets or edit app.py."
         }), 400
 
     # Clear old screenshots
@@ -517,72 +523,41 @@ def trigger_battery():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
-    # Anti-bot detection measures
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    options.add_experimental_option('useAutomationExtension', False)
-    options.add_argument(f"user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{random.randint(110,125)}.0.0.0 Safari/537.36")
 
     driver = None
     try:
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
         
-        # Modify webdriver flag to bypass basic bot detection
-        driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
-            'source': 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'
-        })
+        # Step 1: Open RollerCoin homepage
+        print("[Selenium] Opening RollerCoin...")
+        driver.get("https://rollercoin.com")
+        time.sleep(3)
+        save_screenshot(driver, "01_homepage")
+        steps.append("✅ RollerCoin homepage loaded.")
         
-        # Step 1: Open RollerCoin login page
-        print("[Selenium] Opening RollerCoin Login...")
-        driver.get("https://rollercoin.com/sign-in")
-        time.sleep(5)
-        save_screenshot(driver, "01_login_page")
-        steps.append("✅ RollerCoin login page loaded.")
+        # Step 2: Inject authentication tokens
+        print("[Selenium] Injecting tokens...")
+        driver.execute_script(f"localStorage.setItem('token', '{RC_TOKEN_VALUE}');")
+        driver.execute_script(f"localStorage.setItem('refreshToken', '{RC_REFRESH_TOKEN_VALUE}');")
+        steps.append("✅ Tokens injected into Local Storage.")
         
-        # Step 2: Fill in email and password
-        print("[Selenium] Filling credentials...")
-        try:
-            email_field = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email'], input[name='mail']"))
-            )
-            email_field.send_keys(RC_EMAIL)
-            
-            password_field = driver.find_element(By.CSS_SELECTOR, "input[type='password'], input[name='password']")
-            password_field.send_keys(RC_PASSWORD)
-            
-            time.sleep(1)
-            save_screenshot(driver, "02_credentials_filled")
-            steps.append("✅ Credentials entered.")
-            
-            # Click login button
-            login_btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
-            login_btn.click()
-            time.sleep(8)
-            save_screenshot(driver, "03_after_login_click")
-            steps.append("✅ Login button clicked.")
-        except Exception as e:
-            save_screenshot(driver, "02_login_error")
-            steps.append(f"❌ Failed to log in: {str(e)}")
-            driver.quit()
-            return jsonify({"status": "error", "steps": steps, "view_results": "/sonuc"}), 401
-            
         # Step 3: Navigate to game page
         print("[Selenium] Navigating to /game...")
         driver.get("https://rollercoin.com/game")
         time.sleep(8)
-        save_screenshot(driver, "04_game_page")
+        save_screenshot(driver, "02_game_page")
         steps.append("✅ Game page loaded.")
         
-        # Step 4: Check if we are actually logged in
+        # Step 4: Check login status
         current_url = driver.current_url
         if "sign-in" in current_url or "login" in current_url:
-            save_screenshot(driver, "05_login_redirect")
-            steps.append("❌ Failed to access game page — login might have failed or hit a captcha!")
+            save_screenshot(driver, "03_login_redirect")
+            steps.append("❌ Redirected to login — tokens may be expired!")
             driver.quit()
             return jsonify({"status": "error", "steps": steps, "view_results": "/sonuc"}), 401
         
-        steps.append(f"✅ Logged in successfully. URL: {current_url}")
+        steps.append(f"✅ Logged in. URL: {current_url}")
 
         # Step 5: Find the battery recharge button
         print("[Selenium] Searching for battery button...")
@@ -705,8 +680,8 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7860)
 ```
 
-Once the files are uploaded, configure your login credentials:
-* Navigate to the Space **Settings** tab, scroll down to **Variables and Secrets**, click **New Secret**, create two secrets: name them **`RC_EMAIL`** and **`RC_PASSWORD`**, and paste your RollerCoin login credentials as their values.
+Once the files are uploaded, configure your authentication tokens:
+* Navigate to the Space **Settings** tab, scroll down to **Variables and Secrets**, click **New Secret**, create two secrets: name them **`RC_TOKEN`** and **`RC_REFRESH_TOKEN`**, and paste your copied token values as their values.
 
 ---
 

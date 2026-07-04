@@ -305,8 +305,17 @@ Popup → Oyun Botları kartından botun açık olduğundan emin ol. Bot yalnız
 
 RC Helper, arayüzsüz (headless) bulut tabanlı otomasyon desteği sunar. Bu sayede bilgisayarınızı 7/24 açık bırakmanıza gerek kalmadan, Hugging Face Spaces (Docker + Selenium) ve bir cron-job servisi (örneğin cron-job.org) aracılığıyla RollerCoin bataryalarınızı 24 saatte bir otomatik olarak doldurabilirsiniz.
 
-### 1. Hesap Bilgileri 🔑
-Oturum açmak için **RollerCoin e-posta adresiniz** ve **şifreniz** gerekecektir. Bulut sunucusu, manuel token çıkarma işlemine gerek kalmadan Selenium kullanarak giriş formu üzerinden hesabınıza otomatik olarak giriş yapar.
+### 1. Kimlik Doğrulama Anahtarları (Local Storage) Nasıl Alınır? 🔑
+RollerCoin, kullanıcı oturumunu doğrulamak için standart çerezler yerine tarayıcınızın **Local Storage** alanında JSON Web Token (JWT) saklar.
+1. Tarayıcınızdan [RollerCoin](https://rollercoin.com) sitesine gidin ve hesabınıza giriş yapın.
+2. Sayfada herhangi bir yere sağ tıklayıp **İncele** (Inspect) deyin veya klavyenizden **F12** tuşuna basarak Geliştirici Araçları'nı açın.
+3. Üstteki sekmelerden **Console** (Konsol) sekmesine geçiş yapın.
+4. Aşağıdaki kodu konsola aynen yapıştırıp **Enter** tuşuna basın:
+   ```javascript
+   console.log("RC_TOKEN:", localStorage.getItem("token"));
+   console.log("RC_REFRESH_TOKEN:", localStorage.getItem("refreshToken"));
+   ```
+5. Konsolda yazdırılan `RC_TOKEN` ve `RC_REFRESH_TOKEN` değerlerini kopyalayıp bir yere not edin.
 
 ---
 
@@ -388,8 +397,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import os
@@ -398,20 +405,19 @@ import json
 import zipfile
 import shutil
 import base64
-import random
 from datetime import datetime
 
 app = Flask(__name__)
 
-# ROLLERCOIN GİRİŞ BİLGİLERİ YAPILANDIRMASI:
-# Aşağıdaki tırnak içerilerine bilgilerinizi doğrudan yapıştırabilirsiniz.
+# ROLLERCOIN OTURUM ANAHTARLARI YAPILANDIRMASI:
+# Aşağıdaki tırnak içerilerine konsoldan kopyaladığınız değerleri doğrudan yapıştırabilirsiniz.
 # VEYA daha güvenli bir yöntem olarak, bu kodları aynen bırakıp Hugging Face panelinden:
 # Settings -> Variables and Secrets -> New Secret yolunu izleyerek:
-#   Name = 'RC_EMAIL', Value = 'eposta_adresiniz'
-#   Name = 'RC_PASSWORD', Value = 'sifreniz'
+#   Name = 'RC_TOKEN', Value = 'token_değeriniz'
+#   Name = 'RC_REFRESH_TOKEN', Value = 'refresh_token_değeriniz'
 # şeklinde tanımlayabilirsiniz.
-RC_EMAIL = os.environ.get("RC_EMAIL", "PASTE_YOUR_EMAIL_HERE")
-RC_PASSWORD = os.environ.get("RC_PASSWORD", "PASTE_YOUR_PASSWORD_HERE")
+RC_TOKEN_VALUE = os.environ.get("RC_TOKEN", "PASTE_YOUR_TOKEN_HERE")
+RC_REFRESH_TOKEN_VALUE = os.environ.get("RC_REFRESH_TOKEN", "PASTE_YOUR_REFRESH_TOKEN_HERE")
 
 SCREENSHOTS_DIR = "/app/screenshots"
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
@@ -488,10 +494,10 @@ def index():
 def trigger_battery():
     global latest_run
     
-    if RC_EMAIL == "PASTE_YOUR_EMAIL_HERE" or RC_PASSWORD == "PASTE_YOUR_PASSWORD_HERE":
+    if RC_TOKEN_VALUE == "PASTE_YOUR_TOKEN_HERE" or RC_REFRESH_TOKEN_VALUE == "PASTE_YOUR_REFRESH_TOKEN_HERE":
         return jsonify({
             "status": "error",
-            "message": "Giriş bilgileri yapılandırılmadı. Lütfen Space Secrets alanından RC_EMAIL ve RC_PASSWORD ayarlarını yapın."
+            "message": "Authentication tokens are not configured. Please set RC_TOKEN and RC_REFRESH_TOKEN in Space Secrets or edit app.py."
         }), 400
 
     # Eski ekran görüntülerini temizle
@@ -518,68 +524,37 @@ def trigger_battery():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
-    # Bot algılama önlemleri
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    options.add_experimental_option('useAutomationExtension', False)
-    options.add_argument(f"user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{random.randint(110,125)}.0.0.0 Safari/537.36")
 
     driver = None
     try:
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
         
-        # Temel bot algılamasını aşmak için webdriver bayrağını gizle
-        driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
-            'source': 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'
-        })
+        # Adım 1: RollerCoin ana sayfasını aç
+        print("[Selenium] RollerCoin açılıyor...")
+        driver.get("https://rollercoin.com")
+        time.sleep(3)
+        save_screenshot(driver, "01_anasayfa")
+        steps.append("✅ RollerCoin ana sayfası yüklendi.")
         
-        # Adım 1: RollerCoin giriş sayfasını aç
-        print("[Selenium] RollerCoin Giriş Sayfası açılıyor...")
-        driver.get("https://rollercoin.com/sign-in")
-        time.sleep(5)
-        save_screenshot(driver, "01_giris_sayfasi")
-        steps.append("✅ RollerCoin giriş sayfası yüklendi.")
+        # Adım 2: Kimlik doğrulama anahtarlarını enjekte et
+        print("[Selenium] Token'lar enjekte ediliyor...")
+        driver.execute_script(f"localStorage.setItem('token', '{RC_TOKEN_VALUE}');")
+        driver.execute_script(f"localStorage.setItem('refreshToken', '{RC_REFRESH_TOKEN_VALUE}');")
+        steps.append("✅ Token'lar Local Storage'a enjekte edildi.")
         
-        # Adım 2: E-posta ve şifreyi doldur
-        print("[Selenium] Giriş bilgileri dolduruluyor...")
-        try:
-            email_field = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email'], input[name='mail']"))
-            )
-            email_field.send_keys(RC_EMAIL)
-            
-            password_field = driver.find_element(By.CSS_SELECTOR, "input[type='password'], input[name='password']")
-            password_field.send_keys(RC_PASSWORD)
-            
-            time.sleep(1)
-            save_screenshot(driver, "02_bilgiler_girildi")
-            steps.append("✅ Giriş bilgileri girildi.")
-            
-            # Giriş butonuna tıkla
-            login_btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
-            login_btn.click()
-            time.sleep(8)
-            save_screenshot(driver, "03_giris_tiklandi")
-            steps.append("✅ Giriş butonuna tıklandı.")
-        except Exception as e:
-            save_screenshot(driver, "02_giris_hatasi")
-            steps.append(f"❌ Giriş yapılamadı: {str(e)}")
-            driver.quit()
-            return jsonify({"status": "error", "steps": steps, "view_results": "/sonuc"}), 401
-            
         # Adım 3: Oyun sayfasına git
         print("[Selenium] /game sayfasına gidiliyor...")
         driver.get("https://rollercoin.com/game")
         time.sleep(8)
-        save_screenshot(driver, "04_oyun_sayfasi")
+        save_screenshot(driver, "02_oyun_sayfasi")
         steps.append("✅ Oyun sayfası yüklendi.")
         
         # Adım 4: Giriş durumunu kontrol et
         current_url = driver.current_url
         if "sign-in" in current_url or "login" in current_url:
-            save_screenshot(driver, "05_giris_basarisiz")
-            steps.append("❌ Oyun sayfasına erişilemedi — giriş başarısız olmuş veya captcha'ya takılmış olabilir!")
+            save_screenshot(driver, "03_giris_yonlendirme")
+            steps.append("❌ Giriş sayfasına yönlendirildi — token'lar süresi dolmuş olabilir!")
             driver.quit()
             return jsonify({"status": "error", "steps": steps, "view_results": "/sonuc"}), 401
         
@@ -706,8 +681,8 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7860)
 ```
 
-Dosyalar yüklendikten sonra kimlik doğrulama bilgilerinizi tanımlayın:
-* Space panelinden **Settings** (Ayarlar) sekmesine gidin, **Variables and Secrets** bölümüne inin, **New Secret** butonuna tıklayın. İki adet secret oluşturun: isimlerini sırasıyla **`RC_EMAIL`** ve **`RC_PASSWORD`** yapın, değer kısımlarına ise RollerCoin e-posta ve şifrenizi yapıştırıp kaydedin.
+Dosyalar yüklendikten sonra kimlik doğrulama anahtarlarınızı tanımlayın:
+* Space panelinden **Settings** (Ayarlar) sekmesine gidin, **Variables and Secrets** bölümüne inin, **New Secret** butonuna tıklayın. İki adet secret oluşturun: isimlerini sırasıyla **`RC_TOKEN`** ve **`RC_REFRESH_TOKEN`** yapın, değer kısımlarına ise kopyaladığınız ilgili anahtarları yapıştırıp kaydedin.
 
 ---
 
