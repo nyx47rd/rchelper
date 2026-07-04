@@ -392,10 +392,11 @@ CMD ["python", "app.py"]
 
 #### 📁 `app.py`
 ```python
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template_string
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import os
@@ -403,6 +404,8 @@ import urllib.request
 import json
 import zipfile
 import shutil
+import base64
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -415,6 +418,12 @@ app = Flask(__name__)
 # şeklinde tanımlayabilirsiniz.
 RC_TOKEN_VALUE = os.environ.get("RC_TOKEN", "PASTE_YOUR_TOKEN_HERE")
 RC_REFRESH_TOKEN_VALUE = os.environ.get("RC_REFRESH_TOKEN", "PASTE_YOUR_REFRESH_TOKEN_HERE")
+
+SCREENSHOTS_DIR = "/app/screenshots"
+os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
+
+# Son çalıştırma sonuçlarını global olarak sakla
+latest_run = {"steps": [], "timestamp": None}
 
 def download_and_extract_latest_extension():
     try:
@@ -470,71 +479,202 @@ def download_and_extract_latest_extension():
         print(f"[Extension Manager] Güncel sürüm indirilirken hata: {str(e)}")
         return False
 
+def save_screenshot(driver, name):
+    """Ekran görüntüsü al ve screenshots dizinine kaydet."""
+    path = os.path.join(SCREENSHOTS_DIR, f"{name}.png")
+    driver.save_screenshot(path)
+    print(f"[Screenshot] Kaydedildi: {path}")
+    return path
+
 @app.route('/')
 def index():
-    return "RC Helper Bulut Sunucusu Aktif! Batarya doldurmayı tetiklemek için /tetikle-batarya adresini kullanın."
+    return "RC Helper Bulut Sunucusu Aktif! Tetikle: /tetikle-batarya | Sonuçlar: /sonuc"
 
 @app.route('/tetikle-batarya', methods=['GET', 'POST'])
 def trigger_battery():
+    global latest_run
+    
     if RC_TOKEN_VALUE == "PASTE_YOUR_TOKEN_HERE" or RC_REFRESH_TOKEN_VALUE == "PASTE_YOUR_REFRESH_TOKEN_HERE":
         return jsonify({
             "status": "error",
             "message": "Authentication tokens are not configured. Please set RC_TOKEN and RC_REFRESH_TOKEN in Space Secrets or edit app.py."
         }), 400
 
+    # Eski ekran görüntülerini temizle
+    for f in os.listdir(SCREENSHOTS_DIR):
+        os.remove(os.path.join(SCREENSHOTS_DIR, f))
+    
+    steps = []
+    latest_run = {"steps": steps, "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")}
+
     # En güncel eklenti sürümünü GitHub'dan çek ve ayıkla
     print("[Extension Manager] Eklenti güncelliği kontrol ediliyor...")
     download_success = download_and_extract_latest_extension()
     
     if not download_success and not os.path.exists("/app/rchelper"):
-        return jsonify({
-            "status": "error",
-            "message": "En güncel eklenti indirilemedi ve yerel /app/rchelper dizini bulunamadı."
-        }), 500
+        steps.append("❌ Eklenti indirilemedi ve yerel kopya bulunamadı.")
+        return jsonify({"status": "error", "message": steps[-1], "steps": steps}), 500
+
+    steps.append("✅ Eklenti hazır.")
 
     print("[Selenium] Chrome başlatılıyor...")
     options = Options()
-    options.add_argument("--headless=new")  # Modern headless modu eklenti yüklemeyi destekler
+    options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--load-extension=/app/rchelper")  # Dinamik olarak güncellenen eklenti klasörünün yolu
+    options.add_argument("--window-size=1920,1080")
 
+    driver = None
     try:
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
         
-        # 1. Depolama bağlamını başlatmak için önce ana sayfaya git
+        # Adım 1: RollerCoin ana sayfasını aç
         print("[Selenium] RollerCoin açılıyor...")
         driver.get("https://rollercoin.com")
         time.sleep(3)
+        save_screenshot(driver, "01_anasayfa")
+        steps.append("✅ RollerCoin ana sayfası yüklendi.")
         
-        # 2. Kimlik doğrulama anahtarlarını Local Storage alanına enjekte et
-        print("[Selenium] Local Storage kimlik doğrulama anahtarları enjekte ediliyor...")
+        # Adım 2: Kimlik doğrulama anahtarlarını enjekte et
+        print("[Selenium] Token'lar enjekte ediliyor...")
         driver.execute_script(f"localStorage.setItem('token', '{RC_TOKEN_VALUE}');")
         driver.execute_script(f"localStorage.setItem('refreshToken', '{RC_REFRESH_TOKEN_VALUE}');")
+        steps.append("✅ Token'lar Local Storage'a enjekte edildi.")
         
-        # 3. Batarya butonunun olduğu oyun ana sayfasına git
-        print("[Selenium] Oyun sayfasına gidiliyor...")
+        # Adım 3: Oyun sayfasına git
+        print("[Selenium] /game sayfasına gidiliyor...")
         driver.get("https://rollercoin.com/game")
+        time.sleep(8)
+        save_screenshot(driver, "02_oyun_sayfasi")
+        steps.append("✅ Oyun sayfası yüklendi.")
         
-        # 4. Eklentinin battery_automator.js betiğinin çalışması ve tıklaması için 15 saniye bekle
-        print("[Selenium] Eklentinin bataryayı doldurması bekleniyor (15sn)...")
-        time.sleep(15)
+        # Adım 4: Giriş durumunu kontrol et
+        current_url = driver.current_url
+        if "sign-in" in current_url or "login" in current_url:
+            save_screenshot(driver, "03_giris_yonlendirme")
+            steps.append("❌ Giriş sayfasına yönlendirildi — token'lar süresi dolmuş olabilir!")
+            driver.quit()
+            return jsonify({"status": "error", "steps": steps, "view_results": "/sonuc"}), 401
+        
+        steps.append(f"✅ Giriş başarılı. URL: {current_url}")
+
+        # Adım 5: Batarya şarj butonunu bul
+        print("[Selenium] Batarya butonu aranıyor...")
+        button = None
+        button_method = ""
+        
+        try:
+            button = driver.find_element(By.CSS_SELECTOR,
+                'button:has(div[style*="mask-image"][style*="svg"])')
+            button_method = "CSS :has() selector"
+        except Exception:
+            pass
+        
+        if not button:
+            try:
+                candidates = driver.find_elements(By.CSS_SELECTOR,
+                    "button.custom-button.small.primary")
+                for c in candidates:
+                    if c.find_elements(By.CSS_SELECTOR, "div[style*='mask-image']"):
+                        button = c
+                        button_method = "class + inner style check"
+                        break
+            except Exception:
+                pass
+
+        if not button:
+            try:
+                button = driver.execute_script("""
+                    for (const btn of document.querySelectorAll('button')) {
+                        const d = btn.querySelector('div[style*="mask-image"]');
+                        if (d && d.style.maskImage && d.style.maskImage.includes('.svg'))
+                            return btn;
+                    }
+                    return null;
+                """)
+                if button:
+                    button_method = "JavaScript DOM search"
+            except Exception:
+                pass
+
+        if not button:
+            save_screenshot(driver, "03_buton_bulunamadi")
+            steps.append("❌ Batarya butonu sayfada bulunamadı.")
+            driver.quit()
+            return jsonify({"status": "error", "steps": steps, "view_results": "/sonuc"}), 404
+        
+        save_screenshot(driver, "03_buton_bulundu")
+        is_disabled = button.get_attribute("disabled")
+        steps.append(f"✅ Buton bulundu: {button_method} (disabled={is_disabled})")
+
+        # Adım 6: Butona tıkla
+        if is_disabled:
+            steps.append("⚠️ Buton devre dışı — batarya zaten dolu olabilir.")
+            driver.execute_script(
+                "arguments[0].removeAttribute('disabled'); arguments[0].click();", button)
+            time.sleep(5)
+            save_screenshot(driver, "04_zorla_tiklandi")
+            steps.append("🔄 Zorla tıklama yapıldı. Ekran görüntüsünü kontrol edin.")
+        else:
+            try:
+                button.click()
+            except Exception:
+                driver.execute_script("arguments[0].click();", button)
+            time.sleep(5)
+            save_screenshot(driver, "04_tiklandi")
+            steps.append("✅ Batarya butonuna tıklandı!")
+
+        save_screenshot(driver, "05_son_durum")
+        steps.append("✅ İşlem tamamlandı. Ekran görüntüleri için /sonuc adresini ziyaret edin.")
         
         driver.quit()
-        print("[Selenium] İşlem tamamlandı.")
-        return jsonify({
-            "status": "success",
-            "message": "Battery recharge automation completed successfully."
-        }), 200
+        return jsonify({"status": "success", "steps": steps, "view_results": "/sonuc"}), 200
 
     except Exception as e:
-        print(f"[Selenium] Hata oluştu: {str(e)}")
-        return jsonify({
-            "status": "error",
-            "message": f"An error occurred: {str(e)}"
-        }), 500
+        if driver:
+            try:
+                save_screenshot(driver, "99_hata")
+                driver.quit()
+            except Exception:
+                pass
+        steps.append(f"❌ Hata: {str(e)}")
+        return jsonify({"status": "error", "steps": steps, "view_results": "/sonuc"}), 500
+
+@app.route('/sonuc')
+def sonuc():
+    """Son çalıştırmanın ekran görüntülerini gösteren görsel sonuç sayfası."""
+    screenshots = sorted([f for f in os.listdir(SCREENSHOTS_DIR) if f.endswith('.png')])
+    images_html = ""
+    for ss in screenshots:
+        with open(os.path.join(SCREENSHOTS_DIR, ss), 'rb') as f:
+            b64 = base64.b64encode(f.read()).decode()
+        label = ss.replace(".png", "").replace("_", " ").title()
+        images_html += f'<div style="margin:20px 0;"><h3 style="color:#9ca3af;">{label}</h3>'
+        images_html += f'<img src="data:image/png;base64,{b64}" style="max-width:95%;border:2px solid #333;border-radius:12px;"/></div>'
+    
+    steps_html = ""
+    for step in latest_run.get("steps", []):
+        steps_html += f"<li style='margin:6px 0;'>{step}</li>"
+
+    return render_template_string("""<!DOCTYPE html>
+    <html><head><title>RC Helper - Sonuçlar</title><meta charset="utf-8"/>
+    <style>
+        body { background:#0f172a; color:#e2e8f0; font-family:'Segoe UI',sans-serif;
+               margin:0; padding:20px; text-align:center; }
+        h1 { color:#38bdf8; } h2 { color:#94a3b8; }
+        ul { text-align:left; max-width:800px; margin:20px auto; font-size:16px; line-height:1.8; }
+        .ts { color:#64748b; font-size:14px; }
+        img { box-shadow:0 4px 20px rgba(0,0,0,0.5); }
+    </style></head><body>
+        <h1>🔋 RC Helper — Batarya Otomasyon Sonuçları</h1>
+        <p class="ts">Son çalıştırma: {{ timestamp or 'Henüz çalıştırılmadı' }}</p>
+        <h2>📋 Adımlar</h2><ul>{{ steps_html | safe }}</ul>
+        <h2>📸 Ekran Görüntüleri</h2>{{ images_html | safe }}
+        <br/><p style="color:#475569;">/tetikle-batarya çalıştırdıktan sonra yeni sonuçları görmek için sayfayı yenileyin.</p>
+    </body></html>""", steps_html=steps_html, images_html=images_html,
+         timestamp=latest_run.get("timestamp"))
 
 if __name__ == '__main__':
     # Hugging Face varsayılan portu 7860'tır

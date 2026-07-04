@@ -392,10 +392,11 @@ CMD ["python", "app.py"]
 
 #### 📁 `app.py`
 ```python
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template_string
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import os
@@ -403,6 +404,8 @@ import urllib.request
 import json
 import zipfile
 import shutil
+import base64
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -414,6 +417,12 @@ app = Flask(__name__)
 #   Name = 'RC_REFRESH_TOKEN', Value = 'your_refresh_token_here'
 RC_TOKEN_VALUE = os.environ.get("RC_TOKEN", "PASTE_YOUR_TOKEN_HERE")
 RC_REFRESH_TOKEN_VALUE = os.environ.get("RC_REFRESH_TOKEN", "PASTE_YOUR_REFRESH_TOKEN_HERE")
+
+SCREENSHOTS_DIR = "/app/screenshots"
+os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
+
+# Store the latest run results globally
+latest_run = {"steps": [], "timestamp": None}
 
 def download_and_extract_latest_extension():
     try:
@@ -469,71 +478,202 @@ def download_and_extract_latest_extension():
         print(f"[Extension Manager] Error downloading extension: {str(e)}")
         return False
 
+def save_screenshot(driver, name):
+    """Take a screenshot and save it to the screenshots directory."""
+    path = os.path.join(SCREENSHOTS_DIR, f"{name}.png")
+    driver.save_screenshot(path)
+    print(f"[Screenshot] Saved: {path}")
+    return path
+
 @app.route('/')
 def index():
-    return "RC Helper Cloud Server is running! Trigger the battery recharge at /tetikle-batarya"
+    return "RC Helper Cloud Server is running! Trigger: /tetikle-batarya | Results: /sonuc"
 
 @app.route('/tetikle-batarya', methods=['GET', 'POST'])
 def trigger_battery():
+    global latest_run
+    
     if RC_TOKEN_VALUE == "PASTE_YOUR_TOKEN_HERE" or RC_REFRESH_TOKEN_VALUE == "PASTE_YOUR_REFRESH_TOKEN_HERE":
         return jsonify({
             "status": "error",
             "message": "Authentication tokens are not configured. Please set RC_TOKEN and RC_REFRESH_TOKEN in Space Secrets or edit app.py."
         }), 400
 
+    # Clear old screenshots
+    for f in os.listdir(SCREENSHOTS_DIR):
+        os.remove(os.path.join(SCREENSHOTS_DIR, f))
+    
+    steps = []
+    latest_run = {"steps": steps, "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")}
+
     # Automatically fetch and extract the latest extension release
     print("[Extension Manager] Checking and updating extension...")
     download_success = download_and_extract_latest_extension()
     
     if not download_success and not os.path.exists("/app/rchelper"):
-        return jsonify({
-            "status": "error",
-            "message": "Failed to download the extension and no local /app/rchelper directory exists."
-        }), 500
+        steps.append("❌ Failed to download the extension and no local copy exists.")
+        return jsonify({"status": "error", "message": steps[-1], "steps": steps}), 500
+
+    steps.append("✅ Extension ready.")
 
     print("[Selenium] Starting Chrome Webdriver...")
     options = Options()
-    options.add_argument("--headless=new")  # Modern headless mode supports extensions
+    options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--load-extension=/app/rchelper")  # Path to the dynamically updated extension folder
+    options.add_argument("--window-size=1920,1080")
 
+    driver = None
     try:
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
         
-        # 1. Load domain to initialize storage context
+        # Step 1: Open RollerCoin homepage
         print("[Selenium] Opening RollerCoin...")
         driver.get("https://rollercoin.com")
         time.sleep(3)
+        save_screenshot(driver, "01_homepage")
+        steps.append("✅ RollerCoin homepage loaded.")
         
-        # 2. Inject authentication tokens into Local Storage
-        print("[Selenium] Injecting local storage authentication tokens...")
+        # Step 2: Inject authentication tokens
+        print("[Selenium] Injecting tokens...")
         driver.execute_script(f"localStorage.setItem('token', '{RC_TOKEN_VALUE}');")
         driver.execute_script(f"localStorage.setItem('refreshToken', '{RC_REFRESH_TOKEN_VALUE}');")
+        steps.append("✅ Tokens injected into Local Storage.")
         
-        # 3. Navigate to game page where the battery button is located
-        print("[Selenium] Navigating to game page...")
+        # Step 3: Navigate to game page
+        print("[Selenium] Navigating to /game...")
         driver.get("https://rollercoin.com/game")
+        time.sleep(8)
+        save_screenshot(driver, "02_game_page")
+        steps.append("✅ Game page loaded.")
         
-        # 4. Wait 15 seconds for battery_automator.js to run, wait and click the button
-        print("[Selenium] Waiting for extension to automate battery recharge (15s)...")
-        time.sleep(15)
+        # Step 4: Check login status
+        current_url = driver.current_url
+        if "sign-in" in current_url or "login" in current_url:
+            save_screenshot(driver, "03_login_redirect")
+            steps.append("❌ Redirected to login — tokens may be expired!")
+            driver.quit()
+            return jsonify({"status": "error", "steps": steps, "view_results": "/sonuc"}), 401
+        
+        steps.append(f"✅ Logged in. URL: {current_url}")
+
+        # Step 5: Find the battery recharge button
+        print("[Selenium] Searching for battery button...")
+        button = None
+        button_method = ""
+        
+        try:
+            button = driver.find_element(By.CSS_SELECTOR,
+                'button:has(div[style*="mask-image"][style*="svg"])')
+            button_method = "CSS :has() selector"
+        except Exception:
+            pass
+        
+        if not button:
+            try:
+                candidates = driver.find_elements(By.CSS_SELECTOR,
+                    "button.custom-button.small.primary")
+                for c in candidates:
+                    if c.find_elements(By.CSS_SELECTOR, "div[style*='mask-image']"):
+                        button = c
+                        button_method = "class + inner style check"
+                        break
+            except Exception:
+                pass
+
+        if not button:
+            try:
+                button = driver.execute_script("""
+                    for (const btn of document.querySelectorAll('button')) {
+                        const d = btn.querySelector('div[style*="mask-image"]');
+                        if (d && d.style.maskImage && d.style.maskImage.includes('.svg'))
+                            return btn;
+                    }
+                    return null;
+                """)
+                if button:
+                    button_method = "JavaScript DOM search"
+            except Exception:
+                pass
+
+        if not button:
+            save_screenshot(driver, "03_button_not_found")
+            steps.append("❌ Battery button NOT found on the page.")
+            driver.quit()
+            return jsonify({"status": "error", "steps": steps, "view_results": "/sonuc"}), 404
+        
+        save_screenshot(driver, "03_button_found")
+        is_disabled = button.get_attribute("disabled")
+        steps.append(f"✅ Button found via: {button_method} (disabled={is_disabled})")
+
+        # Step 6: Click the button
+        if is_disabled:
+            steps.append("⚠️ Button is disabled — battery may already be charged.")
+            driver.execute_script(
+                "arguments[0].removeAttribute('disabled'); arguments[0].click();", button)
+            time.sleep(5)
+            save_screenshot(driver, "04_after_forced_click")
+            steps.append("🔄 Forced click executed. Check screenshot.")
+        else:
+            try:
+                button.click()
+            except Exception:
+                driver.execute_script("arguments[0].click();", button)
+            time.sleep(5)
+            save_screenshot(driver, "04_after_click")
+            steps.append("✅ Battery button clicked!")
+
+        save_screenshot(driver, "05_final_state")
+        steps.append("✅ Done. Visit /sonuc to see screenshots.")
         
         driver.quit()
-        print("[Selenium] Recharge sequence complete.")
-        return jsonify({
-            "status": "success",
-            "message": "Battery recharge automation completed successfully."
-        }), 200
+        return jsonify({"status": "success", "steps": steps, "view_results": "/sonuc"}), 200
 
     except Exception as e:
-        print(f"[Selenium] Error occurred: {str(e)}")
-        return jsonify({
-            "status": "error",
-            "message": f"An error occurred: {str(e)}"
-        }), 500
+        if driver:
+            try:
+                save_screenshot(driver, "99_error")
+                driver.quit()
+            except Exception:
+                pass
+        steps.append(f"❌ Error: {str(e)}")
+        return jsonify({"status": "error", "steps": steps, "view_results": "/sonuc"}), 500
+
+@app.route('/sonuc')
+def sonuc():
+    """Visual results page showing screenshots from the latest run."""
+    screenshots = sorted([f for f in os.listdir(SCREENSHOTS_DIR) if f.endswith('.png')])
+    images_html = ""
+    for ss in screenshots:
+        with open(os.path.join(SCREENSHOTS_DIR, ss), 'rb') as f:
+            b64 = base64.b64encode(f.read()).decode()
+        label = ss.replace(".png", "").replace("_", " ").title()
+        images_html += f'<div style="margin:20px 0;"><h3 style="color:#9ca3af;">{label}</h3>'
+        images_html += f'<img src="data:image/png;base64,{b64}" style="max-width:95%;border:2px solid #333;border-radius:12px;"/></div>'
+    
+    steps_html = ""
+    for step in latest_run.get("steps", []):
+        steps_html += f"<li style='margin:6px 0;'>{step}</li>"
+
+    return render_template_string("""<!DOCTYPE html>
+    <html><head><title>RC Helper - Results</title><meta charset="utf-8"/>
+    <style>
+        body { background:#0f172a; color:#e2e8f0; font-family:'Segoe UI',sans-serif;
+               margin:0; padding:20px; text-align:center; }
+        h1 { color:#38bdf8; } h2 { color:#94a3b8; }
+        ul { text-align:left; max-width:800px; margin:20px auto; font-size:16px; line-height:1.8; }
+        .ts { color:#64748b; font-size:14px; }
+        img { box-shadow:0 4px 20px rgba(0,0,0,0.5); }
+    </style></head><body>
+        <h1>🔋 RC Helper — Battery Automation Results</h1>
+        <p class="ts">Last run: {{ timestamp or 'No runs yet' }}</p>
+        <h2>📋 Steps</h2><ul>{{ steps_html | safe }}</ul>
+        <h2>📸 Screenshots</h2>{{ images_html | safe }}
+        <br/><p style="color:#475569;">Refresh after triggering /tetikle-batarya to see new results.</p>
+    </body></html>""", steps_html=steps_html, images_html=images_html,
+         timestamp=latest_run.get("timestamp"))
 
 if __name__ == '__main__':
     # Hugging Face default port is 7860
