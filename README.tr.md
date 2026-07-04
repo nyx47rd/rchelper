@@ -319,8 +319,22 @@ RollerCoin, kullanıcı oturumunu doğrulamak için standart çerezler yerine ta
 
 ---
 
-### 2. Gerekli Dağıtım Dosyaları (Tam İçerikler) 📄
-Hugging Face Space ana dizininizde tam olarak **3 dosya** oluşturmanız gerekir. Aşağıdaki dosya içeriklerini hiçbir yerini değiştirmeden kopyalayıp yapıştırın:
+### 2. Hugging Face Space Dağıtım Adımları 🚀
+1. [Hugging Face](https://huggingface.co) sitesine gidin ve oturum açın.
+2. Sağ üst köşedeki profil resminize tıklayıp **New Space** seçeneğini seçin.
+3. İlgili alanları doldurun:
+   * **Space Name:** Bir isim verin (örn: `my-rc-battery-automator`).
+   * **License:** `mit` (veya dilediğinizi seçin).
+   * **Select Space SDK:** **Docker** seçeneğini işaretleyin.
+   * **Choose a Docker template:** **Blank** seçeneğini seçin.
+   * **Space Hardware:** Ücretsiz CPU temel katmanını seçin.
+   * **Privacy:** **Public** (Açık) veya **Private** (Gizli - Gizlilik için bu önerilir) seçin.
+4. **Create Space** butonuna tıklayın.
+
+---
+
+### 3. Gerekli Dağıtım Dosyaları (Tam İçerikler) 📄
+Yeni oluşturduğunuz Space alanında **Files** (Dosyalar) sekmesine geçip **Contribute** butonuna tıklayarak **Upload files** veya **Create a new file** seçenekleriyle root dizinine şu **3 dosyayı** yükleyin/oluşturun:
 
 #### 📁 `requirements.txt`
 ```text
@@ -526,24 +540,8 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7860)
 ```
 
----
-
-### 3. Hugging Face Space Dağıtım Adımları 🚀
-1. [Hugging Face](https://huggingface.co) sitesine gidin ve oturum açın.
-2. Sağ üst köşedeki profil resminize tıklayıp **New Space** seçeneğini seçin.
-3. İlgili alanları doldurun:
-   * **Space Name:** Bir isim verin (örn: `my-rc-battery-automator`).
-   * **License:** `mit` (veya dilediğinizi seçin).
-   * **Select Space SDK:** **Docker** seçeneğini işaretleyin.
-   * **Choose a Docker template:** **Blank** seçeneğini seçin.
-   * **Space Hardware:** Ücretsiz CPU temel katmanını seçin.
-   * **Privacy:** **Public** (Açık) veya **Private** (Gizli - Gizlilik için bu önerilir) seçin.
-4. **Create Space** butonuna tıklayın.
-5. Sayfa açıldığında **Files** (Dosyalar) sekmesine geçip **Contribute** butonuna tıklayarak **Upload files** veya **Create a new file** seçenekleriyle şunları yükleyin:
-   * `requirements.txt` dosyasını.
-   * `Dockerfile` dosyasını.
-   * `app.py` dosyasını.
-6. (İsteğe Bağlı/Önerilen): Space panelinden **Settings** (Ayarlar) sekmesine gidin, **Variables and Secrets** bölümüne inin, **New Secret** butonuna tıklayın. İki adet secret oluşturun: isimlerini sırasıyla **`RC_TOKEN`** ve **`RC_REFRESH_TOKEN`** yapın, değer kısımlarına ise kopyaladığınız ilgili anahtarları yapıştırıp kaydedin.
+Dosyalar yüklendikten sonra kimlik doğrulama anahtarlarınızı tanımlayın:
+* Space panelinden **Settings** (Ayarlar) sekmesine gidin, **Variables and Secrets** bölümüne inin, **New Secret** butonuna tıklayın. İki adet secret oluşturun: isimlerini sırasıyla **`RC_TOKEN`** ve **`RC_REFRESH_TOKEN`** yapın, değer kısımlarına ise kopyaladığınız ilgili anahtarları yapıştırıp kaydedin.
 
 ---
 

@@ -319,8 +319,22 @@ RollerCoin uses JSON Web Tokens (JWT) stored in your browser's **Local Storage**
 
 ---
 
-### 2. Required Deployment Files (Full Contents) 📄
-Create exactly **3 files** in the root directory of your Hugging Face Space. Copy and paste their full contents directly:
+### 2. Hugging Face Space Creation Steps 🚀
+1. Go to [Hugging Face](https://huggingface.co) and log in.
+2. Click on your profile picture in the top-right corner and select **New Space**.
+3. Fill out the fields:
+   * **Space Name:** Choose a name (e.g., `my-rc-battery-automator`).
+   * **License:** `mit` (or choose any).
+   * **Select Space SDK:** Select **Docker**.
+   * **Choose a Docker template:** Select **Blank**.
+   * **Space Hardware:** Select the free CPU basic tier.
+   * **Privacy:** Set to **Public** or **Private** (Private is recommended for privacy).
+4. Click **Create Space**.
+
+---
+
+### 3. Required Deployment Files (Full Contents) 📄
+In your newly created Space, navigate to the **Files** tab, click **Contribute**, and select **Upload files** or **Create a new file** to add/create the following **3 files** in the root directory:
 
 #### 📁 `requirements.txt`
 ```text
@@ -525,24 +539,8 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7860)
 ```
 
----
-
-### 3. Hugging Face Deployment Steps 🚀
-1. Go to [Hugging Face](https://huggingface.co) and log in.
-2. Click on your profile picture in the top-right corner and select **New Space**.
-3. Fill out the fields:
-   * **Space Name:** Choose a name (e.g., `my-rc-battery-automator`).
-   * **License:** `mit` (or choose any).
-   * **Select Space SDK:** Select **Docker**.
-   * **Choose a Docker template:** Select **Blank**.
-   * **Space Hardware:** Select the free CPU basic tier.
-   * **Privacy:** Set to **Public** or **Private** (Private is recommended for privacy).
-4. Click **Create Space**.
-5. Once created, click on the **Files** tab, click **Contribute** and select **Upload files** or **Create a new file** to add:
-   * The `requirements.txt` file.
-   * The `Dockerfile` file.
-   * The `app.py` file.
-6. (Optional/Recommended): Navigate to the Space **Settings** tab, scroll down to **Variables and Secrets**, click **New Secret**, create two secrets: name them **`RC_TOKEN`** and **`RC_REFRESH_TOKEN`**, and paste your copied token values as their values.
+Once the files are uploaded, configure your authentication tokens:
+* Navigate to the Space **Settings** tab, scroll down to **Variables and Secrets**, click **New Secret**, create two secrets: name them **`RC_TOKEN`** and **`RC_REFRESH_TOKEN`**, and paste your copied token values as their values.
 
 ---
 
