@@ -305,14 +305,17 @@ Popup → Oyun Botları kartından botun açık olduğundan emin ol. Bot yalnız
 
 RC Helper, arayüzsüz (headless) bulut tabanlı otomasyon desteği sunar. Bu sayede bilgisayarınızı 7/24 açık bırakmanıza gerek kalmadan, Hugging Face Spaces (Docker + Selenium) ve bir cron-job servisi (örneğin cron-job.org) aracılığıyla RollerCoin bataryalarınızı 24 saatte bir otomatik olarak doldurabilirsiniz.
 
-### 1. Oturum Çerezi (Session Cookie) Nasıl Alınır? 🍪
-Arayüzsüz çalışan tarayıcının RollerCoin giriş ekranını aşarak sizin hesabınızla işlem yapabilmesi için aktif çerez (cookie) değerinize ihtiyacı vardır.
+### 1. Kimlik Doğrulama Anahtarları (Local Storage) Nasıl Alınır? 🔑
+RollerCoin, kullanıcı oturumunu doğrulamak için standart çerezler yerine tarayıcınızın **Local Storage** alanında JSON Web Token (JWT) saklar.
 1. Tarayıcınızdan [RollerCoin](https://rollercoin.com) sitesine gidin ve hesabınıza giriş yapın.
 2. Sayfada herhangi bir yere sağ tıklayıp **İncele** (Inspect) deyin veya klavyenizden **F12** tuşuna basarak Geliştirici Araçları'nı açın.
-3. Üstteki sekmelerden **Application** (Chrome/Edge kullanıyorsanız) veya **Storage** (Firefox kullanıyorsanız) sekmesine gidin.
-4. Sol menüdeki **Cookies** (Çerezler) seçeneğini genişletip altındaki `https://rollercoin.com` adresine tıklayın.
-5. Tabloda **`session`** isimli satırı bulun.
-6. Bu satırın **Value** (Değer) sütunundaki uzun harf ve sayı kombinasyonuna çift tıklayıp kopyalayın ve bir yere kaydedin.
+3. Üstteki sekmelerden **Console** (Konsol) sekmesine geçiş yapın.
+4. Aşağıdaki kodu konsola aynen yapıştırıp **Enter** tuşuna basın:
+   ```javascript
+   console.log("RC_TOKEN:", localStorage.getItem("token"));
+   console.log("RC_REFRESH_TOKEN:", localStorage.getItem("refreshToken"));
+   ```
+5. Konsolda yazdırılan `RC_TOKEN` ve `RC_REFRESH_TOKEN` değerlerini kopyalayıp bir yere not edin.
 
 ---
 
@@ -388,11 +391,15 @@ import shutil
 
 app = Flask(__name__)
 
-# ROLLERCOIN OTURUM ÇEREZİ (COOKIE) YAPILANDIRMASI:
-# Aşağıdaki tırnak içerisine kopyaladığınız session çerezini doğrudan yapıştırabilirsiniz.
-# VEYA daha güvenli bir yöntem olarak, bu kodu aynen bırakıp Hugging Face panelinden:
-# Settings -> Variables and Secrets -> New Secret yolunu izleyerek Name = 'RC_SESSION' ve Value = 'çerez_değeriniz' şeklinde tanımlayabilirsiniz.
-SESSION_COOKIE_VALUE = os.environ.get("RC_SESSION", "PASTE_YOUR_SESSION_COOKIE_HERE")
+# ROLLERCOIN OTURUM ANAHTARLARI YAPILANDIRMASI:
+# Aşağıdaki tırnak içerilerine konsoldan kopyaladığınız değerleri doğrudan yapıştırabilirsiniz.
+# VEYA daha güvenli bir yöntem olarak, bu kodları aynen bırakıp Hugging Face panelinden:
+# Settings -> Variables and Secrets -> New Secret yolunu izleyerek:
+#   Name = 'RC_TOKEN', Value = 'token_değeriniz'
+#   Name = 'RC_REFRESH_TOKEN', Value = 'refresh_token_değeriniz'
+# şeklinde tanımlayabilirsiniz.
+RC_TOKEN_VALUE = os.environ.get("RC_TOKEN", "PASTE_YOUR_TOKEN_HERE")
+RC_REFRESH_TOKEN_VALUE = os.environ.get("RC_REFRESH_TOKEN", "PASTE_YOUR_REFRESH_TOKEN_HERE")
 
 def download_and_extract_latest_extension():
     try:
@@ -454,10 +461,10 @@ def index():
 
 @app.route('/tetikle-batarya', methods=['GET', 'POST'])
 def trigger_battery():
-    if SESSION_COOKIE_VALUE == "PASTE_YOUR_SESSION_COOKIE_HERE" or not SESSION_COOKIE_VALUE:
+    if RC_TOKEN_VALUE == "PASTE_YOUR_TOKEN_HERE" or RC_REFRESH_TOKEN_VALUE == "PASTE_YOUR_REFRESH_TOKEN_HERE":
         return jsonify({
             "status": "error",
-            "message": "Session cookie is not configured. Please set RC_SESSION in Space Secrets or edit app.py."
+            "message": "Authentication tokens are not configured. Please set RC_TOKEN and RC_REFRESH_TOKEN in Space Secrets or edit app.py."
         }), 400
 
     # En güncel eklenti sürümünü GitHub'dan çek ve ayıkla
@@ -482,19 +489,15 @@ def trigger_battery():
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
         
-        # 1. Çerez tanımlayabilmek için önce alan adına git
+        # 1. Depolama bağlamını başlatmak için önce ana sayfaya git
         print("[Selenium] RollerCoin açılıyor...")
         driver.get("https://rollercoin.com")
         time.sleep(3)
         
-        # 2. Oturum çerezini enjekte et
-        print("[Selenium] Oturum çerezi enjekte ediliyor...")
-        driver.add_cookie({
-            "name": "session",
-            "value": SESSION_COOKIE_VALUE,
-            "domain": ".rollercoin.com",
-            "path": "/"
-        })
+        # 2. Kimlik doğrulama anahtarlarını Local Storage alanına enjekte et
+        print("[Selenium] Local Storage kimlik doğrulama anahtarları enjekte ediliyor...")
+        driver.execute_script(f"localStorage.setItem('token', '{RC_TOKEN_VALUE}');")
+        driver.execute_script(f"localStorage.setItem('refreshToken', '{RC_REFRESH_TOKEN_VALUE}');")
         
         # 3. Batarya butonunun olduğu oyun ana sayfasına git
         print("[Selenium] Oyun sayfasına gidiliyor...")
@@ -521,7 +524,6 @@ def trigger_battery():
 if __name__ == '__main__':
     # Hugging Face varsayılan portu 7860'tır
     app.run(host='0.0.0.0', port=7860)
-```
 
 > [!WARNING]
 > **Kritik Kurulum Notu:** Dağıtım yapmadan önce yerel eklenti klasörünüzdeki [battery_automator.js](file:///home/veilzon/rchelper-master/tools/battery_automator.js) dosyasını açıp `BATTERY_BUTTON_SELECTOR` sabitini, RollerCoin sayfasındaki batarya şarj butonunun güncel CSS selector'ı ile kesinlikle güncellemelisiniz.
@@ -547,7 +549,7 @@ if __name__ == '__main__':
    * `requirements.txt` dosyasını.
    * `Dockerfile` dosyasını.
    * `app.py` dosyasını.
-6. (İsteğe Bağlı/Önerilen): Space panelinden **Settings** (Ayarlar) sekmesine gidin, **Variables and Secrets** bölümüne inin, **New Secret** butonuna tıklayın. İsim olarak **`RC_SESSION`** girin, değer olarak ise kopyaladığınız session çerezini yapıştırıp kaydedin.
+6. (İsteğe Bağlı/Önerilen): Space panelinden **Settings** (Ayarlar) sekmesine gidin, **Variables and Secrets** bölümüne inin, **New Secret** butonuna tıklayın. İki adet secret oluşturun: isimlerini sırasıyla **`RC_TOKEN`** ve **`RC_REFRESH_TOKEN`** yapın, değer kısımlarına ise kopyaladığınız ilgili anahtarları yapıştırıp kaydedin.
 
 ---
 

@@ -305,19 +305,22 @@ Make sure the bot is enabled in Popup → Game Bots card. The bot only activates
 
 RC Helper supports headless cloud-based automation. This allows you to automatically recharge your RollerCoin batteries 24/7 without keeping your computer running, utilizing Hugging Face Spaces (Docker + Selenium) and a cron-job service (e.g., cron-job.org).
 
-### 1. How to Retrieve Your Session Cookie 🍪
-The headless browser uses your active RollerCoin session cookie to bypass login forms.
+### 1. How to Retrieve Your Authentication Tokens (Local Storage) 🔑
+RollerCoin uses JSON Web Tokens (JWT) stored in your browser's **Local Storage** for user authentication (rather than standard cookies).
 1. Open your browser and log into [RollerCoin](https://rollercoin.com).
 2. Press **F12** (or right-click anywhere and select **Inspect**) to open Developer Tools.
-3. Navigate to the **Application** tab (on Chrome/Edge) or **Storage** tab (on Firefox).
-4. In the left sidebar, expand **Cookies** and click on `https://rollercoin.com`.
-5. Find the row named **`session`** in the table.
-6. Double-click the **Value** column of this row, copy the entire string (e.g., a long sequence of letters and numbers), and save it.
+3. Click the **Console** tab at the top.
+4. Copy and paste the following snippet into the console and press **Enter**:
+   ```javascript
+   console.log("RC_TOKEN:", localStorage.getItem("token"));
+   console.log("RC_REFRESH_TOKEN:", localStorage.getItem("refreshToken"));
+   ```
+5. Copy both printed strings (`RC_TOKEN` and `RC_REFRESH_TOKEN`).
 
 ---
 
 ### 2. Required Deployment Files (Full Contents) 📄
-You must create exactly **3 files** in the root directory of your Hugging Face Space. Copy and paste their full contents directly:
+Create exactly **3 files** in the root directory of your Hugging Face Space. Copy and paste their full contents directly:
 
 #### 📁 `requirements.txt`
 ```text
@@ -388,11 +391,14 @@ import shutil
 
 app = Flask(__name__)
 
-# ROLLERCOIN SESSION COOKIE CONFIGURATION:
-# You can paste your session cookie value below inside the quotes,
-# OR for better security, leave it as is and set it in your Space settings:
-# Settings -> Variables and Secrets -> New Secret: Name = 'RC_SESSION', Value = 'your_cookie_here'
-SESSION_COOKIE_VALUE = os.environ.get("RC_SESSION", "PASTE_YOUR_SESSION_COOKIE_HERE")
+# ROLLERCOIN AUTHENTICATION CONFIGURATION:
+# You can paste your token values below inside the quotes,
+# OR for better security, leave them as is and set them in your Space settings:
+# Settings -> Variables and Secrets -> New Secret:
+#   Name = 'RC_TOKEN', Value = 'your_token_here'
+#   Name = 'RC_REFRESH_TOKEN', Value = 'your_refresh_token_here'
+RC_TOKEN_VALUE = os.environ.get("RC_TOKEN", "PASTE_YOUR_TOKEN_HERE")
+RC_REFRESH_TOKEN_VALUE = os.environ.get("RC_REFRESH_TOKEN", "PASTE_YOUR_REFRESH_TOKEN_HERE")
 
 def download_and_extract_latest_extension():
     try:
@@ -454,10 +460,10 @@ def index():
 
 @app.route('/tetikle-batarya', methods=['GET', 'POST'])
 def trigger_battery():
-    if SESSION_COOKIE_VALUE == "PASTE_YOUR_SESSION_COOKIE_HERE" or not SESSION_COOKIE_VALUE:
+    if RC_TOKEN_VALUE == "PASTE_YOUR_TOKEN_HERE" or RC_REFRESH_TOKEN_VALUE == "PASTE_YOUR_REFRESH_TOKEN_HERE":
         return jsonify({
             "status": "error",
-            "message": "Session cookie is not configured. Please set RC_SESSION in Space Secrets or edit app.py."
+            "message": "Authentication tokens are not configured. Please set RC_TOKEN and RC_REFRESH_TOKEN in Space Secrets or edit app.py."
         }), 400
 
     # Automatically fetch and extract the latest extension release
@@ -482,19 +488,15 @@ def trigger_battery():
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
         
-        # 1. Load domain to initialize cookies
+        # 1. Load domain to initialize storage context
         print("[Selenium] Opening RollerCoin...")
         driver.get("https://rollercoin.com")
         time.sleep(3)
         
-        # 2. Inject session cookie
-        print("[Selenium] Injecting session cookie...")
-        driver.add_cookie({
-            "name": "session",
-            "value": SESSION_COOKIE_VALUE,
-            "domain": ".rollercoin.com",
-            "path": "/"
-        })
+        # 2. Inject authentication tokens into Local Storage
+        print("[Selenium] Injecting local storage authentication tokens...")
+        driver.execute_script(f"localStorage.setItem('token', '{RC_TOKEN_VALUE}');")
+        driver.execute_script(f"localStorage.setItem('refreshToken', '{RC_REFRESH_TOKEN_VALUE}');")
         
         # 3. Navigate to game page where the battery button is located
         print("[Selenium] Navigating to game page...")
@@ -521,7 +523,6 @@ def trigger_battery():
 if __name__ == '__main__':
     # Hugging Face default port is 7860
     app.run(host='0.0.0.0', port=7860)
-```
 
 > [!WARNING]
 > **Critical Configuration:** You MUST edit [battery_automator.js](file:///home/veilzon/rchelper-master/tools/battery_automator.js) in your local extension folder and update the `BATTERY_BUTTON_SELECTOR` constant with the current selector of the recharge button from the RollerCoin page before packaging and deploying.
@@ -547,7 +548,7 @@ if __name__ == '__main__':
    * The `requirements.txt` file.
    * The `Dockerfile` file.
    * The `app.py` file.
-6. (Optional/Recommended): Navigate to the Space **Settings** tab, scroll down to **Variables and Secrets**, click **New Secret**, name it **`RC_SESSION`**, and paste your copied session cookie value as the value.
+6. (Optional/Recommended): Navigate to the Space **Settings** tab, scroll down to **Variables and Secrets**, click **New Secret**, create two secrets: name them **`RC_TOKEN`** and **`RC_REFRESH_TOKEN`**, and paste your copied token values as their values.
 
 ---
 
