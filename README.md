@@ -301,6 +301,67 @@ Make sure the bot is enabled in Popup → Game Bots card. The bot only activates
 
 ---
 
+## ☁️ Cloud-Based Battery Automator (Hugging Face & Selenium)
+
+RC Helper includes support for headless cloud-based automation. This allows you to automatically recharge your RollerCoin batteries 24/7 without keeping your computer running, utilizing Hugging Face Spaces (Docker + Selenium) and a cron-job service (e.g., cron-job.org).
+
+### 📋 Prerequisites
+1. **Hugging Face Account:** To host the Docker Space.
+2. **RollerCoin Session Cookie:** To authenticate in the headless browser.
+3. **Cron-job.org Account:** To trigger the automation endpoint every 24 hours.
+4. **CSS Selector:** The current CSS selector of the RollerCoin battery recharge button.
+
+> [!WARNING]
+> **Critical Configuration:** You MUST edit [battery_automator.js](file:///home/veilzon/rchelper-master/tools/battery_automator.js) and update the `BATTERY_BUTTON_SELECTOR` constant with the current selector of the recharge button from the RollerCoin page before deploying.
+> ```javascript
+> const BATTERY_BUTTON_SELECTOR = "button.your-recharge-button-class";
+> ```
+
+### 🚀 Deployment Steps
+
+1. **Create Hugging Face Space:**
+   * Go to Hugging Face, click **New Space**.
+   * Select **Docker** as the SDK. Choose the **Blank** template.
+2. **Upload Files:**
+   * Upload the `rchelper` extension folder.
+   * Upload your `Dockerfile` and your python app file `app.py`.
+3. **Selenium Configuration (app.py):**
+   * Configure your Selenium webdriver to load the `rchelper` extension using `--load-extension`. Here is an example Python snippet:
+     ```python
+     from selenium import webdriver
+     from selenium.webdriver.chrome.options import Options
+     import time
+
+     options = Options()
+     options.add_argument("--headless=new") # Modern headless mode supports extensions
+     options.add_argument("--no-sandbox")
+     options.add_argument("--disable-dev-shm-usage")
+     options.add_argument("--load-extension=/app/rchelper") # Path to extension
+
+     driver = webdriver.Chrome(options=options)
+
+     # 1. Set Session Cookie
+     driver.get("https://rollercoin.com")
+     driver.add_cookie({
+         "name": "session",
+         "value": "YOUR_ROLLERCOIN_SESSION_COOKIE",
+         "domain": ".rollercoin.com"
+     })
+
+     # 2. Go to game page where the battery resides
+     driver.get("https://rollercoin.com/game")
+     time.sleep(10) # Give the extension time to wait, delay, and click the button
+
+     driver.quit()
+     ```
+4. **Setup Cron-Job:**
+   * Register on [cron-job.org](https://cron-job.org).
+   * Create a cron job pointing to your Hugging Face Space trigger URL (e.g. `https://your-space-url.hf.space/trigger-battery`) configured to run every 24 hours.
+
+<br/>
+
+---
+
 ## 🛠️ Technology
 
 <div align="center">
