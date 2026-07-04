@@ -11,15 +11,16 @@
     return;
   }
 
-  // ⚠️ KRİTİK: Buraya RollerCoin batarya doldurma (Recharge) butonunun güncel CSS selector'ını yazın
-  const BATTERY_BUTTON_SELECTOR = "BURAYA_CSS_SELECTOR_GELECEK";
+  // RollerCoin batarya şarj butonunun güncel CSS selector'ı:
+  // İçindeki div öğesinde mask-image style niteliğiyle pil ikonu (.svg) barındıran butonu yakalar
+  const BATTERY_BUTTON_SELECTOR = 'button:has(div[style*="mask-image"][style*="svg"])';
 
   console.log("[RC-Battery] 🔋 Battery Automator modülü aktifleşti. Buton tespiti bekleniyor...");
 
   // Sayfa yüklendikten sonra butonu periyodik olarak tarayan döngü
   const checkInterval = setInterval(() => {
-    if (BATTERY_BUTTON_SELECTOR === "BURAYA_CSS_SELECTOR_GELECEK" || !BATTERY_BUTTON_SELECTOR) {
-      console.warn("[RC-Battery] ⚠️ BATTERY_BUTTON_SELECTOR henüz yapılandırılmamış. Lütfen tools/battery_automator.js dosyasını güncelleyin.");
+    if (!BATTERY_BUTTON_SELECTOR) {
+      console.warn("[RC-Battery] ⚠️ BATTERY_BUTTON_SELECTOR boş bırakılamaz.");
       clearInterval(checkInterval);
       return;
     }
