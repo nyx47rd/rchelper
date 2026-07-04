@@ -381,6 +381,10 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import os
+import urllib.request
+import json
+import zipfile
+import shutil
 
 app = Flask(__name__)
 
@@ -389,6 +393,60 @@ app = Flask(__name__)
 # VEYA daha güvenli bir yöntem olarak, bu kodu aynen bırakıp Hugging Face panelinden:
 # Settings -> Variables and Secrets -> New Secret yolunu izleyerek Name = 'RC_SESSION' ve Value = 'çerez_değeriniz' şeklinde tanımlayabilirsiniz.
 SESSION_COOKIE_VALUE = os.environ.get("RC_SESSION", "PASTE_YOUR_SESSION_COOKIE_HERE")
+
+def download_and_extract_latest_extension():
+    try:
+        print("[Extension Manager] GitHub üzerinden en güncel eklenti sürümü kontrol ediliyor...")
+        req = urllib.request.Request(
+            "https://api.github.com/repos/nyx47rd/rchelper/releases/latest",
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode())
+            
+        zip_url = None
+        for asset in data.get("assets", []):
+            if asset.get("name", "").startswith("rchelper") and asset.get("name", "").endswith(".zip"):
+                zip_url = asset.get("browser_download_url")
+                break
+                
+        if not zip_url:
+            print("[Extension Manager] Son sürümde ZIP dosyası bulunamadı! Mevcut yerel dosyalar kullanılacak.")
+            return False
+            
+        zip_path = "/tmp/rchelper_latest.zip"
+        print(f"[Extension Manager] Güncel sürüm indiriliyor: {zip_url}...")
+        urllib.request.urlretrieve(zip_url, zip_path)
+        
+        extract_dir = "/app/rchelper"
+        tmp_extract = "/tmp/rchelper_extract"
+        if os.path.exists(tmp_extract):
+            shutil.rmtree(tmp_extract)
+        os.makedirs(tmp_extract, exist_ok=True)
+        
+        print("[Extension Manager] ZIP dosyası ayıklanıyor...")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(tmp_extract)
+            
+        source_folder = os.path.join(tmp_extract, "rchelper")
+        if os.path.exists(source_folder):
+            if os.path.exists(extract_dir):
+                shutil.rmtree(extract_dir)
+            shutil.move(source_folder, extract_dir)
+            print(f"[Extension Manager] Eklenti başarıyla {extract_dir} dizinine güncellendi.")
+        else:
+            print("[Extension Manager] ZIP içerisinden 'rchelper' klasörü bulunamadı!")
+            return False
+            
+        if os.path.exists(zip_path):
+            os.remove(zip_path)
+        if os.path.exists(tmp_extract):
+            shutil.rmtree(tmp_extract)
+            
+        return True
+    except Exception as e:
+        print(f"[Extension Manager] Güncel sürüm indirilirken hata: {str(e)}")
+        return False
 
 @app.route('/')
 def index():
@@ -402,13 +460,23 @@ def trigger_battery():
             "message": "Session cookie is not configured. Please set RC_SESSION in Space Secrets or edit app.py."
         }), 400
 
+    # En güncel eklenti sürümünü GitHub'dan çek ve ayıkla
+    print("[Extension Manager] Eklenti güncelliği kontrol ediliyor...")
+    download_success = download_and_extract_latest_extension()
+    
+    if not download_success and not os.path.exists("/app/rchelper"):
+        return jsonify({
+            "status": "error",
+            "message": "En güncel eklenti indirilemedi ve yerel /app/rchelper dizini bulunamadı."
+        }), 500
+
     print("[Selenium] Chrome başlatılıyor...")
     options = Options()
     options.add_argument("--headless=new")  # Modern headless modu eklenti yüklemeyi destekler
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--load-extension=/app/rchelper")  # Docker içindeki eklenti klasörünün yolu
+    options.add_argument("--load-extension=/app/rchelper")  # Dinamik olarak güncellenen eklenti klasörünün yolu
 
     try:
         service = Service(ChromeDriverManager().install())

@@ -381,6 +381,10 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import os
+import urllib.request
+import json
+import zipfile
+import shutil
 
 app = Flask(__name__)
 
@@ -389,6 +393,60 @@ app = Flask(__name__)
 # OR for better security, leave it as is and set it in your Space settings:
 # Settings -> Variables and Secrets -> New Secret: Name = 'RC_SESSION', Value = 'your_cookie_here'
 SESSION_COOKIE_VALUE = os.environ.get("RC_SESSION", "PASTE_YOUR_SESSION_COOKIE_HERE")
+
+def download_and_extract_latest_extension():
+    try:
+        print("[Extension Manager] Fetching latest release info from GitHub...")
+        req = urllib.request.Request(
+            "https://api.github.com/repos/nyx47rd/rchelper/releases/latest",
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode())
+            
+        zip_url = None
+        for asset in data.get("assets", []):
+            if asset.get("name", "").startswith("rchelper") and asset.get("name", "").endswith(".zip"):
+                zip_url = asset.get("browser_download_url")
+                break
+                
+        if not zip_url:
+            print("[Extension Manager] No ZIP asset found in latest release! Using existing local files.")
+            return False
+            
+        zip_path = "/tmp/rchelper_latest.zip"
+        print(f"[Extension Manager] Downloading latest release from {zip_url}...")
+        urllib.request.urlretrieve(zip_url, zip_path)
+        
+        extract_dir = "/app/rchelper"
+        tmp_extract = "/tmp/rchelper_extract"
+        if os.path.exists(tmp_extract):
+            shutil.rmtree(tmp_extract)
+        os.makedirs(tmp_extract, exist_ok=True)
+        
+        print("[Extension Manager] Extracting ZIP...")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(tmp_extract)
+            
+        source_folder = os.path.join(tmp_extract, "rchelper")
+        if os.path.exists(source_folder):
+            if os.path.exists(extract_dir):
+                shutil.rmtree(extract_dir)
+            shutil.move(source_folder, extract_dir)
+            print(f"[Extension Manager] Successfully updated extension to {extract_dir}")
+        else:
+            print("[Extension Manager] Could not find 'rchelper' directory in ZIP extraction!")
+            return False
+            
+        if os.path.exists(zip_path):
+            os.remove(zip_path)
+        if os.path.exists(tmp_extract):
+            shutil.rmtree(tmp_extract)
+            
+        return True
+    except Exception as e:
+        print(f"[Extension Manager] Error downloading extension: {str(e)}")
+        return False
 
 @app.route('/')
 def index():
@@ -402,13 +460,23 @@ def trigger_battery():
             "message": "Session cookie is not configured. Please set RC_SESSION in Space Secrets or edit app.py."
         }), 400
 
+    # Automatically fetch and extract the latest extension release
+    print("[Extension Manager] Checking and updating extension...")
+    download_success = download_and_extract_latest_extension()
+    
+    if not download_success and not os.path.exists("/app/rchelper"):
+        return jsonify({
+            "status": "error",
+            "message": "Failed to download the extension and no local /app/rchelper directory exists."
+        }), 500
+
     print("[Selenium] Starting Chrome Webdriver...")
     options = Options()
     options.add_argument("--headless=new")  # Modern headless mode supports extensions
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--load-extension=/app/rchelper")  # Path where the extension folder resides
+    options.add_argument("--load-extension=/app/rchelper")  # Path to the dynamically updated extension folder
 
     try:
         service = Service(ChromeDriverManager().install())
