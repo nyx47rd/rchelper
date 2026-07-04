@@ -538,7 +538,7 @@ if __name__ == '__main__':
    * **Space Hardware:** Select the free CPU basic tier.
    * **Privacy:** Set to **Public** or **Private** (Private is recommended for privacy).
 4. Click **Create Space**.
-5. Once created, click on the **Files** tab and upload:
+5. Once created, click on the **Files** tab, click **Contribute** and select **Upload files** or **Create a new file** to add:
    * The `requirements.txt` file.
    * The `Dockerfile` file.
    * The `app.py` file.

@@ -539,7 +539,7 @@ if __name__ == '__main__':
    * **Space Hardware:** Ücretsiz CPU temel katmanını seçin.
    * **Privacy:** **Public** (Açık) veya **Private** (Gizli - Gizlilik için bu önerilir) seçin.
 4. **Create Space** butonuna tıklayın.
-5. Sayfa açıldığında **Files** (Dosyalar) sekmesine geçip şunları yükleyin:
+5. Sayfa açıldığında **Files** (Dosyalar) sekmesine geçip **Contribute** butonuna tıklayarak **Upload files** veya **Create a new file** seçenekleriyle şunları yükleyin:
    * `requirements.txt` dosyasını.
    * `Dockerfile` dosyasını.
    * `app.py` dosyasını.
