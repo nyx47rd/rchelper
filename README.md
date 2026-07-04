@@ -506,6 +506,12 @@ def trigger_battery():
     steps = []
     latest_run = {"steps": steps, "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")}
 
+    # Random delay (1 to 15 seconds) to prevent exact-time bot detection
+    delay = random.randint(1, 15)
+    print(f"[Anti-Bot] Waiting for {delay} seconds before starting...")
+    steps.append(f"🕒 Anti-bot delay: Waited {delay} seconds.")
+    time.sleep(delay)
+
     # Automatically fetch and extract the latest extension release
     print("[Extension Manager] Checking and updating extension...")
     download_success = download_and_extract_latest_extension()

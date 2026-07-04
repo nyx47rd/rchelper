@@ -507,6 +507,12 @@ def trigger_battery():
     steps = []
     latest_run = {"steps": steps, "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")}
 
+    # Tam dakika/saniye bot tespitini önlemek için rastgele gecikme (1 ile 15 saniye arası)
+    delay = random.randint(1, 15)
+    print(f"[Anti-Bot] İşleme başlamadan önce {delay} saniye bekleniyor...")
+    steps.append(f"🕒 Anti-bot gecikmesi: {delay} saniye beklendi.")
+    time.sleep(delay)
+
     # En güncel eklenti sürümünü GitHub'dan çek ve ayıkla
     print("[Extension Manager] Eklenti güncelliği kontrol ediliyor...")
     download_success = download_and_extract_latest_extension()
