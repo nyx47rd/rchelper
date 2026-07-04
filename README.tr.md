@@ -526,12 +526,6 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7860)
 ```
 
-> [!WARNING]
-> **Kritik Kurulum Notu:** Dağıtım yapmadan önce yerel eklenti klasörünüzdeki [battery_automator.js](file:///home/veilzon/rchelper-master/tools/battery_automator.js) dosyasını açıp `BATTERY_BUTTON_SELECTOR` sabitini, RollerCoin sayfasındaki batarya şarj butonunun güncel CSS selector'ı ile kesinlikle güncellemelisiniz.
-> ```javascript
-> const BATTERY_BUTTON_SELECTOR = "button.your-recharge-button-class";
-> ```
-
 ---
 
 ### 3. Hugging Face Space Dağıtım Adımları 🚀

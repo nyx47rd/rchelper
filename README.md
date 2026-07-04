@@ -525,12 +525,6 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7860)
 ```
 
-> [!WARNING]
-> **Critical Configuration:** You MUST edit [battery_automator.js](file:///home/veilzon/rchelper-master/tools/battery_automator.js) in your local extension folder and update the `BATTERY_BUTTON_SELECTOR` constant with the current selector of the recharge button from the RollerCoin page before packaging and deploying.
-> ```javascript
-> const BATTERY_BUTTON_SELECTOR = "button.your-recharge-button-class";
-> ```
-
 ---
 
 ### 3. Hugging Face Deployment Steps 🚀
