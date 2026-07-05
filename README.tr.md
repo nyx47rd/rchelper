@@ -67,7 +67,7 @@ Bu araç; güvenli bir RollerCoin asistanı, otomatik oyun seçici, otomatik gü
 | ⌨️ **Klavye Kısayolları** | `S` = Pas Geç · `P` = Daima Atla |
 | 🔊 **Ses Efektleri** | Oyun seçimi, pas geçme, mola başlangıcı/bitişi, otomasyon açma/kapama için farklı tonlar |
 | 🗑️ **Hafızayı Temizle** | Tüm ayarları ve istatistikleri tek butonda sıfırla |
-| 🤖 **Oyun Botları** | Coin Fisher, Hamster Climber ve 2048 Coins oyunlarını tam ekranda otomatik oynatır. Popup'tan her birini ayrı ayrı açıp kapatabilirsin. Alt ortadaki OSD bildirimi bot durumunu gösterir. |
+| 🤖 **Oyun Botları** | Coin Fisher, Hamster Climber ve 2048 Coins oyunlarını tam ekranda otomatik oynatır. Popup'tan her birini ayrı ayrı açıp kapatabilirsin. |
 
 </div>
 
@@ -295,7 +295,7 @@ Popup → Mola Ayarları kartından oyun süresini artır veya azalt.
 Sayfayı yenile. Eklenti bir content script olarak yüklenir; bazı sayfalarda gecikmeli başlayabilir.
 
 **Oyun botu otomatik başlamıyor.**
-Popup → Oyun Botları kartından botun açık olduğundan emin ol. Bot yalnızca tam ekrana alındığında devreye girer. Alt ortadaki OSD bildirimi "Tam ekrana al → otomatik oynanacak" veya "🤖 Bot Oynuyor" mesajını gösterir.
+Popup → Oyun Botları kartından botun açık olduğundan emin ol. Bot yalnızca tam ekrana alındığında devreye girer.
 
 <br/>
 
@@ -703,17 +703,19 @@ Dosyalar yüklendikten sonra kimlik doğrulama anahtarlarınızı tanımlayın:
 ---
 
 ### 4. Cron-job.org Otomatik Tetikleme Adımları ⏱️
-İşlemin 24 saatte bir otomatik olarak çalışması için ücretsiz bir cron işi kuracağız:
-1. Hugging Face Space uygulamanızın web URL adresini kopyalayın.
-   * *Not:* URL'yi Space menüsündeki **Embed this Space** altından bulabilir veya şu şablonla kendiniz oluşturabilirsiniz: `https://<kullanici-adiniz>-<space-adiniz>.hf.space`.
-2. Kopyaladığınız URL adresinin sonuna `/tetikle-batarya` ekleyin (örn: `https://veilzon-my-rc-battery-automator.hf.space/tetikle-batarya`).
-3. [cron-job.org](https://cron-job.org) adresine gidip ücretsiz üye olun.
-4. **Create Cronjob** butonuna tıklayın.
-5. Formu doldurun:
-   * **Title:** `RollerCoin Batarya Doldurma`
-   * **Address (URL):** Sonuna `/tetikle-batarya` eklediğiniz URL'yi yapıştırın.
-   * **Schedule:** **Every day** (Her gün) seçeneğini işaretleyin (ya da her 24 saatte bir çalışacak şekilde ayarlayın).
-6. **Create** butonuna basarak kaydedin.
+İşlemin otomatik olarak çalışması için ücretsiz bir cron işi kuracağız:
+1. Öncelikle sonuna `/tetikle-batarya` eklenmiş Hugging Face Space URL adresinizi hazırlayın (örn: `https://<kullanici-adiniz>-<space-adiniz>.hf.space/tetikle-batarya`).
+2. `YOUR_HF_TOKEN` yazan yere kendi Hugging Face Access Token'ınızı yazarak şu CURL komutunu hazırlayın:
+   ```bash
+   curl -s -H "Authorization: Bearer YOUR_HF_TOKEN" "https://YOUR_SPACE_URL/tetikle-batarya"
+   ```
+3. [cron-job.org](https://cron-job.org) adresine gidip giriş yapın ve **Create Cronjob** butonuna tıklayın.
+4. Ayarları en kolay şekilde yapmak için aşağıdaki sekmelerden **Advanced** kısmına tıklayın.
+5. Aşağı kaydırıp **Import from curl** bölümünü bulun. Hazırladığınız CURL komutunu buraya yapıştırıp **Import** butonuna basın. (Bu işlem URL ve Header ayarlarını otomatik yapacaktır).
+6. Şimdi yukarıdan tekrar **General** sekmesine dönün.
+7. **Title** kısmına bir isim verin (örn: `RC Batarya`).
+8. **Execution schedule** kısmından "User-defined" seçeneğini seçin ve bot olduğu anlaşılmasın diye küsuratlı bir saat girin (örneğin her gün 14:17 için `17 14 * * *`).
+9. Son olarak **Create** butonuna basarak kaydedin.
 
 <br/>
 
@@ -732,16 +734,17 @@ Dosyalar yüklendikten sonra kimlik doğrulama anahtarlarınızı tanımlayın:
 
 <br/>
 
-```
+```text
 📁 rchelper/
 ├── 📄 manifest.json           ← Eklenti tanımı (Manifest v3)
 ├── 📜 content.js              ← Sayfa içi otomasyon + widget UI + mola sistemi
 ├── 📜 popup.js                ← Popup panel mantığı + istatistik okuma
 ├── 🎨 popup.html              ← Popup panel arayüzü + stilleri
+├── 📜 i18n.js                 ← Çoklu dil (Internationalization) desteği
 ├── 🎓 tutorial.js             ← İnteraktif tutorial adımları + spotlight mantığı
 ├── 🎨 tutorial.css            ← Tutorial overlay stilleri
 ├── ⚙️  background.js          ← Service worker (Manifest v3 zorunluluğu)
-├── 🐍 make_release_body.py    ← Commit logunu markdown release notuna çeviren script
+├── 🎮 games/                  ← Oyuna özel mantık ve auto-play betikleri
 └── 🖼️  icon16/48/128.png      ← Eklenti ikonları
 ```
 

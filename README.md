@@ -67,7 +67,7 @@ This tool acts as a safe RollerCoin assistant, auto game selector, automatic pow
 |⌨️ **Keyboard Shortcuts** |`S` = Pass · `P` = Always Skip |
 |🔊 **Sound Effects** |Different tones for play selection, passing, timeout start/end, automation on/off |
 |🗑️ **Clear Memory** |Reset all settings and statistics with one button |
-|🤖 **Game Bots** |Auto-play Coin Fisher, Hamster Climber & 2048 Coins when fullscreen. Toggle each bot individually from popup. OSD notification at bottom center shows bot status. |
+|🤖 **Game Bots** |Auto-play Coin Fisher, Hamster Climber & 2048 Coins when fullscreen. Toggle each bot individually from popup. |
 
 </div>
 
@@ -295,7 +295,7 @@ The "Clear Memory" button clears the entire `chrome.storage.local`.This button s
 Refresh the page.The plugin is installed as a content script;It may start delayed on some pages.
 
 **Game bot doesn't start automatically.**
-Make sure the bot is enabled in Popup → Game Bots card. The bot only activates when you go fullscreen. An OSD notification at the bottom center will show "Go fullscreen → auto-play" or "🤖 Bot Playing".
+Make sure the bot is enabled in Popup → Game Bots card. The bot only activates when you go fullscreen.
 
 <br/>
 
@@ -702,17 +702,19 @@ Once the files are uploaded, configure your authentication tokens:
 ---
 
 ### 4. Cron-job.org Automation Steps ⏱️
-To automate this request so it triggers automatically every 24 hours:
-1. Copy your Hugging Face Space App URL.
-   * *Note:* You can find your app URL under **Embed this Space** in your Space menu, or form it like: `https://<your-username>-<your-space-name>.hf.space`.
-2. Append `/tetikle-batarya` to the end of the URL (e.g., `https://veilzon-my-rc-battery-automator.hf.space/tetikle-batarya`).
-3. Go to [cron-job.org](https://cron-job.org) and create a free account.
-4. Click **Create Cronjob**.
-5. Configure the job:
-   * **Title:** `RollerCoin Battery Recharge`
-   * **Address (URL):** Paste your URL with the `/tetikle-batarya` suffix.
-   * **Schedule:** Choose **Every day** (or set a custom hourly schedule, e.g., every 24 hours).
-6. Click **Create**.
+To automate this request so it triggers automatically:
+1. First, prepare your Hugging Face Space App URL by appending `/tetikle-batarya` (e.g., `https://<your-username>-<your-space-name>.hf.space/tetikle-batarya`).
+2. Prepare your CURL command by replacing `YOUR_HF_TOKEN` with your actual Hugging Face Access Token:
+   ```bash
+   curl -s -H "Authorization: Bearer YOUR_HF_TOKEN" "https://YOUR_SPACE_URL/tetikle-batarya"
+   ```
+3. Go to [cron-job.org](https://cron-job.org), log in, and click **Create Cronjob**.
+4. To easily configure everything, click on the **Advanced** tab below.
+5. Scroll down to the **Import from curl** section, paste the CURL command you prepared, and click **Import**. This will automatically fill in the URL and Headers.
+6. Now, go back to the **General** tab at the top.
+7. Set the **Title** (e.g., `RC Battery`).
+8. Under **Execution schedule**, select "User-defined" and enter a custom, odd schedule (e.g., `17 14 * * *` for 14:17 daily) to avoid detection.
+9. Click **Create**.
 
 <br/>
 
@@ -731,17 +733,18 @@ To automate this request so it triggers automatically every 24 hours:
 
 <br/>
 
-```
+```text
 📁 rchelper/
 ├── 📄 manifest.json           ← Extension definition (Manifest v3)
 ├── 📜 content.js              ← In-page automation + widget UI + break system
 ├── 📜 popup.js                ← Popup panel logic + stats reading
 ├── 🎨 popup.html              ← Popup panel UI + styles
+├── 📜 i18n.js                 ← Internationalization (Multi-language) support
 ├── 🎓 tutorial.js             ← Interactive tutorial steps + spotlight logic
 ├── 🎨 tutorial.css            ← Tutorial overlay styles
 ├── ⚙️  background.js          ← Service worker (Manifest v3 requirement)
-├── 🐍 make_release_body.py    ← Converts commit log to markdown release notes
-└── 🖼️  icon16/48/128.png      ← Eklenti ikonları
+├── 🎮 games/                  ← Game-specific logic and auto-play scripts
+└── 🖼️  icon16/48/128.png      ← Extension icons
 ```
 
 **Technical highlights:**
