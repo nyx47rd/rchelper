@@ -203,13 +203,14 @@ window.nextBreakTime = null;
 var mainTimer = null;
 var breakCheckTimer = null;
 
-chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled'], (data) => {
+chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled', 'botBlasterEnabled'], (data) => {
   window.autoCollect = data.autoCollect !== false;
   window.autoChoose  = data.autoChoose  !== false;
   window._rcBotEnabled = {
     botFisherEnabled:        data.botFisherEnabled        !== false,
     botHamsterEnabled:       data.botHamsterEnabled       !== false,
-    bot2048Enabled:          data.bot2048Enabled          !== false
+    bot2048Enabled:          data.bot2048Enabled          !== false,
+    botBlasterEnabled:       data.botBlasterEnabled       !== false
   };
   window.breakReminderEnabled = data.breakReminder !== false;
   if (data.breakSessionMin)  window.breakSessionMinutes  = parseFloat(data.breakSessionMin);
@@ -1464,7 +1465,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       bots: {
         fisher:        !!(window._rcCoinFisher    && window._rcCoinFisher.isActive()),
         hamster:       !!(window._rcHamster       && window._rcHamster.isActive()),
-        '2048':        !!(window._rc2048          && window._rc2048.isActive())
+        '2048':        !!(window._rc2048          && window._rc2048.isActive()),
+        blaster:       !!(window._rcTokenBlaster  && window._rcTokenBlaster.isActive())
       }
     });
     return true;
@@ -1476,6 +1478,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.bot === 'botFisherEnabled'        && window._rcCoinFisher)    { if (!msg.enabled) window._rcCoinFisher.stop(); }
     if (msg.bot === 'botHamsterEnabled'       && window._rcHamster)       { if (!msg.enabled) window._rcHamster.stop(); }
     if (msg.bot === 'bot2048Enabled'          && window._rc2048)          { if (!msg.enabled) window._rc2048.stop(); }
+    if (msg.bot === 'botBlasterEnabled'       && window._rcTokenBlaster)  { if (!msg.enabled) window._rcTokenBlaster.stop(); }
     sendResponse({ ok: true });
     return true;
   }

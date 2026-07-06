@@ -1,6 +1,6 @@
 var autoPlayState = false;
 var loadSkippedGames = null;
-var CURRENT_VERSION = '2.2.71';
+var CURRENT_VERSION = '2.2.72';
 var updateAvailable = false;
 var latestReleaseUrl = 'https://github.com/nyx47rd/rchelper/releases/latest';
 
@@ -163,7 +163,8 @@ document.addEventListener('DOMContentLoaded', function() {
   var BOT_KEYS = {
     'chk-bot-fisher':         'botFisherEnabled',
     'chk-bot-hamster':        'botHamsterEnabled',
-    'chk-bot-2048':           'bot2048Enabled'
+    'chk-bot-2048':           'bot2048Enabled',
+    'chk-bot-blaster':        'botBlasterEnabled'
   };
 
   chrome.storage.local.get(Object.values(BOT_KEYS), function(data) {
@@ -183,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /* Bot aktif badge'ini güncelle — content script'ten mesaj gelince */
   function updateBotBadges(activeBots) {
-    var map = { fisher: 'badge-fisher', hamster: 'badge-hamster', '2048': 'badge-2048' };
+    var map = { fisher: 'badge-fisher', hamster: 'badge-hamster', '2048': 'badge-2048', blaster: 'badge-blaster' };
     Object.keys(map).forEach(function(k) {
       var el = document.getElementById(map[k]);
       if (el) el.style.display = (activeBots && activeBots[k]) ? '' : 'none';

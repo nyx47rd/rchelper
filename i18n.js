@@ -86,7 +86,7 @@ var RC_STRINGS = {
     tut_step_7_title: 'Listeden Seç',
     tut_step_8_desc: '<strong>Ana buton.</strong> Açıkken her 1 saniyede kontrol eder, oyun seçim ekranındaysan otomatik seçer. Kapatınca her şey durur.',
     tut_step_8_title: 'Auto-Play',
-    tut_step_9_desc: 'Coin Fisher, Hamster Climber ve 2048 Coins oyunlarını <strong>otomatik oyna</strong>. Her birini ayrı ayrı açıp kapatabilirsin. Büyük ekranda oynarken bot devreye girer.',
+    tut_step_9_desc: 'Coin Fisher, Hamster Climber, 2048 Coins ve Token Blaster oyunlarını <strong>otomatik oyna</strong>. Her birini ayrı ayrı açıp kapatabilirsin. Büyük ekranda oynarken bot devreye girer.',
     tut_step_9_title: 'Oyun Botları',
     tut_step_10_desc: 'Oynadığın <strong>toplam oyun</strong>, bugün, bu hafta, toplam süre, ortalama süre, en çok oynadığın oyun ve şu an oynadığın oyunu burada görürsün.',
     tut_step_10_title: 'İstatistikler',
@@ -126,6 +126,7 @@ var RC_STRINGS = {
     bot_fisher: 'Coin Fisher',
     bot_hamster: 'Hamster Climber',
     bot_2048: '2048 Coins',
+    bot_blaster: 'Token Blaster',
     bot_active_badge: 'OYNUYOR',
   },
   en: {
@@ -209,7 +210,7 @@ var RC_STRINGS = {
     tut_step_7_title: 'Select from List',
     tut_step_8_desc: '<strong>Main button.</strong> When on, checks every second and auto-selects on the game screen. Turning it off stops everything.',
     tut_step_8_title: 'Auto-Play',
-    tut_step_9_desc: 'Auto-play Coin Fisher, Hamster Climber and 2048 Coins. Toggle each bot individually. The bot activates when you go fullscreen.',
+    tut_step_9_desc: 'Auto-play Coin Fisher, Hamster Climber, 2048 Coins and Token Blaster. Toggle each bot individually. The bot activates when you go fullscreen.',
     tut_step_9_title: 'Game Bots',
     tut_step_10_desc: 'See your <strong>total games</strong>, today, this week, total time, average time, most played game and currently playing game here.',
     tut_step_10_title: 'Statistics',
@@ -249,6 +250,7 @@ var RC_STRINGS = {
     bot_fisher: 'Coin Fisher',
     bot_hamster: 'Hamster Climber',
     bot_2048: '2048 Coins',
+    bot_blaster: 'Token Blaster',
     bot_active_badge: 'PLAYING',
   },
 };
