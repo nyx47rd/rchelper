@@ -587,7 +587,12 @@
       </div>
       <div class="break-setting-row" style="border-top: none; padding: 4px 0;">
         <div class="break-setting-label" style="font-size: 11px;" data-i18n="sync_pwd_lbl">Eşitleme Şifresi:</div>
-        <input class="break-input" type="password" id="inp-sync-pwd" style="width: 140px; text-align: left; padding: 4px 6px;" placeholder="••••••••">
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <input class="break-input" type="password" id="inp-sync-pwd" style="width: 112px; text-align: left; padding: 4px 6px;" placeholder="••••••••">
+          <button id="btn-copy-pwd" title="Şifreyi Kopyala" style="background: #1E2545; border: 1px solid #1E2545; color: #718096; border-radius: 6px; padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 23px; width: 23px; transition: color 0.15s, border-color 0.15s;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
       </div>
       <div class="break-setting-row" style="border-top: none; padding: 4px 0;">
         <div class="break-setting-label" style="font-size: 11px;">HF Token (Opsiyonel):</div>

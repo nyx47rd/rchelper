@@ -1,5 +1,5 @@
 var autoPlayState = false;
-var CURRENT_VERSION = '2.2.63';
+var CURRENT_VERSION = '2.2.64';
 var updateAvailable = false;
 var latestReleaseUrl = 'https://github.com/nyx47rd/rchelper/releases/latest';
 
@@ -540,15 +540,52 @@ document.addEventListener('DOMContentLoaded', function() {
   var inpSyncHfToken = document.getElementById('inp-sync-hftoken');
   var btnSyncNow = document.getElementById('btn-sync-now');
   var syncStatus = document.getElementById('sync-status');
+  var btnCopyPwd = document.getElementById('btn-copy-pwd');
+
+  function generateRandomPassword(length) {
+    var chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    var array = new Uint32Array(length || 24);
+    window.crypto.getRandomValues(array);
+    var password = '';
+    for (var i = 0; i < array.length; i++) {
+      password += chars[array[i] % chars.length];
+    }
+    return password;
+  }
 
   chrome.storage.local.get(['syncEnabled', 'syncUrl', 'syncPassword', 'syncHfToken', 'syncLastStatus'], function(data) {
+    var pwd = data.syncPassword;
+    if (!pwd) {
+      pwd = generateRandomPassword(24);
+      chrome.storage.local.set({ syncPassword: pwd });
+    }
     if (chkSync) chkSync.checked = !!data.syncEnabled;
     if (syncDetails) syncDetails.style.display = data.syncEnabled ? 'block' : 'none';
     if (inpSyncUrl) inpSyncUrl.value = data.syncUrl || '';
-    if (inpSyncPwd) inpSyncPwd.value = data.syncPassword || '';
+    if (inpSyncPwd) inpSyncPwd.value = pwd;
     if (inpSyncHfToken) inpSyncHfToken.value = data.syncHfToken || '';
     if (syncStatus) syncStatus.textContent = data.syncLastStatus || t('sync_status_idle');
   });
+
+  if (btnCopyPwd && inpSyncPwd) {
+    btnCopyPwd.onclick = function() {
+      var val = inpSyncPwd.value;
+      if (!val) return;
+      navigator.clipboard.writeText(val).then(function() {
+        var origHTML = btnCopyPwd.innerHTML;
+        btnCopyPwd.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        btnCopyPwd.style.borderColor = '#4ade80';
+        btnCopyPwd.style.color = '#4ade80';
+        setTimeout(function() {
+          btnCopyPwd.innerHTML = origHTML;
+          btnCopyPwd.style.borderColor = '';
+          btnCopyPwd.style.color = '';
+        }, 1500);
+      }).catch(function(e) {
+        console.error('Kopyalama hatası:', e);
+      });
+    };
+  }
 
   if (chkSync) {
     chkSync.onchange = function() {
