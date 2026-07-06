@@ -32,6 +32,10 @@
     });
   }
 
+  function _isOnPlayPage() {
+    return window.location.href.includes('/play_game');
+  }
+
   function _isBigCanvas() {
     var c = _getCanvas();
     if (!c) return false;
@@ -221,9 +225,9 @@
 
   setInterval(function () {
     var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botBlasterEnabled'] === false);
-    var big = _isBigCanvas() && _isGame() && enabled;
-    if (big && !_botActive)  _start();
-    if (!big && _botActive)  _stop();
+    var active = _isOnPlayPage() && _isGame() && !!_getCanvas() && enabled;
+    if (active && !_botActive)  _start();
+    if (!active && _botActive)  _stop();
   }, 500);
 
   window._rcTokenBlaster = { start: _start, stop: _stop, isActive: function () { return _botActive; } };
