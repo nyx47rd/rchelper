@@ -326,17 +326,17 @@
       transition: color 0.15s;
     }
     .popout-btn {
-      background: transparent;
-      border: none;
+      background: #141728;
+      border: 1px solid #1E2545;
       color: #4A5568;
+      border-radius: 6px;
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
       cursor: pointer;
-      padding: 4px;
-      border-radius: 5px;
-      display: flex;
-      align-items: center;
-      transition: color 0.15s;
+      transition: border-color 0.15s, color 0.15s;
+      flex-shrink: 0;
     }
-    .popout-btn:hover { color: #FF3D6B; }
+    .popout-btn:hover { border-color: #FF3D6B; color: #fff; }
     .stat-reset-btn:hover { color: #FF3D6B; }
     .stat-reset-btn .stat-reset-lbl { display: none; font-size: 9px; font-weight: 600; }
     .stat-reset-btn:hover .stat-reset-lbl { display: inline; }
@@ -508,11 +508,13 @@
         <div class="header-sub">rollercoin.com</div>
       </div>
     </div>
-    <button class="lang-btn" id="btn-lang" data-lang="tr" title="Switch language"></button>
-    <button class="popout-btn" id="btn-popout" data-i18n="popout_title" data-i18n-attr="title" title="Ayrı pencerede aç">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><path d="M10 14L21 3"/><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/></svg>
-    </button>
-    <button class="tut-help-btn" id="btn-tutorial" title="Nasıl Kullanılır?" data-i18n="tut_help_title" data-i18n-attr="title">?</button>
+    <div class="header-right" style="display: flex; align-items: center; gap: 6px;">
+      <button class="lang-btn" id="btn-lang" data-lang="tr" title="Switch language"></button>
+      <button class="popout-btn" id="btn-popout" data-i18n="popout_title" data-i18n-attr="title" title="Ayrı pencerede aç">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><path d="M10 14L21 3"/><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/></svg>
+      </button>
+      <button class="tut-help-btn" id="btn-tutorial" title="Nasıl Kullanılır?" data-i18n="tut_help_title" data-i18n-attr="title">?</button>
+    </div>
   </div>
 
   <!-- Settings -->
