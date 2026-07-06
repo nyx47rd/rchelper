@@ -1,5 +1,5 @@
 var autoPlayState = false;
-var CURRENT_VERSION = '2.2.65';
+var CURRENT_VERSION = '2.2.66';
 var updateAvailable = false;
 var latestReleaseUrl = 'https://github.com/nyx47rd/rchelper/releases/latest';
 
@@ -542,10 +542,26 @@ document.addEventListener('DOMContentLoaded', function() {
   var syncStatus = document.getElementById('sync-status');
   var btnCopyPwd = document.getElementById('btn-copy-pwd');
   var btnSyncHelp = document.getElementById('btn-sync-help');
+  var syncHelpModal = document.getElementById('sync-help-modal');
+  var btnCloseSyncHelp = document.getElementById('btn-close-sync-help');
 
-  if (btnSyncHelp) {
+  if (btnSyncHelp && syncHelpModal) {
     btnSyncHelp.onclick = function() {
-      alert(t('sync_help_text'));
+      syncHelpModal.style.display = 'flex';
+    };
+  }
+
+  if (btnCloseSyncHelp && syncHelpModal) {
+    btnCloseSyncHelp.onclick = function() {
+      syncHelpModal.style.display = 'none';
+    };
+  }
+
+  if (syncHelpModal) {
+    syncHelpModal.onclick = function(e) {
+      if (e.target === syncHelpModal) {
+        syncHelpModal.style.display = 'none';
+      }
     };
   }
 

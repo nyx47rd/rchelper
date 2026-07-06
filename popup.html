@@ -755,6 +755,30 @@
     </a>
   </div>
 
+  <!-- Bulut Eşitleme Yardım Modalı -->
+  <div id="sync-help-modal" style="display: none; position: fixed; inset: 0; background: rgba(13, 15, 26, 0.9); z-index: 10000; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: #141728; border: 1px solid #1E2545; border-radius: 12px; width: 100%; max-width: 320px; max-height: 90%; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #1E2545;">
+        <span style="font-weight: 700; font-size: 13px; color: #fff;" data-i18n="sync_help_modal_title">Bulut Eşitleme Kılavuzu</span>
+        <button id="btn-close-sync-help" style="background: none; border: none; color: #4A5568; cursor: pointer; display: flex; align-items: center; padding: 2px; transition: color 0.15s;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="sync-help-content" style="padding: 14px; font-size: 11px; color: #CBD5E0; line-height: 1.5; overflow-y: auto; text-align: left; flex: 1;">
+        <p style="margin-bottom: 10px; color: #8892b0;" data-i18n="sync_help_desc">RollerCoin oturumunuzun buluttaki otomasyon sunucunuzda (Hugging Face) kesintisiz çalışması için token'larınızı uçtan uca şifreli (E2EE) olarak senkronize eder.</p>
+        <strong style="color: #FF3D6B; display: block; margin-bottom: 6px;" data-i18n="sync_help_steps_title">Adım Adım Yapılması Gerekenler:</strong>
+        <ol style="padding-left: 16px; margin: 0;">
+          <li style="margin-bottom: 6px;" data-i18n="sync_help_step1">Eşitleme Şifresi'nin yanındaki kopyalama butonuna tıklayarak otomatik üretilen şifreyi kopyalayın.</li>
+          <li style="margin-bottom: 6px;" data-i18n="sync_help_step2">Hugging Face Space ayarlarınızdan (Settings -> Variables and Secrets) <strong>SYNC_PASSWORD</strong> adında yeni bir secret oluşturup kopyaladığınız şifreyi değer kısmına yapıştırın.</li>
+          <li style="margin-bottom: 6px;" data-i18n="sync_help_step3">Eklentide <strong>Otomatik Eşitleme</strong> seçeneğini aktif edin.</li>
+          <li style="margin-bottom: 6px;" data-i18n="sync_help_step4"><strong>Space URL</strong> alanına Hugging Face Space uygulamanızın adresini girin (örn. <code>https://kullanici-space.hf.space</code>).</li>
+          <li style="margin-bottom: 6px;" data-i18n="sync_help_step5">*(Opsiyonel)* Space alanınız <strong>Private</strong> ise, <strong>HF Token</strong> alanına Hugging Face'ten aldığınız access token'ı girin.</li>
+          <li style="margin-bottom: 6px;" data-i18n="sync_help_step6"><strong>Şimdi Eşitle</strong> butonuna basarak ilk eşitlemeyi tamamlayın. Eklenti, RollerCoin sekmelerinde oturumunuz açıkken token'larınızı arka planda güncel tutacaktır.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
   <script src="i18n.js"></script>
   <script src="tutorial.js"></script>
   <script src="popup.js"></script>
