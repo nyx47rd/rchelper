@@ -211,7 +211,6 @@
   function _start() {
     if (_botActive) return;
     _botActive = true;
-    try { document.body.setAttribute('data-rc-bot-blaster-active', 'true'); } catch(e) {}
     console.log('[RC-TB] ✅ Token Blaster bot BAŞLADI (Hafıza Modu)');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🚀 Token Blaster Bot aktif');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
@@ -221,7 +220,6 @@
   function _stop() {
     if (!_botActive) return;
     _botActive = false;
-    try { document.body.setAttribute('data-rc-bot-blaster-active', 'false'); } catch(e) {}
     if (_loopId) { clearInterval(_loopId); _loopId = null; }
     _setKeyState('ArrowLeft', false);
     _setKeyState('ArrowRight', false);
@@ -237,7 +235,7 @@
   });
 
   setInterval(function () {
-    var enabled = document.body.getAttribute('data-rc-bot-blaster-enabled') !== 'false';
+    var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botBlasterEnabled'] === false);
     var active = _isOnPlayPage() && _isGame() && !!_getCanvas() && enabled;
     if (active && !_botActive)  _start();
     if (!active && _botActive)  _stop();

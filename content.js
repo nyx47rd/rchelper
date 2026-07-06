@@ -1,24 +1,4 @@
-const RC_VERSION = '2.2.78';
-
-/* ══════════════════════════════════════════════════════════════════
-   MAIN WORLD INJECTION — coins2048.js ve token-blaster.js
-   Bu iki script React Fiber/Phaser bellek nesnelerine erişmek için
-   sayfanın ana JavaScript bağlamına (MAIN world) inject edilmelidir.
-   Manifest'teki web_accessible_resources sayesinde güvenli URL alınır.
-   ══════════════════════════════════════════════════════════════════ */
-(function _injectMainWorldBots() {
-  var scripts = ['games/coins2048.js', 'games/token-blaster.js'];
-  scripts.forEach(function(path) {
-    try {
-      var s = document.createElement('script');
-      s.src = chrome.runtime.getURL(path);
-      s.onload = function() { this.remove(); };
-      (document.head || document.documentElement).appendChild(s);
-    } catch(e) {
-      console.warn('[RC] Bot enjeksiyonu başarısız (' + path + '):', e);
-    }
-  });
-})();
+const RC_VERSION = '2.2.79';
 
 
 /* ── i18n (content script) ── */
@@ -1490,8 +1470,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       bots: {
         fisher:        !!(window._rcCoinFisher    && window._rcCoinFisher.isActive()),
         hamster:       !!(window._rcHamster       && window._rcHamster.isActive()),
-        '2048':        document.body.getAttribute('data-rc-bot-2048-active') === 'true',
-        blaster:       document.body.getAttribute('data-rc-bot-blaster-active') === 'true'
+        '2048':        !!(window._rc2048          && window._rc2048.isActive()),
+        blaster:       !!(window._rcTokenBlaster  && window._rcTokenBlaster.isActive())
       }
     });
     return true;
@@ -1499,14 +1479,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   else if (msg.action === 'setBotEnabled') {
     window._rcBotEnabled = window._rcBotEnabled || {};
     window._rcBotEnabled[msg.bot] = msg.enabled;
-    try {
-      if (msg.bot === 'bot2048Enabled') {
-        document.body.setAttribute('data-rc-bot-2048-enabled', msg.enabled ? 'true' : 'false');
-      }
-      if (msg.bot === 'botBlasterEnabled') {
-        document.body.setAttribute('data-rc-bot-blaster-enabled', msg.enabled ? 'true' : 'false');
-      }
-    } catch(e) {}
     /* Bot'u direkt durdur/başlat */
     if (msg.bot === 'botFisherEnabled'        && window._rcCoinFisher)    { if (!msg.enabled) window._rcCoinFisher.stop(); }
     if (msg.bot === 'botHamsterEnabled'       && window._rcHamster)       { if (!msg.enabled) window._rcHamster.stop(); }
