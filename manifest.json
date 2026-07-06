@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "RollerCoin Auto Helper",
-  "version": "2.2.77",
+  "version": "2.2.78",
   "description": "RollerCoin Helper: Auto-play selector, auto-collect gain power, and break reminder extension for RollerCoin.",
   "permissions": ["activeTab", "scripting", "tabs", "storage", "windows"],
   "host_permissions": ["*://*.rollercoin.com/*", "*://rollercoin.com/*"],
@@ -23,12 +23,12 @@
       "matches": ["*://*.rollercoin.com/*", "*://rollercoin.com/*"],
       "js": ["content.js", "games/coin-fisher.js", "games/hamster-climber.js", "tools/battery_automator.js"],
       "run_at": "document_end"
-    },
+    }
+  ],
+  "web_accessible_resources": [
     {
-      "matches": ["*://*.rollercoin.com/*", "*://rollercoin.com/*"],
-      "js": ["games/coins2048.js", "games/token-blaster.js"],
-      "run_at": "document_end",
-      "world": "MAIN"
+      "resources": ["games/coins2048.js", "games/token-blaster.js"],
+      "matches": ["*://*.rollercoin.com/*", "*://rollercoin.com/*"]
     }
   ]
 }

@@ -1,4 +1,25 @@
-const RC_VERSION = '2.2.56';
+const RC_VERSION = '2.2.78';
+
+/* ══════════════════════════════════════════════════════════════════
+   MAIN WORLD INJECTION — coins2048.js ve token-blaster.js
+   Bu iki script React Fiber/Phaser bellek nesnelerine erişmek için
+   sayfanın ana JavaScript bağlamına (MAIN world) inject edilmelidir.
+   Manifest'teki web_accessible_resources sayesinde güvenli URL alınır.
+   ══════════════════════════════════════════════════════════════════ */
+(function _injectMainWorldBots() {
+  var scripts = ['games/coins2048.js', 'games/token-blaster.js'];
+  scripts.forEach(function(path) {
+    try {
+      var s = document.createElement('script');
+      s.src = chrome.runtime.getURL(path);
+      s.onload = function() { this.remove(); };
+      (document.head || document.documentElement).appendChild(s);
+    } catch(e) {
+      console.warn('[RC] Bot enjeksiyonu başarısız (' + path + '):', e);
+    }
+  });
+})();
+
 
 /* ── i18n (content script) ── */
 var _RC_LANG_CONTENT = 'tr';
