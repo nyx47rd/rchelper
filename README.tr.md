@@ -309,15 +309,14 @@ RC Helper, arayüzsüz (headless) bulut tabanlı otomasyon desteği sunar. Bu sa
 
 Bu otomasyonun çalışması için RollerCoin oturum token'larına ihtiyacı vardır. Eklentimiz bu token'ları uçtan uca şifreli (E2EE) olarak Hugging Face Spaces sunucunuza otomatik eşitler:
 
-1. Hugging Face Space alanınızı oluşturun (Bkz. Adım 2).
-2. Space panelinden **Settings** (Ayarlar) -> **Variables and Secrets** bölümüne gidin.
-3. **New Secret** butonuna tıklayarak **`SYNC_PASSWORD`** adında yeni bir secret oluşturun ve kendiniz güçlü bir şifre belirleyin.
-4. Eklentinin popup arayüzündeki **"Bulut Eşitleme"** kısmını açın.
-5. **Otomatik Eşitleme** seçeneğini aktif edin.
-6. **Space URL** alanına Hugging Face Space uygulamanızın adresini girin (örn. `https://kullaniciadiniz-spaceadiniz.hf.space`).
-7. **Eşitleme Şifresi** alanına Hugging Face'te oluşturduğunuz `SYNC_PASSWORD` şifresini girin.
-8. *(Opsiyonel)* Eğer Hugging Face Space alanınızı **Private** (Gizli) olarak kurduysanız, **HF Token** alanına Hugging Face profil ayarlarınızdan (Access Tokens) aldığınız `hf_...` token'ını yazın.
-9. **"Şimdi Eşitle"** butonuna basarak ilk eşitlemeyi anında yapın. Eklentimiz, RollerCoin sekmesinde oturumunuz açıkken token'larınız değiştikçe arka planda otomatik olarak şifreleyip bulut sunucunuza gönderecektir.
+1. Eklentinin popup arayüzündeki **"Bulut Eşitleme"** kısmını açtığınızda otomatik olarak üretilen ve değiştirilemeyen (read-only) **Eşitleme Şifresi**'nin yanındaki kopyalama butonuna tıklayarak şifreyi kopyalayın.
+2. Hugging Face Space alanınızı oluşturun (Bkz. Adım 2).
+3. Space panelinden **Settings** (Ayarlar) -> **Variables and Secrets** bölümüne gidin ve **New Secret** butonuna tıklayarak **`SYNC_PASSWORD`** adında yeni bir secret oluşturup kopyaladığınız şifreyi değer kısmına yapıştırıp kaydedin.
+4. Eklentide **Otomatik Eşitleme** seçeneğini aktif edin.
+5. **Space URL** alanına Hugging Face Space uygulamanızın adresini girin (örn. `https://kullaniciadiniz-spaceadiniz.hf.space`).
+6. *(Opsiyonel)* Eğer Hugging Face Space alanınızı **Private** (Gizli) olarak kurduysanız, **HF Token** alanına Hugging Face profil ayarlarınızdan (Access Tokens) aldığınız `hf_...` token'ını yazın.
+7. **"Şimdi Eşitle"** butonuna basarak ilk eşitlemeyi anında yapın. Eklentimiz, RollerCoin sekmesinde oturumunuz açıkken token'larınız değiştikçe arka planda otomatik olarak şifreleyip bulut sunucunuza gönderecektir.
+8. Bulut Eşitleme başlığının yanındaki **"?"** yardım butonuna tıklayarak bu adım adım kılavuza ve ne işe yaradığına dair özet bilgilere tarayıcı üzerinden her zaman ulaşabilirsiniz.
 
 *(Alternatif - Manuel Yöntem)*: Eğer otomatik eşitleme kullanmak istemiyorsanız, RollerCoin sitesinde konsolu (F12) açıp `console.log("RC_TOKEN:", localStorage.getItem("token")); console.log("RC_REFRESH_TOKEN:", localStorage.getItem("refreshToken"));` yazarak aldığınız token'ları elinizle kopyalayabilir ve Hugging Face Secrets altına `RC_TOKEN` ve `RC_REFRESH_TOKEN` adlarıyla elinizle ekleyebilirsiniz.
 

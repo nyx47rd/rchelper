@@ -309,15 +309,14 @@ RC Helper supports headless cloud-based automation. This allows you to automatic
 
 This automation requires RollerCoin session tokens to function. Our extension automatically syncs these tokens to your Hugging Face Spaces server using End-to-End Encryption (E2EE):
 
-1. Create your Hugging Face Space (See Step 2).
-2. From your Space dashboard, go to the **Settings** -> **Variables and Secrets** section.
-3. Click the **New Secret** button to create a secret named **`SYNC_PASSWORD`** and define a strong password of your choice.
-4. Open the **"Cloud Sync"** section in the extension's popup interface.
-5. Enable the **Auto Sync** option.
-6. Enter your Hugging Face Space URL in the **Space URL** field (e.g., `https://username-space.hf.space`).
-7. Enter the password you configured in Hugging Face in the **Sync Password** field.
-8. *(Optional)* If you set your Hugging Face Space to **Private**, enter your Hugging Face Access Token (`hf_...`) under the **HF Token** field.
-9. Click the **"Sync Now"** button to perform the first synchronization. The extension will automatically encrypt and sync your tokens in the background as they change while you are logged in.
+1. When you open the **"Cloud Sync"** section in the extension's popup interface, click the copy button next to the automatically generated, read-only **Sync Password** to copy it.
+2. Create your Hugging Face Space (See Step 2).
+3. From your Space dashboard, go to the **Settings** -> **Variables and Secrets** section and click the **New Secret** button to create a secret named **`SYNC_PASSWORD`**, then paste the copied password as its value.
+4. Enable the **Auto Sync** option in the extension.
+5. Enter your Hugging Face Space URL in the **Space URL** field (e.g., `https://username-space.hf.space`).
+6. *(Optional)* If you set your Hugging Face Space to **Private**, enter your Hugging Face Access Token (`hf_...`) under the **HF Token** field.
+7. Click the **"Sync Now"** button to perform the first synchronization. The extension will automatically encrypt and sync your tokens in the background as they change while you are logged in.
+8. You can click the **"?"** help button next to the Cloud Sync title in the extension to view this step-by-step guide and description at any time.
 
 *(Alternative - Manual Method)*: If you do not wish to use automatic sync, you can manually copy tokens from RollerCoin using the Developer Tools Console (F12) via `console.log("RC_TOKEN:", localStorage.getItem("token")); console.log("RC_REFRESH_TOKEN:", localStorage.getItem("refreshToken"));` and define them manually as `RC_TOKEN` and `RC_REFRESH_TOKEN` secrets in Hugging Face.
 
