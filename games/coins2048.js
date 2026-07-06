@@ -1,24 +1,21 @@
 /* ══════════════════════════════════════════════════════════════════
-   RC Helper — 2048 Coins Auto-Bot v3
-   Strateji: Corner-snake döngüsü + takılı kalmayı önle
-   Canvas okuma yok (cross-origin taint hatası nedeniyle güvenilmez)
+   RC Helper — 2048 Coins Auto-Bot v4 (Hibrit Yapay Zeka + Fallback)
+   Yalnızca /game/play_game sayfasına inject edilir (manifest.json)
+   Tetikleyici: Oyun ekranı algılanınca otomatik başlar
    ══════════════════════════════════════════════════════════════════ */
 (function () {
-  var _botActive  = false;
-  var _loopId     = null;
-  var _INTERVAL   = 250;
+  var _botActive   = false;
+  var _loopId      = null;
+  var _INTERVAL    = 150;     /* Daha hızlı hamle için interval 150ms yapıldı */
 
-  /* Corner-snake: sol-alt köşeyi büyük tile için koru
-     Sol → Aşağı → Sağ → Aşağı döngüsü.
-     Yukarı ASLA öncelikli değil — sadece kurtarma hamlesi. */
-  var _MAIN_CYCLE = ['ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowDown',
-                     'ArrowLeft', 'ArrowDown', 'ArrowLeft', 'ArrowDown'];
-  var _cycleIdx   = 0;
+  /* Fallback olarak kullanılan Körleme Corner-snake Döngüsü */
+  var _MAIN_CYCLE  = ['ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowDown',
+                      'ArrowLeft', 'ArrowDown', 'ArrowLeft', 'ArrowDown'];
+  var _cycleIdx    = 0;
 
-  /* Takılma tespiti: son N hamlede herhangi bir etki olmadıysa */
   var _lastKey       = null;
-  var _noMoveStreak  = 0;  /* aynı yönde ard arda hareket olmadı sayısı */
-  var _rescueSeq     = []; /* kurtarma hamlesi kuyruğu */
+  var _noMoveStreak  = 0;
+  var _rescueSeq     = [];
 
   function _isGame() {
     var sources = [
@@ -42,59 +39,209 @@
     return document.querySelector('#phaserGame canvas') || document.querySelector('canvas');
   }
 
-  function _pressKey(key) {
-    var opts = { key: key, code: key, keyCode: 0, which: 0,
-                 bubbles: true, cancelable: true };
+  /* Klavye olayını fırlatan ve oyunu zorla uyanık tutan metot */
+  function _pressKey(key, gameObj) {
+    var opts = { 
+      key: key, 
+      code: key, 
+      keyCode: 0, 
+      which: 0,
+      bubbles: true, 
+      cancelable: true 
+    };
     var codes = { ArrowLeft: 37, ArrowRight: 39, ArrowUp: 38, ArrowDown: 40 };
-    opts.keyCode = codes[key]; opts.which = codes[key];
+    opts.keyCode = codes[key]; 
+    opts.which = codes[key];
+    
+    // Arka planda/odak dışındayken Phaser'ın donmasını önle
+    if (gameObj && gameObj.events) {
+      gameObj.events.emit('focus');
+      gameObj.events.emit('resume');
+    }
+
     var canvas = _getCanvas();
-    [window, document, canvas].forEach(function(t) {
-      if (!t) return;
-      t.dispatchEvent(new KeyboardEvent('keydown', opts));
-      t.dispatchEvent(new KeyboardEvent('keyup',   opts));
+    var targets = [window, document, canvas, document.body];
+    targets.forEach(function(t) {
+      if (t) {
+        t.dispatchEvent(new KeyboardEvent('keydown', opts));
+        t.dispatchEvent(new KeyboardEvent('keyup', opts));
+      }
     });
   }
 
+  /* 2048 Çözücü Yardımcı Fonksiyonları */
+  function _getEvaluation(board) {
+    var weights = [
+      [ 2,  4,  8, 16],
+      [32, 16,  8,  4],
+      [64, 32, 16,  8],
+      [128, 64, 32, 16] // Sol-alt köşeyi büyük sayılar için koruyoruz
+    ];
+    
+    var score = 0;
+    var emptyCells = 0;
+    for (var r = 0; r < 4; r++) {
+      for (var c = 0; c < 4; c++) {
+        var val = board[r][c];
+        score += val * weights[r][c];
+        if (val === 0) emptyCells++;
+      }
+    }
+    score += emptyCells * 150;
+    return score;
+  }
+
+  function _slideLeft(board) {
+    var changed = false;
+    var next = board.map(function(row) {
+      var line = row.filter(function(x) { return x !== 0; });
+      var newLine = [];
+      for (var i = 0; i < line.length; i++) {
+        if (i + 1 < line.length && line[i] === line[i+1]) {
+          newLine.push(line[i] * 2);
+          i++;
+        } else {
+          newLine.push(line[i]);
+        }
+      }
+      while (newLine.length < 4) newLine.push(0);
+      if (JSON.stringify(row) !== JSON.stringify(newLine)) changed = true;
+      return newLine;
+    });
+    return { board: next, changed: changed };
+  }
+
+  function _rotateCounterClockwise(board) {
+    var next = [];
+    for (var c = 3; c >= 0; c--) {
+      var row = [];
+      for (var r = 0; r < 4; r++) row.push(board[r][c]);
+      next.push(row);
+    }
+    return next;
+  }
+
+  function _simulateMove(board, dir) {
+    var b = board.map(function(r) { return [].concat(r); });
+    var rotations = 0;
+    if (dir === 'ArrowUp') rotations = 1;
+    else if (dir === 'ArrowRight') rotations = 2;
+    else if (dir === 'ArrowDown') rotations = 3;
+    
+    for (var i = 0; i < rotations; i++) b = _rotateCounterClockwise(b);
+    var res = _slideLeft(b);
+    var nextB = res.board;
+    var backRotations = (4 - rotations) % 4;
+    for (var i = 0; i < backRotations; i++) nextB = _rotateCounterClockwise(nextB);
+    
+    return { board: nextB, changed: res.changed };
+  }
+
+  /* Ana Tick Fonksiyonu: Önce yapay zekayı dener, hata veya başarısızlıkta körleme yönteme döner */
   function _tick() {
     if (!_botActive) return;
 
-    var key;
+    var canvas = _getCanvas();
+    var scene = null;
+    var gameObj = null;
 
-    /* Kurtarma kuyruğu doluysa önce onu işle */
+    // 1. Phaser active scene ve game nesnesine erişimi dene
+    try {
+      if (canvas) {
+        var reactKey = Object.keys(canvas).find(function(k) { return k.indexOf('__reactFiber$') === 0; });
+        if (!reactKey) {
+          var parent = document.getElementById('phaserGame');
+          if (parent) reactKey = Object.keys(parent).find(function(k) { return k.indexOf('__reactFiber$') === 0; });
+        }
+        if (reactKey) {
+          var node = canvas[reactKey] || (document.getElementById('phaserGame') && document.getElementById('phaserGame')[reactKey]);
+          while (node) {
+            if (node.stateNode && node.stateNode.game) { gameObj = node.stateNode.game; break; }
+            node = node.return;
+          }
+          if (gameObj) {
+            var activeScenes = gameObj.scene.scenes.filter(function(s) {
+              return s.sys && s.sys.settings && s.sys.settings.active;
+            });
+            if (activeScenes.length > 0) scene = activeScenes[0];
+          }
+        }
+      }
+    } catch(e) {
+      console.warn('[RC-2048] Phaser erişim hatası, fallback devrede:', e.message);
+    }
+
+    // 2. Yapay Zeka Hamle Kararını Uygula (scene ve fieldArray mevcutsa)
+    if (scene && scene.fieldArray) {
+      try {
+        var board = [];
+        for (var r = 0; r < 4; r++) {
+          var row = [];
+          for (var c = 0; c < 4; c++) {
+            var tile = scene.fieldArray[r] ? scene.fieldArray[r][c] : null;
+            row.push((tile && tile.tileValue !== undefined) ? tile.tileValue : 0);
+          }
+          board.push(row);
+        }
+
+        var dirs = ['ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowUp'];
+        var bestDir = null;
+        var bestScore = -1;
+
+        dirs.forEach(function(dir) {
+          var res = _simulateMove(board, dir);
+          if (res.changed) {
+            var score = _getEvaluation(res.board);
+            if (score > bestScore) {
+              bestScore = score;
+              bestDir = dir;
+            }
+          }
+        });
+
+        if (bestDir) {
+          _pressKey(bestDir, gameObj);
+          return; // Başarıyla hamle yapıldı, döngüyü sonlandır
+        }
+      } catch(aiError) {
+        console.warn('[RC-2048] AI karar hatası, fallback devrede:', aiError.message);
+      }
+    }
+
+    // 3. Fallback: Körleme Yöntem (Phaser veya AI kararı çalışmazsa devrededir)
+    var fallbackKey;
+
     if (_rescueSeq.length > 0) {
-      key = _rescueSeq.shift();
-      _pressKey(key);
+      fallbackKey = _rescueSeq.shift();
+      _pressKey(fallbackKey, gameObj);
       return;
     }
 
-    /* Normal döngü */
-    key = _MAIN_CYCLE[_cycleIdx];
+    fallbackKey = _MAIN_CYCLE[_cycleIdx];
     _cycleIdx = (_cycleIdx + 1) % _MAIN_CYCLE.length;
 
-    /* Aynı yön üst üste 4 kez geldiyse takılı sayılır */
-    if (key === _lastKey) {
+    if (fallbackKey === _lastKey) {
       _noMoveStreak++;
     } else {
       _noMoveStreak = 0;
     }
-    _lastKey = key;
+    _lastKey = fallbackKey;
 
-    /* Takılı → kurtarma: yukarı + sağ + aşağı sırası ile açılmayı zorla */
     if (_noMoveStreak >= 4) {
       _noMoveStreak = 0;
       _cycleIdx = 0;
       _rescueSeq = ['ArrowUp', 'ArrowRight', 'ArrowUp', 'ArrowDown',
                     'ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowDown'];
-      key = _rescueSeq.shift();
+      fallbackKey = _rescueSeq.shift();
     }
 
-    _pressKey(key);
+    _pressKey(fallbackKey, gameObj);
   }
 
   function _start() {
     if (_botActive) return;
     _botActive = true;
-    console.log('[RC-2048] ✅ 2048 bot BAŞLADI');
+    console.log('[RC-2048] ✅ 2048 bot BAŞLADI (Yapay Zeka Modu)');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🔢 2048 Bot aktif');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
     _loopId = setInterval(_tick, _INTERVAL);
