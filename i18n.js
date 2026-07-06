@@ -269,7 +269,7 @@ function applyTranslations() {
     if (attr) {
       el.setAttribute(attr, val);
     } else {
-      el.textContent = val;
+      el.innerHTML = val;
     }
   });
 }
