@@ -59,7 +59,10 @@ async function handleSync(token, refreshToken) {
         const plaintext = JSON.stringify({ token, refreshToken });
         const encrypted = await encryptData(plaintext, data.syncPassword);
         
-        const baseUrl = data.syncUrl.replace(/\/$/, "");
+        let baseUrl = data.syncUrl.replace(/\/$/, "");
+        if (baseUrl.startsWith("http://")) {
+          baseUrl = baseUrl.replace(/^http:\/\//i, "https://");
+        }
         const url = `${baseUrl}/guncelle-token`;
         
         const headers = {

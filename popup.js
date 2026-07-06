@@ -1,5 +1,6 @@
 var autoPlayState = false;
-var CURRENT_VERSION = '2.2.70';
+var loadSkippedGames = null;
+var CURRENT_VERSION = '2.2.71';
 var updateAvailable = false;
 var latestReleaseUrl = 'https://github.com/nyx47rd/rchelper/releases/latest';
 
@@ -73,7 +74,7 @@ function refreshDynamicTexts() {
   var state = typeof autoPlayState !== 'undefined' ? autoPlayState : false;
   var lbl = document.getElementById('auto-play-lbl') || document.getElementById('btn-auto');
   if (lbl) lbl.textContent = t(state ? 'auto_on' : 'auto_off');
-  loadSkippedGames();
+  if (typeof loadSkippedGames === 'function') loadSkippedGames();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -283,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function loadSkippedGames() {
+  loadSkippedGames = function() {
     chrome.storage.local.get(['skippedGames', 'permanentSkippedGames'], (data) => {
       updateSkippedGamesList(data.skippedGames || {});
       updatePermanentSkippedList(data.permanentSkippedGames || {});
@@ -619,8 +620,13 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function saveSyncInputs() {
+    var rawUrl = inpSyncUrl ? inpSyncUrl.value.trim() : '';
+    if (rawUrl.startsWith('http://')) {
+      rawUrl = rawUrl.replace(/^http:\/\//i, 'https://');
+      if (inpSyncUrl) inpSyncUrl.value = rawUrl;
+    }
     chrome.storage.local.set({
-      syncUrl: inpSyncUrl ? inpSyncUrl.value.trim() : '',
+      syncUrl: rawUrl,
       syncPassword: inpSyncPwd ? inpSyncPwd.value : '',
       syncHfToken: inpSyncHfToken ? inpSyncHfToken.value.trim() : ''
     });
