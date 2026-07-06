@@ -341,6 +341,7 @@ Yeni oluşturduğunuz Space alanında **Files** (Dosyalar) sekmesine geçip **Co
 flask
 selenium
 webdriver-manager
+cryptography
 ```
 
 #### 📁 `Dockerfile`
@@ -392,7 +393,7 @@ CMD ["python", "app.py"]
 
 #### 📁 `app.py`
 ```python
-from flask import Flask, jsonify, render_template_string
+from flask import Flask, jsonify, render_template_string, request
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -405,16 +406,21 @@ import json
 import zipfile
 import shutil
 import base64
+import random
 from datetime import datetime
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 app = Flask(__name__)
 
-# ROLLERCOIN OTURUM ANAHTARLARI YAPILANDIRMASI:
+# ROLLERCOIN OTURUM ANAHTARLARI YAPILANDIRMASI (FALLBACK / MANUEL):
 # Aşağıdaki tırnak içerilerine konsoldan kopyaladığınız değerleri doğrudan yapıştırabilirsiniz.
 # VEYA daha güvenli bir yöntem olarak, bu kodları aynen bırakıp Hugging Face panelinden:
 # Settings -> Variables and Secrets -> New Secret yolunu izleyerek:
 #   Name = 'RC_TOKEN', Value = 'token_değeriniz'
 #   Name = 'RC_REFRESH_TOKEN', Value = 'refresh_token_değeriniz'
+#   Name = 'SYNC_PASSWORD', Value = 'eklenti_şifreniz' (Eşitleme için önerilir)
 # şeklinde tanımlayabilirsiniz.
 RC_TOKEN_VALUE = os.environ.get("RC_TOKEN", "PASTE_YOUR_TOKEN_HERE")
 RC_REFRESH_TOKEN_VALUE = os.environ.get("RC_REFRESH_TOKEN", "PASTE_YOUR_REFRESH_TOKEN_HERE")
@@ -490,14 +496,63 @@ def save_screenshot(driver, name):
 def index():
     return "RC Helper Bulut Sunucusu Aktif! Tetikle: /tetikle-batarya | Sonuçlar: /sonuc"
 
+@app.route('/guncelle-token', methods=['POST'])
+def update_token():
+    try:
+        data = request.get_json()
+        if not data or not all(k in data for k in ("ciphertext", "iv", "salt")):
+            return jsonify({"status": "error", "message": "Missing encrypted payload fields"}), 400
+        
+        # Şifreli payload'ı doğrudan tokens.json dosyasına yaz
+        with open("/app/tokens.json", "w") as f:
+            json.dump(data, f)
+            
+        return jsonify({"status": "success", "message": "Tokens saved securely in encrypted format."}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route('/tetikle-batarya', methods=['GET', 'POST'])
 def trigger_battery():
     global latest_run
     
-    if RC_TOKEN_VALUE == "PASTE_YOUR_TOKEN_HERE" or RC_REFRESH_TOKEN_VALUE == "PASTE_YOUR_REFRESH_TOKEN_HERE":
+    # E2EE Deşifre mantığı
+    sync_password = os.environ.get("SYNC_PASSWORD")
+    rc_token = RC_TOKEN_VALUE
+    rc_refresh_token = RC_REFRESH_TOKEN_VALUE
+    token_src = "Environment Secrets"
+    
+    if sync_password and os.path.exists("/app/tokens.json"):
+        try:
+            with open("/app/tokens.json", "r") as f:
+                enc_data = json.load(f)
+            
+            ciphertext = base64.b64decode(enc_data["ciphertext"])
+            iv = base64.b64decode(enc_data["iv"])
+            salt = base64.b64decode(enc_data["salt"])
+            
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,
+                salt=salt,
+                iterations=100000,
+            )
+            key = kdf.derive(sync_password.encode())
+            
+            aesgcm = AESGCM(key)
+            decrypted_bytes = aesgcm.decrypt(iv, ciphertext, None)
+            decrypted_data = json.loads(decrypted_bytes.decode('utf-8'))
+            
+            rc_token = decrypted_data["token"]
+            rc_refresh_token = decrypted_data["refreshToken"]
+            token_src = "Decrypted tokens.json"
+            print("[Decryption] Tokens successfully loaded and decrypted from tokens.json")
+        except Exception as e:
+            print(f"[Decryption Error] {str(e)}")
+            
+    if rc_token == "PASTE_YOUR_TOKEN_HERE" or rc_refresh_token == "PASTE_YOUR_REFRESH_TOKEN_HERE":
         return jsonify({
             "status": "error",
-            "message": "Authentication tokens are not configured. Please set RC_TOKEN and RC_REFRESH_TOKEN in Space Secrets or edit app.py."
+            "message": "Authentication tokens are not configured. Please set them via the extension or HF Secrets."
         }), 400
 
     # Eski ekran görüntülerini temizle
@@ -506,6 +561,7 @@ def trigger_battery():
     
     steps = []
     latest_run = {"steps": steps, "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")}
+    steps.append(f"ℹ️ Token Kaynağı: {token_src}")
 
     # Tam dakika/saniye bot tespitini önlemek için rastgele gecikme (1 ile 15 saniye arası)
     delay = random.randint(1, 15)
@@ -555,8 +611,8 @@ def trigger_battery():
         
         # Adım 2: Kimlik doğrulama anahtarlarını enjekte et
         print("[Selenium] Token'lar enjekte ediliyor...")
-        driver.execute_script(f"localStorage.setItem('token', '{RC_TOKEN_VALUE}');")
-        driver.execute_script(f"localStorage.setItem('refreshToken', '{RC_REFRESH_TOKEN_VALUE}');")
+        driver.execute_script(f"localStorage.setItem('token', '{rc_token}');")
+        driver.execute_script(f"localStorage.setItem('refreshToken', '{rc_refresh_token}');")
         steps.append("✅ Token'lar Local Storage'a enjekte edildi.")
         
         # Adım 3: Oyun sayfasına git

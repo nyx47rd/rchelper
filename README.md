@@ -341,6 +341,7 @@ In your newly created Space, navigate to the **Files** tab, click **Contribute**
 flask
 selenium
 webdriver-manager
+cryptography
 ```
 
 #### 📁 `Dockerfile`
@@ -392,7 +393,7 @@ CMD ["python", "app.py"]
 
 #### 📁 `app.py`
 ```python
-from flask import Flask, jsonify, render_template_string
+from flask import Flask, jsonify, render_template_string, request
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -405,16 +406,21 @@ import json
 import zipfile
 import shutil
 import base64
+import random
 from datetime import datetime
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 app = Flask(__name__)
 
-# ROLLERCOIN AUTHENTICATION CONFIGURATION:
+# ROLLERCOIN AUTHENTICATION CONFIGURATION (FALLBACK / MANUAL):
 # You can paste your token values below inside the quotes,
 # OR for better security, leave them as is and set them in your Space settings:
 # Settings -> Variables and Secrets -> New Secret:
 #   Name = 'RC_TOKEN', Value = 'your_token_here'
 #   Name = 'RC_REFRESH_TOKEN', Value = 'your_refresh_token_here'
+#   Name = 'SYNC_PASSWORD', Value = 'your_sync_password_here' (Recommended for auto-sync)
 RC_TOKEN_VALUE = os.environ.get("RC_TOKEN", "PASTE_YOUR_TOKEN_HERE")
 RC_REFRESH_TOKEN_VALUE = os.environ.get("RC_REFRESH_TOKEN", "PASTE_YOUR_REFRESH_TOKEN_HERE")
 
@@ -489,14 +495,63 @@ def save_screenshot(driver, name):
 def index():
     return "RC Helper Cloud Server is running! Trigger: /tetikle-batarya | Results: /sonuc"
 
+@app.route('/guncelle-token', methods=['POST'])
+def update_token():
+    try:
+        data = request.get_json()
+        if not data or not all(k in data for k in ("ciphertext", "iv", "salt")):
+            return jsonify({"status": "error", "message": "Missing encrypted payload fields"}), 400
+        
+        # Write encrypted payload directly to tokens.json
+        with open("/app/tokens.json", "w") as f:
+            json.dump(data, f)
+            
+        return jsonify({"status": "success", "message": "Tokens saved securely in encrypted format."}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route('/tetikle-batarya', methods=['GET', 'POST'])
 def trigger_battery():
     global latest_run
     
-    if RC_TOKEN_VALUE == "PASTE_YOUR_TOKEN_HERE" or RC_REFRESH_TOKEN_VALUE == "PASTE_YOUR_REFRESH_TOKEN_HERE":
+    # E2EE Decryption logic
+    sync_password = os.environ.get("SYNC_PASSWORD")
+    rc_token = RC_TOKEN_VALUE
+    rc_refresh_token = RC_REFRESH_TOKEN_VALUE
+    token_src = "Environment Secrets"
+    
+    if sync_password and os.path.exists("/app/tokens.json"):
+        try:
+            with open("/app/tokens.json", "r") as f:
+                enc_data = json.load(f)
+            
+            ciphertext = base64.b64decode(enc_data["ciphertext"])
+            iv = base64.b64decode(enc_data["iv"])
+            salt = base64.b64decode(enc_data["salt"])
+            
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,
+                salt=salt,
+                iterations=100000,
+            )
+            key = kdf.derive(sync_password.encode())
+            
+            aesgcm = AESGCM(key)
+            decrypted_bytes = aesgcm.decrypt(iv, ciphertext, None)
+            decrypted_data = json.loads(decrypted_bytes.decode('utf-8'))
+            
+            rc_token = decrypted_data["token"]
+            rc_refresh_token = decrypted_data["refreshToken"]
+            token_src = "Decrypted tokens.json"
+            print("[Decryption] Tokens successfully loaded and decrypted from tokens.json")
+        except Exception as e:
+            print(f"[Decryption Error] {str(e)}")
+            
+    if rc_token == "PASTE_YOUR_TOKEN_HERE" or rc_refresh_token == "PASTE_YOUR_REFRESH_TOKEN_HERE":
         return jsonify({
             "status": "error",
-            "message": "Authentication tokens are not configured. Please set RC_TOKEN and RC_REFRESH_TOKEN in Space Secrets or edit app.py."
+            "message": "Authentication tokens are not configured. Please set them via the extension or HF Secrets."
         }), 400
 
     # Clear old screenshots
@@ -505,6 +560,7 @@ def trigger_battery():
     
     steps = []
     latest_run = {"steps": steps, "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")}
+    steps.append(f"ℹ️ Token Source: {token_src}")
 
     # Random delay (1 to 15 seconds) to prevent exact-time bot detection
     delay = random.randint(1, 15)
@@ -533,7 +589,7 @@ def trigger_battery():
     options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option('useAutomationExtension', False)
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, line Gecko) Chrome/120.0.0.0 Safari/537.36")
 
     driver = None
     try:
@@ -554,8 +610,8 @@ def trigger_battery():
         
         # Step 2: Inject authentication tokens
         print("[Selenium] Injecting tokens...")
-        driver.execute_script(f"localStorage.setItem('token', '{RC_TOKEN_VALUE}');")
-        driver.execute_script(f"localStorage.setItem('refreshToken', '{RC_REFRESH_TOKEN_VALUE}');")
+        driver.execute_script(f"localStorage.setItem('token', '{rc_token}');")
+        driver.execute_script(f"localStorage.setItem('refreshToken', '{rc_refresh_token}');")
         steps.append("✅ Tokens injected into Local Storage.")
         
         # Step 3: Navigate to game page

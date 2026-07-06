@@ -567,6 +567,39 @@
     </div>
   </div>
 
+  <!-- Bulut Eşitleme Ayarları -->
+  <div class="card" id="cloud-sync-card">
+    <div class="card-label">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a6 6 0 0 0 0-12z"/></svg>
+      <span data-i18n="card_cloud_sync">Bulut Eşitleme</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-row-left">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16 12 12 8 16"/><path d="M12 12v9"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        <span data-i18n="toggle_sync_lbl">Otomatik Eşitleme</span>
+      </div>
+      <label class="toggle"><input type="checkbox" id="chk-sync"><span class="toggle-track"></span></label>
+    </div>
+    <div id="sync-settings-details" style="display: none; border-top: 1px solid #1E2545; padding-top: 8px; margin-top: 8px;">
+      <div class="break-setting-row" style="border-top: none; padding: 4px 0;">
+        <div class="break-setting-label" style="font-size: 11px;">Space URL:</div>
+        <input class="break-input" type="text" id="inp-sync-url" style="width: 140px; text-align: left; padding: 4px 6px;" placeholder="https://....hf.space">
+      </div>
+      <div class="break-setting-row" style="border-top: none; padding: 4px 0;">
+        <div class="break-setting-label" style="font-size: 11px;" data-i18n="sync_pwd_lbl">Eşitleme Şifresi:</div>
+        <input class="break-input" type="password" id="inp-sync-pwd" style="width: 140px; text-align: left; padding: 4px 6px;" placeholder="••••••••">
+      </div>
+      <div class="break-setting-row" style="border-top: none; padding: 4px 0;">
+        <div class="break-setting-label" style="font-size: 11px;">HF Token (Opsiyonel):</div>
+        <input class="break-input" type="password" id="inp-sync-hftoken" style="width: 140px; text-align: left; padding: 4px 6px;" placeholder="hf_••••••••">
+      </div>
+      <button class="btn btn-perm" id="btn-sync-now" style="margin-top: 8px; font-size: 11px; padding: 6px 10px; color: #FF3D6B; border-color: rgba(255, 61, 107, 0.3);">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        <span data-i18n="sync_btn_now">Şimdi Eşitle</span>
+      </button>
+      <div id="sync-status" style="font-size: 10px; color: #4A5568; margin-top: 6px; text-align: center; word-break: break-all;" data-i18n="sync_status_idle">-</div>
+    </div>
+
   <!-- Game picker panel -->
   <div class="game-picker" id="game-picker">
     <div class="game-picker-header">

@@ -1,5 +1,5 @@
 var autoPlayState = false;
-var CURRENT_VERSION = '2.2.56';
+var CURRENT_VERSION = '2.2.62';
 var updateAvailable = false;
 var latestReleaseUrl = 'https://github.com/nyx47rd/rchelper/releases/latest';
 
@@ -531,6 +531,106 @@ document.addEventListener('DOMContentLoaded', function() {
     chrome.storage.local.set({ breakReminder: chkBreak.checked });
     sendMessage({ action: 'toggleBreak', on: chkBreak.checked });
   };
+
+  // ── Bulut Eşitleme Ayarları ──
+  var chkSync = document.getElementById('chk-sync');
+  var syncDetails = document.getElementById('sync-settings-details');
+  var inpSyncUrl = document.getElementById('inp-sync-url');
+  var inpSyncPwd = document.getElementById('inp-sync-pwd');
+  var inpSyncHfToken = document.getElementById('inp-sync-hftoken');
+  var btnSyncNow = document.getElementById('btn-sync-now');
+  var syncStatus = document.getElementById('sync-status');
+
+  chrome.storage.local.get(['syncEnabled', 'syncUrl', 'syncPassword', 'syncHfToken', 'syncLastStatus'], function(data) {
+    if (chkSync) chkSync.checked = !!data.syncEnabled;
+    if (syncDetails) syncDetails.style.display = data.syncEnabled ? 'block' : 'none';
+    if (inpSyncUrl) inpSyncUrl.value = data.syncUrl || '';
+    if (inpSyncPwd) inpSyncPwd.value = data.syncPassword || '';
+    if (inpSyncHfToken) inpSyncHfToken.value = data.syncHfToken || '';
+    if (syncStatus) syncStatus.textContent = data.syncLastStatus || t('sync_status_idle');
+  });
+
+  if (chkSync) {
+    chkSync.onchange = function() {
+      var enabled = chkSync.checked;
+      chrome.storage.local.set({ syncEnabled: enabled });
+      if (syncDetails) syncDetails.style.display = enabled ? 'block' : 'none';
+    };
+  }
+
+  function saveSyncInputs() {
+    chrome.storage.local.set({
+      syncUrl: inpSyncUrl ? inpSyncUrl.value.trim() : '',
+      syncPassword: inpSyncPwd ? inpSyncPwd.value : '',
+      syncHfToken: inpSyncHfToken ? inpSyncHfToken.value.trim() : ''
+    });
+  }
+
+  if (inpSyncUrl) inpSyncUrl.addEventListener('change', saveSyncInputs);
+  if (inpSyncPwd) inpSyncPwd.addEventListener('change', saveSyncInputs);
+  if (inpSyncHfToken) inpSyncHfToken.addEventListener('change', saveSyncInputs);
+
+  if (btnSyncNow) {
+    btnSyncNow.onclick = function() {
+      if (syncStatus) syncStatus.textContent = 'Bağlanılıyor...';
+      
+      // Önce aktif tabın rollercoin olup olmadığını kontrol et
+      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        if (!tabs || !tabs[0]) {
+          if (syncStatus) syncStatus.textContent = 'Aktif sekme bulunamadı.';
+          return;
+        }
+        
+        var url = tabs[0].url || '';
+        if (!url.includes('rollercoin.com')) {
+          if (syncStatus) syncStatus.textContent = 'Lütfen RollerCoin sekmesinde olun.';
+          return;
+        }
+        
+        // Tab içinde executeScript ile token'ları çek
+        chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          func: () => {
+            return {
+              token: localStorage.getItem('token'),
+              refreshToken: localStorage.getItem('refreshToken')
+            };
+          },
+          world: 'MAIN'
+        }, function(results) {
+          if (chrome.runtime.lastError || !results || !results[0] || !results[0].result) {
+            if (syncStatus) syncStatus.textContent = 'Token okuma hatası.';
+            return;
+          }
+          
+          var tokens = results[0].result;
+          if (!tokens.token || !tokens.refreshToken) {
+            if (syncStatus) syncStatus.textContent = 'Giriş yapılmamış veya token yok.';
+            return;
+          }
+          
+          if (syncStatus) syncStatus.textContent = 'Eşitleniyor...';
+          
+          // Eşitleme isteğini arka plana gönder
+          chrome.runtime.sendMessage({
+            action: 'syncTokens',
+            token: tokens.token,
+            refreshToken: tokens.refreshToken
+          }, function(response) {
+            if (chrome.runtime.lastError) {
+              if (syncStatus) syncStatus.textContent = 'Arka plan iletişim hatası.';
+              return;
+            }
+            if (response && response.success) {
+              if (syncStatus) syncStatus.textContent = response.message;
+            } else {
+              if (syncStatus) syncStatus.textContent = 'Hata: ' + (response?.error || 'Bilinmeyen hata');
+            }
+          });
+        });
+      });
+    };
+  }
 
   btnClear.onclick = function() {
     var existing = document.getElementById('rc-confirm-box');

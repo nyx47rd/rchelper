@@ -1561,3 +1561,64 @@ document.addEventListener('click', function(e) {
     console.log('[RC] ✓ Manuel seçim yakalandı:', window.lastSelectedGame);
   }
 }, true); /* capture=true: tıklama DOM'a ulaşmadan önce yakala */
+
+/* ── Bulut Eşitleme: Token Değişiklik İzleme & Gönderme ── */
+(function() {
+  const script = document.createElement('script');
+  script.textContent = `
+    (function() {
+      let lastToken = localStorage.getItem('token');
+      let lastRefreshToken = localStorage.getItem('refreshToken');
+      
+      function checkTokens() {
+        const token = localStorage.getItem('token');
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (token && refreshToken && (token !== lastToken || refreshToken !== lastRefreshToken)) {
+          lastToken = token;
+          lastRefreshToken = refreshToken;
+          window.postMessage({
+            type: 'RC_TOKENS_CHANGED',
+            token: token,
+            refreshToken: refreshToken
+          }, '*');
+        }
+      }
+      
+      setInterval(checkTokens, 15000);
+      window.addEventListener('click', checkTokens);
+      window.addEventListener('keyup', checkTokens);
+      setTimeout(checkTokens, 2000);
+    })();
+  `;
+  try {
+    (document.head || document.documentElement).appendChild(script);
+    script.remove();
+  } catch (e) {
+    console.error('[RC] Token izleme scripti enjekte edilemedi:', e);
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.source !== window) return;
+    if (event.data && event.data.type === 'RC_TOKENS_CHANGED') {
+      const { token, refreshToken } = event.data;
+      chrome.storage.local.get(['syncEnabled'], (data) => {
+        if (data.syncEnabled) {
+          console.log('[RC] Otomatik bulut eşitleme tetiklendi.');
+          chrome.runtime.sendMessage({
+            action: 'syncTokens',
+            token: token,
+            refreshToken: refreshToken
+          }, (response) => {
+            void chrome.runtime.lastError;
+            if (response && response.success) {
+              console.log('[RC] Otomatik bulut eşitleme başarılı:', response.message);
+            } else {
+              console.warn('[RC] Otomatik bulut eşitleme hatası:', response?.error || 'Bilinmeyen hata');
+            }
+          });
+        }
+      });
+    }
+  });
+})();
+
