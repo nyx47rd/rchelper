@@ -305,17 +305,21 @@ Popup → Oyun Botları kartından botun açık olduğundan emin ol. Bot yalnız
 
 RC Helper, arayüzsüz (headless) bulut tabanlı otomasyon desteği sunar. Bu sayede bilgisayarınızı 7/24 açık bırakmanıza gerek kalmadan, Hugging Face Spaces (Docker + Selenium) ve bir cron-job servisi (örneğin cron-job.org) aracılığıyla RollerCoin bataryalarınızı 24 saatte bir otomatik olarak doldurabilirsiniz.
 
-### 1. Kimlik Doğrulama Anahtarları (Local Storage) Nasıl Alınır? 🔑
-RollerCoin, kullanıcı oturumunu doğrulamak için standart çerezler yerine tarayıcınızın **Local Storage** alanında JSON Web Token (JWT) saklar.
-1. Tarayıcınızdan [RollerCoin](https://rollercoin.com) sitesine gidin ve hesabınıza giriş yapın.
-2. Sayfada herhangi bir yere sağ tıklayıp **İncele** (Inspect) deyin veya klavyenizden **F12** tuşuna basarak Geliştirici Araçları'nı açın.
-3. Üstteki sekmelerden **Console** (Konsol) sekmesine geçiş yapın.
-4. Aşağıdaki kodu konsola aynen yapıştırıp **Enter** tuşuna basın:
-   ```javascript
-   console.log("RC_TOKEN:", localStorage.getItem("token"));
-   console.log("RC_REFRESH_TOKEN:", localStorage.getItem("refreshToken"));
-   ```
-5. Konsolda yazdırılan `RC_TOKEN` ve `RC_REFRESH_TOKEN` değerlerini kopyalayıp bir yere not edin.
+### 1. Kimlik Doğrulama Anahtarları Eşitleme Ayarı 🔑
+
+Bu otomasyonun çalışması için RollerCoin oturum token'larına ihtiyacı vardır. Eklentimiz bu token'ları uçtan uca şifreli (E2EE) olarak Hugging Face Spaces sunucunuza otomatik eşitler:
+
+1. Hugging Face Space alanınızı oluşturun (Bkz. Adım 2).
+2. Space panelinden **Settings** (Ayarlar) -> **Variables and Secrets** bölümüne gidin.
+3. **New Secret** butonuna tıklayarak **`SYNC_PASSWORD`** adında yeni bir secret oluşturun ve kendiniz güçlü bir şifre belirleyin.
+4. Eklentinin popup arayüzündeki **"Bulut Eşitleme"** kısmını açın.
+5. **Otomatik Eşitleme** seçeneğini aktif edin.
+6. **Space URL** alanına Hugging Face Space uygulamanızın adresini girin (örn. `https://kullaniciadiniz-spaceadiniz.hf.space`).
+7. **Eşitleme Şifresi** alanına Hugging Face'te oluşturduğunuz `SYNC_PASSWORD` şifresini girin.
+8. *(Opsiyonel)* Eğer Hugging Face Space alanınızı **Private** (Gizli) olarak kurduysanız, **HF Token** alanına Hugging Face profil ayarlarınızdan (Access Tokens) aldığınız `hf_...` token'ını yazın.
+9. **"Şimdi Eşitle"** butonuna basarak ilk eşitlemeyi anında yapın. Eklentimiz, RollerCoin sekmesinde oturumunuz açıkken token'larınız değiştikçe arka planda otomatik olarak şifreleyip bulut sunucunuza gönderecektir.
+
+*(Alternatif - Manuel Yöntem)*: Eğer otomatik eşitleme kullanmak istemiyorsanız, RollerCoin sitesinde konsolu (F12) açıp `console.log("RC_TOKEN:", localStorage.getItem("token")); console.log("RC_REFRESH_TOKEN:", localStorage.getItem("refreshToken"));` yazarak aldığınız token'ları elinizle kopyalayabilir ve Hugging Face Secrets altına `RC_TOKEN` ve `RC_REFRESH_TOKEN` adlarıyla elinizle ekleyebilirsiniz.
 
 ---
 
@@ -753,8 +757,8 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7860)
 ```
 
-Dosyalar yüklendikten sonra kimlik doğrulama anahtarlarınızı tanımlayın:
-* Space panelinden **Settings** (Ayarlar) sekmesine gidin, **Variables and Secrets** bölümüne inin, **New Secret** butonuna tıklayın. İki adet secret oluşturun: isimlerini sırasıyla **`RC_TOKEN`** ve **`RC_REFRESH_TOKEN`** yapın, değer kısımlarına ise kopyaladığınız ilgili anahtarları yapıştırıp kaydedin.
+Dosyalar yüklendikten sonra şifreleme anahtarınızı tanımlayın:
+* Space panelinden **Settings** (Ayarlar) sekmesine gidin, **Variables and Secrets** bölümüne inin, **New Secret** butonuna tıklayın. **`SYNC_PASSWORD`** adında bir secret oluşturup belirlediğiniz şifreyi girin. (Eğer manuel yöntem kullanıyorsanız, `RC_TOKEN` ve `RC_REFRESH_TOKEN` secret'larını da tanımlayabilirsiniz).
 
 ---
 

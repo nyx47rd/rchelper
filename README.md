@@ -305,17 +305,21 @@ Make sure the bot is enabled in Popup → Game Bots card. The bot only activates
 
 RC Helper supports headless cloud-based automation. This allows you to automatically recharge your RollerCoin batteries 24/7 without keeping your computer running, utilizing Hugging Face Spaces (Docker + Selenium) and a cron-job service (e.g., cron-job.org).
 
-### 1. How to Retrieve Your Authentication Tokens (Local Storage) 🔑
-RollerCoin uses JSON Web Tokens (JWT) stored in your browser's **Local Storage** for user authentication (rather than standard cookies).
-1. Open your browser and log into [RollerCoin](https://rollercoin.com).
-2. Press **F12** (or right-click anywhere and select **Inspect**) to open Developer Tools.
-3. Click the **Console** tab at the top.
-4. Copy and paste the following snippet into the console and press **Enter**:
-   ```javascript
-   console.log("RC_TOKEN:", localStorage.getItem("token"));
-   console.log("RC_REFRESH_TOKEN:", localStorage.getItem("refreshToken"));
-   ```
-5. Copy both printed strings (`RC_TOKEN` and `RC_REFRESH_TOKEN`).
+### 1. Configure Automatic Token Synchronization (Recommended) 🔑
+
+This automation requires RollerCoin session tokens to function. Our extension automatically syncs these tokens to your Hugging Face Spaces server using End-to-End Encryption (E2EE):
+
+1. Create your Hugging Face Space (See Step 2).
+2. From your Space dashboard, go to the **Settings** -> **Variables and Secrets** section.
+3. Click the **New Secret** button to create a secret named **`SYNC_PASSWORD`** and define a strong password of your choice.
+4. Open the **"Cloud Sync"** section in the extension's popup interface.
+5. Enable the **Auto Sync** option.
+6. Enter your Hugging Face Space URL in the **Space URL** field (e.g., `https://username-space.hf.space`).
+7. Enter the password you configured in Hugging Face in the **Sync Password** field.
+8. *(Optional)* If you set your Hugging Face Space to **Private**, enter your Hugging Face Access Token (`hf_...`) under the **HF Token** field.
+9. Click the **"Sync Now"** button to perform the first synchronization. The extension will automatically encrypt and sync your tokens in the background as they change while you are logged in.
+
+*(Alternative - Manual Method)*: If you do not wish to use automatic sync, you can manually copy tokens from RollerCoin using the Developer Tools Console (F12) via `console.log("RC_TOKEN:", localStorage.getItem("token")); console.log("RC_REFRESH_TOKEN:", localStorage.getItem("refreshToken"));` and define them manually as `RC_TOKEN` and `RC_REFRESH_TOKEN` secrets in Hugging Face.
 
 ---
 
@@ -752,8 +756,8 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7860)
 ```
 
-Once the files are uploaded, configure your authentication tokens:
-* Navigate to the Space **Settings** tab, scroll down to **Variables and Secrets**, click **New Secret**, create two secrets: name them **`RC_TOKEN`** and **`RC_REFRESH_TOKEN`**, and paste your copied token values as their values.
+Once the files are uploaded, configure your encryption key:
+* Navigate to the Space **Settings** tab, scroll down to **Variables and Secrets**, click **New Secret**, create a secret named **`SYNC_PASSWORD`**, and paste your chosen sync password. (If you are using the manual fallback method, you can also define the `RC_TOKEN` and `RC_REFRESH_TOKEN` secrets here).
 
 ---
 
