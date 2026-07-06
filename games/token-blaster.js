@@ -24,12 +24,14 @@
       (window._activeGame && window._activeGame.name) || '',
       window.currentPlayingGame || '',
       window.lastSelectedGame || '',
-      document.title || ''
+      document.title || '',
+      window.location.href || ''
     ];
-    return sources.some(function(s) {
+    var isMatched = sources.some(function(s) {
       var n = s.toLowerCase();
       return n.includes('token blaster') || n.includes('tokenblaster');
     });
+    return isMatched;
   }
 
   function _isOnPlayPage() {
@@ -109,14 +111,12 @@
     catch (e) { return; }
 
     // 1. Gemi Konumunu Bul (Yapay Zeka Taraması)
-    // Gemi Y seviyesi yaklaşık alt kısımdadır (h - 85)
     var scanY = Math.round(h * 0.88); 
     var minX = -1, maxX = -1;
     
     for (var x = 50; x < w - 50; x += 4) {
       var idx = (scanY * w + x) * 4;
       var r = data[idx], g = data[idx + 1], b = data[idx + 2];
-      // Renklilik kontrolü (renkli pikseller gemiyi temsil eder, siyah/gri/yıldızları eler)
       var maxColor = Math.max(r, g, b);
       var minColor = Math.min(r, g, b);
       if (maxColor > 50 && (maxColor - minColor) > 40) {
@@ -131,8 +131,7 @@
       _shipY = scanY;
     }
 
-    // 2. Tehlikeleri Algıla (Düşman lazerleri veya süzülen canavarlar)
-    // Geminin üzerindeki koridor taranır
+    // 2. Tehlikeleri Algıla
     var threatLeft = 0, threatRight = 0;
     var detectHeight = 120;
     var startY = _shipY - detectHeight;
@@ -148,10 +147,7 @@
         var maxColor = Math.max(r, g, b);
         var minColor = Math.min(r, g, b);
         
-        // Siyah (arka plan) ve beyaz (yıldızlar) olmayan tüm renkli cisimler tehdittir
         if (maxColor > 30 && (maxColor - minColor) > 30) {
-          // Oyuncu kendi lazerini elemek için mavi/kırmızı ayrımını filtreleyebilir
-          // Ancak basitlik ve güvenlik için geminin üstündeki hareketli renkli her şey tehdittir
           if (dx < _shipX) {
             threatLeft++;
           } else {
@@ -165,23 +161,20 @@
     var targetDir = _sweepDir;
     
     if (threatLeft > 0 || threatRight > 0) {
-      // Tehlike varsa ters yöne kaç
       if (threatLeft > threatRight) {
-        targetDir = 1;  // Solda tehlike var, sağa kaç
+        targetDir = 1;
       } else {
-        targetDir = -1; // Sağda tehlike var, sola kaç
+        targetDir = -1;
       }
     } else {
-      // Tehlike yoksa süpürme hareketine devam et
       if (_shipX > w - 80) {
-        _sweepDir = -1; // Sınıra geldik, sola dön
+        _sweepDir = -1;
       } else if (_shipX < 80) {
-        _sweepDir = 1;  // Sınıra geldik, sağa dön
+        _sweepDir = 1;
       }
       targetDir = _sweepDir;
     }
 
-    // Tuşları yönlendir
     if (targetDir === 1) {
       _setKeyState('ArrowLeft', false);
       _setKeyState('ArrowRight', true);
@@ -190,7 +183,6 @@
       _setKeyState('ArrowLeft', true);
     }
 
-    // Sürekli ateş et
     if (Date.now() - _lastSpace > _spaceInterval) {
       _lastSpace = Date.now();
       _pressSpace();
@@ -226,9 +218,20 @@
   setInterval(function () {
     var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botBlasterEnabled'] === false);
     var active = _isOnPlayPage() && _isGame() && !!_getCanvas() && enabled;
+    
+    // Debug Log
+    console.log('[RC-TB] Durum Kontrolü:', {
+      isOnPlayPage: _isOnPlayPage(),
+      isGame: _isGame(),
+      hasCanvas: !!_getCanvas(),
+      enabled: enabled,
+      active: active,
+      botActive: _botActive
+    });
+
     if (active && !_botActive)  _start();
     if (!active && _botActive)  _stop();
-  }, 500);
+  }, 1000);
 
   window._rcTokenBlaster = { start: _start, stop: _stop, isActive: function () { return _botActive; } };
 })();
