@@ -681,25 +681,30 @@ def trigger_battery():
             return jsonify({"status": "error", "steps": steps, "view_results": "/sonuc"}), 404
         
         save_screenshot(driver, "03_buton_bulundu")
-        is_disabled = button.get_attribute("disabled")
-        steps.append(f"✅ Buton bulundu: {button_method} (disabled={is_disabled})")
+        # Butonun gerçekten pasif olup olmadığını kontrol et (nitelik veya sınıf adı üzerinden)
+        is_disabled = (
+            button.get_attribute("disabled") is not None or 
+            "disabled" in (button.get_attribute("class") or "").lower()
+        )
+        steps.append(f"✅ Buton bulundu: {button_method} (pasif={is_disabled})")
 
         # Adım 6: Butona tıkla
         if is_disabled:
-            steps.append("⚠️ Buton devre dışı — batarya zaten dolu olabilir.")
-            driver.execute_script(
-                "arguments[0].removeAttribute('disabled'); arguments[0].click();", button)
-            time.sleep(5)
-            save_screenshot(driver, "04_zorla_tiklandi")
-            steps.append("🔄 Zorla tıklama yapıldı. Ekran görüntüsünü kontrol edin.")
+            steps.append("ℹ️ Batarya zaten dolu veya şarj butonu şu an pasif. Yapay tıklama algılamasını (anti-bot) önlemek için tıklama atlandı.")
+            print("[Selenium] Batarya zaten dolu veya buton pasif. Güvenlik için tıklama atlandı.")
         else:
             try:
-                button.click()
-            except Exception:
+                # İnsansı davranış simülasyonu için ActionChains ile butona git ve tıkla
+                from selenium.webdriver.common.action_chains import ActionChains
+                actions = ActionChains(driver)
+                actions.move_to_element(button).pause(random.uniform(0.6, 1.8)).click().perform()
+                steps.append("✅ Batarya butonuna organik imleç hareketiyle (ActionChains) tıklandı!")
+            except Exception as click_err:
+                print(f"[Selenium] Organik tıklama başarısız, JavaScript fallback yapılıyor: {str(click_err)}")
                 driver.execute_script("arguments[0].click();", button)
+                steps.append("✅ Batarya butonuna JavaScript olayı tetiklenerek tıklandı.")
             time.sleep(5)
             save_screenshot(driver, "04_tiklandi")
-            steps.append("✅ Batarya butonuna tıklandı!")
 
         save_screenshot(driver, "05_son_durum")
         steps.append("✅ İşlem tamamlandı. Ekran görüntüleri için /sonuc adresini ziyaret edin.")

@@ -680,25 +680,30 @@ def trigger_battery():
             return jsonify({"status": "error", "steps": steps, "view_results": "/sonuc"}), 404
         
         save_screenshot(driver, "03_button_found")
-        is_disabled = button.get_attribute("disabled")
+        # Check if the button is actually disabled (either via attribute or class name)
+        is_disabled = (
+            button.get_attribute("disabled") is not None or 
+            "disabled" in (button.get_attribute("class") or "").lower()
+        )
         steps.append(f"✅ Button found via: {button_method} (disabled={is_disabled})")
 
         # Step 6: Click the button
         if is_disabled:
-            steps.append("⚠️ Button is disabled — battery may already be charged.")
-            driver.execute_script(
-                "arguments[0].removeAttribute('disabled'); arguments[0].click();", button)
-            time.sleep(5)
-            save_screenshot(driver, "04_after_forced_click")
-            steps.append("🔄 Forced click executed. Check screenshot.")
+            steps.append("ℹ️ Battery is already charged / recharge button is currently disabled. Skipping click to prevent bot detection.")
+            print("[Selenium] Battery already charged or button is disabled. Skipping click for safety.")
         else:
             try:
-                button.click()
-            except Exception:
+                # Use ActionChains to simulate organic cursor hover and click
+                from selenium.webdriver.common.action_chains import ActionChains
+                actions = ActionChains(driver)
+                actions.move_to_element(button).pause(random.uniform(0.6, 1.8)).click().perform()
+                steps.append("✅ Battery button clicked organically via cursor move (ActionChains)!")
+            except Exception as click_err:
+                print(f"[Selenium] Organic click failed, falling back to script click: {str(click_err)}")
                 driver.execute_script("arguments[0].click();", button)
+                steps.append("✅ Battery button clicked via fallback JavaScript event.")
             time.sleep(5)
             save_screenshot(driver, "04_after_click")
-            steps.append("✅ Battery button clicked!")
 
         save_screenshot(driver, "05_final_state")
         steps.append("✅ Done. Visit /sonuc to see screenshots.")
