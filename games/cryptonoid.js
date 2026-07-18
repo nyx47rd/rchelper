@@ -172,20 +172,24 @@
 
     var isStationary = _ballStationaryCount > 15;
 
-    /* === 2. Top Fırlatma — yalnızca top GERÇEKTEN rakette beklerken === */
+    /* === 2. Top Fırlatma — yalnızca top GEREÇEKTEN rakette beklerken === */
     if (isStationary && ball.y >= 740) {
       var now = Date.now();
       if (now - _lastLaunch > 2000) {
         _lastLaunch = now;
         console.log('[RC-Cryptonoid] 🚀 Top fırlatılıyor...');
         _pressSpace();
+        /* Tüm mouse/pointer event varyantlarını gönder — Phaser v3 bazı sürümlerde
+           sadece mousedown/up'a, bazıları sadece pointerdown/up'a yanıt verir */
         var r2 = canvas.getBoundingClientRect();
-        var scaleX2 = r2.width / (canvas.width || 960);
-        var clickOpts = { bubbles: true, cancelable: true,
-          clientX: r2.left + ball.x * scaleX2,
-          clientY: r2.top  + ball.y * (r2.height / (canvas.height || 900)) };
-        canvas.dispatchEvent(new MouseEvent('pointerdown', clickOpts));
-        canvas.dispatchEvent(new MouseEvent('pointerup',   clickOpts));
+        var sx = r2.width  / (canvas.width  || 960);
+        var sy = r2.height / (canvas.height || 900);
+        var cx = r2.left + ball.x * sx;
+        var cy = r2.top  + ball.y * sy;
+        var evOpts = { bubbles: true, cancelable: true, clientX: cx, clientY: cy };
+        ['mousedown','mouseup','click','pointerdown','pointerup'].forEach(function(t) {
+          try { canvas.dispatchEvent(new MouseEvent(t, evOpts)); } catch(e) {}
+        });
       }
     }
 
@@ -313,10 +317,22 @@
     if (_botActive) return;
     _botActive            = true;
     _lastBallY            = 0;
+    _lastBallX            = 0;
     _ballStationaryCount  = 0;
     _lastLaunch           = 0;
     _paddleOffset         = 0;
     _offsetPrepared       = false;
+
+    /* Başlangıçta top zaten rakette bekliyorsa ilk frame delta'sı devasa çıkar
+       ve stationary sayımı sıfırlanır. Top konumunu şimdiden oku. */
+    try {
+      var game0 = _findGame();
+      var scene0 = game0 && _getActiveScene(game0);
+      if (scene0 && scene0.ball) {
+        _lastBallX = scene0.ball.x;
+        _lastBallY = scene0.ball.y;
+      }
+    } catch(e) {}
 
     try { document.body.setAttribute('data-rc-bot-cryptonoid-active', 'true'); } catch (e) {}
     console.log('[RC-Cryptonoid] ✅ Bot BAŞLADI');
