@@ -81,43 +81,29 @@
     return found;
   }
 
-  /* ─── Kart Tıklama ──────────────────────────────────────────── */
+  /* ─── Kart Tıklama (Phaser Event Injection) ───────────────────── */
   function _clickCard(card, canvas, scene) {
-    var rect   = canvas.getBoundingClientRect();
-    var scaleX = rect.width  / (canvas.width  || 960);
-    var scaleY = rect.height / (canvas.height || 828);
-
-    var cardCenterX = card.x + (card.width  || 171) / 2;
-    var cardCenterY = card.y + (card.height || 171) / 2;
-
-    var cx = rect.left + cardCenterX * scaleX;
-    var cy = rect.top  + cardCenterY * scaleY;
-
-    /* Phaser activePointer'ı güncelle */
     if (scene && scene.input) {
       try {
-        if (scene.input.activePointer) {
-          scene.input.activePointer.x = cardCenterX;
-          scene.input.activePointer.y = cardCenterY;
-        }
-        if (scene.input.mousePointer) {
-          scene.input.mousePointer.x = cardCenterX;
-          scene.input.mousePointer.y = cardCenterY;
-        }
-      } catch(e) {}
+        var cardCenterX = card.x + (card.width  || 171) / 2;
+        var cardCenterY = card.y + (card.height || 171) / 2;
+
+        /* Pointer objesini güncelle */
+        var pointer = scene.input.activePointer || {};
+        pointer.x = cardCenterX;
+        pointer.y = cardCenterY;
+        pointer.worldX = cardCenterX;
+        pointer.worldY = cardCenterY;
+
+        /* Olayları doğrudan karta ve Phaser input yöneticisine gönder */
+        card.emit('pointerdown', pointer);
+        card.emit('pointerup', pointer);
+        scene.input.emit('gameobjectdown', pointer, card);
+        console.log('[RC-CoinFlip] ✓ Phaser olayları tetiklendi:', card.texture && card.texture.key);
+      } catch(e) {
+        console.log('[RC-CoinFlip] ❌ Phaser olay tetikleme hatası:', e);
+      }
     }
-
-    var evOpts = { bubbles: true, cancelable: true, clientX: cx, clientY: cy, isPrimary: true, pointerId: 1 };
-
-    /* 1. Pointer Events */
-    ['pointerdown', 'pointerup'].forEach(function (t) {
-      try { canvas.dispatchEvent(new PointerEvent(t, evOpts)); } catch (e) {}
-    });
-
-    /* 2. Mouse Events */
-    ['mousedown', 'mouseup', 'click'].forEach(function (t) {
-      try { canvas.dispatchEvent(new MouseEvent(t, evOpts)); } catch (e) {}
-    });
   }
 
   /* ─── Ana Karar Döngüsü (60 FPS) ────────────────────────────── */
