@@ -1,6 +1,6 @@
 var autoPlayState = false;
 var loadSkippedGames = null;
-var CURRENT_VERSION = '2.2.94';
+var CURRENT_VERSION = '2.2.95';
 var updateAvailable = false;
 var latestReleaseUrl = 'https://github.com/nyx47rd/rchelper/releases/latest';
 
@@ -165,7 +165,8 @@ document.addEventListener('DOMContentLoaded', function() {
     'chk-bot-hamster':        'botHamsterEnabled',
     'chk-bot-2048':           'bot2048Enabled',
     'chk-bot-blaster':        'botBlasterEnabled',
-    'chk-bot-cryptonoid':      'botCryptonoidEnabled'
+    'chk-bot-cryptonoid':     'botCryptonoidEnabled',
+    'chk-bot-coinflip':       'botCoinFlipEnabled'
   };
 
   chrome.storage.local.get(Object.values(BOT_KEYS), function(data) {
@@ -190,7 +191,8 @@ document.addEventListener('DOMContentLoaded', function() {
       hamster: 'badge-hamster', 
       '2048': 'badge-2048', 
       blaster: 'badge-blaster',
-      cryptonoid: 'badge-cryptonoid'
+      cryptonoid: 'badge-cryptonoid',
+      coinflip: 'badge-coinflip'
     };
     Object.keys(map).forEach(function(k) {
       var el = document.getElementById(map[k]);

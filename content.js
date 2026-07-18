@@ -1495,7 +1495,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         hamster:       !!(window._rcHamster       && window._rcHamster.isActive()),
         '2048':        document.body.getAttribute('data-rc-bot-2048-active') === 'true',
         blaster:       document.body.getAttribute('data-rc-bot-blaster-active') === 'true',
-        cryptonoid:    document.body.getAttribute('data-rc-bot-cryptonoid-active') === 'true'
+        cryptonoid:    document.body.getAttribute('data-rc-bot-cryptonoid-active') === 'true',
+        coinflip:      document.body.getAttribute('data-rc-bot-coinflip-active') === 'true'
       }
     });
     return true;
@@ -1519,7 +1520,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.bot === 'botHamsterEnabled'       && window._rcHamster)       { if (!msg.enabled) window._rcHamster.stop(); }
     if (msg.bot === 'bot2048Enabled'          && window._rc2048)          { if (!msg.enabled) window._rc2048.stop(); }
     if (msg.bot === 'botBlasterEnabled'       && window._rcTokenBlaster)  { if (!msg.enabled) window._rcTokenBlaster.stop(); }
-    if (msg.bot === 'botCryptonoidEnabled'     && window._rcCryptonoid)    { if (!msg.enabled) window._rcCryptonoid.stop(); }
+    if (msg.bot === 'botCryptonoidEnabled'    && window._rcCryptonoid)    { if (!msg.enabled) window._rcCryptonoid.stop(); }
+    if (msg.bot === 'botCoinFlipEnabled'      && window._rcCoinFlip)      { if (!msg.enabled) window._rcCoinFlip.stop(); }
     sendResponse({ ok: true });
     return true;
   }
