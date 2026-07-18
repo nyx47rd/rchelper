@@ -205,7 +205,7 @@ var mainTimer = null;
 var breakCheckTimer = null;
 
 try {
-  chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled', 'botBlasterEnabled', 'botCryptonoidEnabled', 'botCoinFlipEnabled'], (data) => {
+  chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled', 'botBlasterEnabled', 'botCryptonoidEnabled'], (data) => {
     if (!data) data = {};
     window.autoCollect = data.autoCollect !== false;
     window.autoChoose  = data.autoChoose  !== false;
@@ -214,14 +214,12 @@ try {
       botHamsterEnabled:       data.botHamsterEnabled       !== false,
       bot2048Enabled:          data.bot2048Enabled          !== false,
       botBlasterEnabled:       data.botBlasterEnabled       !== false,
-      botCryptonoidEnabled:    data.botCryptonoidEnabled    !== false,
-      botCoinFlipEnabled:      data.botCoinFlipEnabled      !== false
+      botCryptonoidEnabled:    data.botCryptonoidEnabled    !== false
     };
     try {
       document.body.setAttribute('data-rc-bot-2048-enabled', (data.bot2048Enabled !== false) ? 'true' : 'false');
       document.body.setAttribute('data-rc-bot-blaster-enabled', (data.botBlasterEnabled !== false) ? 'true' : 'false');
       document.body.setAttribute('data-rc-bot-cryptonoid-enabled', (data.botCryptonoidEnabled !== false) ? 'true' : 'false');
-      document.body.setAttribute('data-rc-bot-coinflip-enabled', (data.botCoinFlipEnabled !== false) ? 'true' : 'false');
     } catch(e) {}
     window.breakReminderEnabled = data.breakReminder !== false;
     if (data.breakSessionMin)  window.breakSessionMinutes  = parseFloat(data.breakSessionMin);
@@ -1502,8 +1500,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         hamster:       !!(window._rcHamster       && window._rcHamster.isActive()),
         '2048':        document.body.getAttribute('data-rc-bot-2048-active') === 'true',
         blaster:       document.body.getAttribute('data-rc-bot-blaster-active') === 'true',
-        cryptonoid:    document.body.getAttribute('data-rc-bot-cryptonoid-active') === 'true',
-        coinflip:      document.body.getAttribute('data-rc-bot-coinflip-active') === 'true'
+        cryptonoid:    document.body.getAttribute('data-rc-bot-cryptonoid-active') === 'true'
       }
     });
     return true;
@@ -1521,9 +1518,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (msg.bot === 'botCryptonoidEnabled') {
         document.body.setAttribute('data-rc-bot-cryptonoid-enabled', msg.enabled ? 'true' : 'false');
       }
-      if (msg.bot === 'botCoinFlipEnabled') {
-        document.body.setAttribute('data-rc-bot-coinflip-enabled', msg.enabled ? 'true' : 'false');
-      }
     } catch(e) {}
     /* Bot'u direkt durdur/başlat */
     if (msg.bot === 'botFisherEnabled'        && window._rcCoinFisher)    { if (!msg.enabled) window._rcCoinFisher.stop(); }
@@ -1531,7 +1525,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.bot === 'bot2048Enabled'          && window._rc2048)          { if (!msg.enabled) window._rc2048.stop(); }
     if (msg.bot === 'botBlasterEnabled'       && window._rcTokenBlaster)  { if (!msg.enabled) window._rcTokenBlaster.stop(); }
     if (msg.bot === 'botCryptonoidEnabled'    && window._rcCryptonoid)    { if (!msg.enabled) window._rcCryptonoid.stop(); }
-    if (msg.bot === 'botCoinFlipEnabled'      && window._rcCoinFlip)      { if (!msg.enabled) window._rcCoinFlip.stop(); }
     sendResponse({ ok: true });
     return true;
   }
