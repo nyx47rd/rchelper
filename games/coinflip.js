@@ -125,7 +125,13 @@
     var sceneKey = scene && scene.sys && scene.sys.settings && scene.sys.settings.key;
     if (sceneKey !== 'Game') return;
 
-    var canvas = _getCanvas();
+    /* Phaser input kilitliyse (animasyon vb.) işlem yapma */
+    if (scene.input && !scene.input.enabled) return;
+
+    /* Canvas'ı DOM'dan aramak yerine DOĞRUDAN Phaser'ın kendi canvas referansından al.
+       Bu sayede sayfaya sonradan yüklenen reklam vb. yabancı canvas'lar asla tıklanmaz. */
+    var canvas = scene.sys && scene.sys.game && scene.sys.game.canvas;
+    if (!canvas) canvas = _getCanvas();
     if (!canvas) return;
 
     var cards = scene.cards;
@@ -166,7 +172,7 @@
         /* Zaten bir karta tıkladık ama henüz scene.openedCard olarak atanmadı (animasyon sürüyor).
            Eğer tıklama üzerinden 1.5 saniye geçtiyse tıklama başarısız sayıp kilidi aç. */
         if (now - _lastActionTime > 1500) {
-          console.log('[RC-CoinFlip] ⚠ Kart açılması zaman aşımına uğradı, tekrar denenecek:', _clickedFirstCard.texture.key);
+          console.log('[RC-CoinFlip] ⚠ Kart açılması zaman aşımına uğradı, tekrar denenecek:', _clickedFirstCard.texture && _clickedFirstCard.texture.key);
           _clickedFirstCard = null;
         }
         return; /* Beklemeye devam et, ikinci kez tıklayıp animasyonu bozma */
