@@ -143,12 +143,19 @@
 
   /* ─── Ana Kare Döngüsü (60 FPS) ────────────────────────────── */
   function _tickFrame(scene) {
+    /* Sadece asıl oyun sahnesinde çalış — GameOver/Start/LoadGame'de DUR */
+    var sceneKey = scene && scene.sys && scene.sys.settings && scene.sys.settings.key;
+    if (sceneKey !== 'Game') return;
+
     var canvas = _getCanvas();
     if (!canvas) return;
 
     var paddle = scene.platform;
     var ball   = scene.ball;
     if (!paddle || !ball) return;
+
+    /* Top aktif ve görünür değilse (oyun bitti) hiçbir şey yapma */
+    if (!ball.active || !ball.visible) return;
 
     /* === 1. Hız Tespiti (fizik motorundan bağımsız) === */
     var vy = ball.y - _lastBallY;
@@ -162,14 +169,21 @@
 
     var isStationary = _ballStationaryCount > 15;
 
-    /* === 2. Top Fırlatma === */
+    /* === 2. Top Fırlatma — yalnızca top GERÇEKTEN rakette beklerken === */
     if (isStationary && ball.y >= 740) {
       var now = Date.now();
-      if (now - _lastLaunch > 1500) {
+      if (now - _lastLaunch > 2000) {
         _lastLaunch = now;
         console.log('[RC-Cryptonoid] 🚀 Top fırlatılıyor...');
         _pressSpace();
-        _clickCanvas(canvas);
+        /* Click SADECE Space çalışmadıysa fallback olarak — canvas ortasına değil top konumuna */
+        var r2 = canvas.getBoundingClientRect();
+        var scaleX = r2.width / (canvas.width || 960);
+        var clickOpts = { bubbles: true, cancelable: true,
+          clientX: r2.left + ball.x * scaleX,
+          clientY: r2.top  + ball.y * (r2.height / (canvas.height || 900)) };
+        canvas.dispatchEvent(new MouseEvent('pointerdown', clickOpts));
+        canvas.dispatchEvent(new MouseEvent('pointerup',   clickOpts));
       }
     }
 
