@@ -5,12 +5,14 @@
    Mekanik: Topu takip ederek raketi tam topun altına hizalar
    ══════════════════════════════════════════════════════════════════ */
 (function () {
-  var _botActive       = false;
-  var _loopId          = null;
-  var _lastLaunch      = 0;
-  var _activeKeys      = {};    /* Basılı tutulan tuşlar */
-  var _paddleOffset    = 0;     /* Topun rakete açı vermesi için kullanılan sapma payı */
-  var _offsetPrepared  = false; /* Açı hazırlığı kilidi */
+  var _botActive          = false;
+  var _loopId             = null;
+  var _lastLaunch         = 0;
+  var _activeKeys         = {};    /* Basılı tutulan tuşlar */
+  var _paddleOffset       = 0;     /* Topun rakete açı vermesi için kullanılan sapma payı */
+  var _offsetPrepared     = false; /* Açı hazırlığı kilidi */
+  var _lastBallY          = 0;     /* Son frame'deki top Y koordinatı */
+  var _ballStationaryCount= 0;     /* Topun hareketsiz kaldığı frame sayısı */
 
   function _isGame() {
     var curGame = (document.body.getAttribute('data-rc-current-game') || '').toLowerCase();
@@ -118,11 +120,23 @@
     var ball = scene.ball;
     if (!paddle || !ball) return;
 
-    // 1. Topu Başlatma Kontrolü (Top raketin üzerinde hareketsiz bekliyorsa fırlat)
-    var vx = (ball.body && ball.body.velocity) ? ball.body.velocity.x : 0;
-    var vy = (ball.body && ball.body.velocity) ? ball.body.velocity.y : 0;
+    // 1. Hareket Takibi ve Hız Hesaplama (Fizik motorundan bağımsız)
+    var vy = ball.y - _lastBallY; // Negatifse yükseliyor, pozitifse düşüyor, 0 ise duruyor
+    
+    var isStationary = false;
+    if (Math.abs(vy) < 0.05) {
+      _ballStationaryCount++;
+    } else {
+      _ballStationaryCount = 0;
+    }
+    _lastBallY = ball.y;
 
-    if (vx === 0 && vy === 0 && ball.y >= 755) {
+    if (_ballStationaryCount > 15) { // ~250ms boyunca kıpırdamadıysa duruyor kabul et
+      isStationary = true;
+    }
+
+    // 2. Topu Başlatma Kontrolü (Top raketin üzerinde hareketsiz bekliyorsa fırlat)
+    if (isStationary && ball.y >= 755) {
       var now = Date.now();
       if (now - _lastLaunch > 1500) {
         _lastLaunch = now;
@@ -132,10 +146,10 @@
       }
     }
 
-    // 2. Raket Takip Kontrolü (Raketi topun altına sapma vererek konumlandır)
+    // 3. Raket Takip Kontrolü (Raketi topun altına sapma vererek konumlandır)
     try {
-      // Top yukarı doğru giderken (vy < 0) bir sonraki düşüş için açı verecek yeni bir offset hazırla
-      if (vy < 0) {
+      // Top yukarı doğru giderken (vy < -0.1) bir sonraki düşüş için açı verecek yeni bir offset hazırla
+      if (vy < -0.1) {
         if (!_offsetPrepared) {
           // Raketin genişliğine göre güvenli bir sapma: -20px ile +20px arası (ortaya çarpmaması için min genlik 8px)
           var direction = Math.random() > 0.5 ? 1 : -1;
@@ -144,7 +158,7 @@
           _offsetPrepared = true;
           console.log('[RC-Cryptonoid] 🧭 Yeni sapma açısı belirlendi:', _paddleOffset, 'px');
         }
-      } else if (vy > 0) {
+      } else if (vy > 0.1) {
         _offsetPrepared = false; // Top düşerken hazırlığı sıfırla ki bir sonraki yükselişte yeni açı alsın
       }
 
