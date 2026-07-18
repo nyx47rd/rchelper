@@ -1,9 +1,10 @@
 /* ══════════════════════════════════════════════════════════════════
-   RC Helper — CoinFlip (Hafıza Kartı) Zeki Hafıza Botu (v2.2.97)
+   RC Helper — CoinFlip (Hafıza Kartı) Zeki Hafıza Botu (v2.2.98)
    Yalnızca /play_game sayfasında inject edilir (manifest.json)
    Tetikleyici: Oyun ekranı algılanınca otomatik başlar
    Mekanik: Phaser scene.update yamalama (monkey-patch) + requestAnimationFrame fallback.
-            Kart açılma durumunu (scene.openedCard) anlık takip eden durum makinesi.
+            Kart açılma durumunu (scene.openedCard) ve tıklama kilidini anlık takip eden
+            çift tıklamayı engelleyen gelişmiş durum makinesi.
    ══════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -15,7 +16,8 @@
   var _rafId          = null;
 
   /* Durum Takip Değişkenleri */
-  var _lastActionTime = 0;
+  var _lastActionTime    = 0;
+  var _clickedFirstCard  = null; /* İlk tıklanan kart nesnesi (açılması bekleniyor) */
 
   /* ─── Oyun Tespiti ──────────────────────────────────────────── */
   function _isGame() {
@@ -30,6 +32,16 @@
   }
 
   function _getCanvas() {
+    var ph = document.getElementById('phaserGame');
+    if (ph) {
+      var c = ph.querySelector('canvas');
+      if (c) return c;
+    }
+    var canvases = document.querySelectorAll('canvas');
+    for (var i = 0; i < canvases.length; i++) {
+      var c = canvases[i];
+      if (c.width === 960 && c.height === 828) return c;
+    }
     return document.querySelector('#phaserGame canvas') || document.querySelector('canvas');
   }
 
@@ -120,13 +132,16 @@
     if (!cards || !cards.length) return;
 
     var now = Date.now();
-    if (now - _lastActionTime < 500) return; /* Eylemler arası minimum 500ms mola (animasyonlar için) */
+    if (now - _lastActionTime < 300) return; /* Eylemler arası minimum 300ms bekleme */
 
     /* Aktif olan (henüz eşleşmemiş) kartları filtrele */
     var activeCards = cards.filter(function (c) {
       return c && c.active && c.visible;
     });
-    if (activeCards.length === 0) return;
+    if (activeCards.length === 0) {
+      _clickedFirstCard = null;
+      return;
+    }
 
     /* Açıkta olan kart var mı? */
     var opened = scene.openedCard;
@@ -141,15 +156,27 @@
       if (partner) {
         console.log('[RC-CoinFlip] 🎯 Eş bulundu! Eşleştiriliyor:', openedKey);
         _clickCard(partner, canvas, scene);
+        _clickedFirstCard = null; /* Eşleşme yapıldı, kilidi kaldır */
         /* Eşleşme animasyonu ve kartların kaybolması için uzun bekleme süresi ver */
-        _lastActionTime = now + 900;
+        _lastActionTime = now + 1200;
       }
     } else {
-      /* Açıkta kart yok: İlk sıradaki aktif kartı aç */
+      /* Açıkta kart yok: Tıklama kilidini kontrol et */
+      if (_clickedFirstCard) {
+        /* Zaten bir karta tıkladık ama henüz scene.openedCard olarak atanmadı (animasyon sürüyor).
+           Eğer tıklama üzerinden 1.5 saniye geçtiyse tıklama başarısız sayıp kilidi aç. */
+        if (now - _lastActionTime > 1500) {
+          console.log('[RC-CoinFlip] ⚠ Kart açılması zaman aşımına uğradı, tekrar denenecek:', _clickedFirstCard.texture.key);
+          _clickedFirstCard = null;
+        }
+        return; /* Beklemeye devam et, ikinci kez tıklayıp animasyonu bozma */
+      }
+
+      /* Yeni bir kart seç ve tıkla */
       var target = activeCards[0];
       console.log('[RC-CoinFlip] 🎴 Kart açılıyor:', target.texture && target.texture.key);
       _clickCard(target, canvas, scene);
-      /* Kartın dönme animasyonu için bekleme süresi ver */
+      _clickedFirstCard = target;
       _lastActionTime = now;
     }
   }
@@ -191,8 +218,9 @@
   /* ─── Başlatma / Durdurma ───────────────────────────────────── */
   function _start() {
     if (_botActive) return;
-    _botActive      = true;
-    _lastActionTime = 0;
+    _botActive        = true;
+    _lastActionTime   = 0;
+    _clickedFirstCard = null;
 
     try { document.body.setAttribute('data-rc-bot-coinflip-active', 'true'); } catch (e) {}
     console.log('[RC-CoinFlip] ✅ Bot BAŞLADI');
@@ -209,7 +237,6 @@
       var game = _findGame();
       var scene = game && _getGameScene(game);
       if (scene && _patchedScene !== scene) {
-        /* Yamalanamadıysa doğrudan döngüden çağır */
         _tickFrame(scene);
       }
       _rafId = requestAnimationFrame(_rafLoop);
@@ -219,7 +246,8 @@
 
   function _stop() {
     if (!_botActive) return;
-    _botActive = false;
+    _botActive        = false;
+    _clickedFirstCard = null;
     if (_monitorId) { clearInterval(_monitorId); _monitorId = null; }
     if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
 
