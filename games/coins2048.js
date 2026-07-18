@@ -241,6 +241,7 @@
   function _start() {
     if (_botActive) return;
     _botActive = true;
+    try { document.body.setAttribute('data-rc-bot-2048-active', 'true'); } catch(e) {}
     console.log('[RC-2048] ✅ 2048 bot BAŞLADI (Yapay Zeka Modu)');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🔢 2048 Bot aktif');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
@@ -250,6 +251,7 @@
   function _stop() {
     if (!_botActive) return;
     _botActive = false;
+    try { document.body.setAttribute('data-rc-bot-2048-active', 'false'); } catch(e) {}
     if (_loopId) { clearInterval(_loopId); _loopId = null; }
     console.log('[RC-2048] ⏹ 2048 bot DURDU');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🔢 2048 Bot durdu');
@@ -257,7 +259,7 @@
   }
 
   setInterval(function () {
-    var enabled = !(window._rcBotEnabled && window._rcBotEnabled['bot2048Enabled'] === false);
+    var enabled = document.body.getAttribute('data-rc-bot-2048-enabled') !== 'false';
     var active = _isOnPlayPage() && _isGame() && !!_getCanvas() && enabled;
     if (active && !_botActive)  _start();
     if (!active && _botActive)  _stop();
