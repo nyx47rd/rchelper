@@ -1,33 +1,28 @@
 /* ══════════════════════════════════════════════════════════════════
-   RC Helper — Cryptonoid (Breakout) Zeki Hafıza Botu (v2.2.89)
+   RC Helper — Cryptonoid (Breakout) Zeki Hafıza Botu (v2.2.90)
    Yalnızca /game/play_game sayfasında inject edilir (manifest.json)
    Tetikleyici: Oyun ekranı algılanınca otomatik başlar
-   Mekanik: Topu ve düşen bonusları takip eder, Phaser scene.update
-   metodunu yamalayarak (monkey-patch) 60 FPS pürüzsüz takip sağlar.
+   Mekanik: Phaser scene.update yamalama (monkey-patch) + requestAnimationFrame fallback
    ══════════════════════════════════════════════════════════════════ */
 (function () {
-  var _botActive          = false;
-  var _lastLaunch         = 0;
-  var _activeKeys         = {};    /* Basılı tutulan tuşlar */
-  var _paddleOffset       = 0;     /* Topun rakete açı vermesi için kullanılan sapma payı */
-  var _offsetPrepared     = false; /* Açı hazırlığı kilidi */
-  var _lastBallY          = 0;     /* Son frame'deki top Y koordinatı */
-  var _ballStationaryCount= 0;     /* Topun hareketsiz kaldığı frame sayısı */
-  var _originalUpdate     = null;  /* Orijinal scene.update referansı */
+  'use strict';
 
+  var _botActive           = false;
+  var _lastLaunch          = 0;
+  var _paddleOffset        = 0;
+  var _offsetPrepared      = false;
+  var _lastBallY           = 0;
+  var _ballStationaryCount = 0;
+  var _monitorId           = null;
+  var _rafId               = null;
+  var _patchedScene        = null;  /* Şu an yamalı olan sahne referansı */
+  var _originalUpdate      = null;
+
+  /* ─── Oyun Tespiti ──────────────────────────────────────────── */
   function _isGame() {
-    var curGame = (document.body.getAttribute('data-rc-current-game') || '').toLowerCase();
-    if (curGame.includes('cryptonoid')) {
-      return true;
-    }
-    var sources = [
-      document.title || '',
-      window.location.href || ''
-    ];
-    return sources.some(function(s) {
-      var n = s.toLowerCase();
-      return n.includes('cryptonoid');
-    });
+    var attr = (document.body.getAttribute('data-rc-current-game') || '').toLowerCase();
+    if (attr.includes('cryptonoid')) return true;
+    return (document.title + window.location.href).toLowerCase().includes('cryptonoid');
   }
 
   function _isOnPlayPage() {
@@ -35,82 +30,129 @@
   }
 
   function _getCanvas() {
-    return document.querySelector('#phaserGame canvas') ||
-           document.querySelector('canvas');
+    return document.querySelector('#phaserGame canvas') || document.querySelector('canvas');
   }
 
-  /* Klavyeden tuş basma/bırakma simülasyonu */
-  function _setKeyState(key, isPressed) {
-    if (_activeKeys[key] === isPressed) return;
-    _activeKeys[key] = isPressed;
-
-    var type = isPressed ? 'keydown' : 'keyup';
-    var codes = { ArrowLeft: 37, ArrowRight: 39, ArrowUp: 38, ArrowDown: 40, Space: 32 };
-    var keyCode = codes[key] || 0;
-    
-    var opts = { 
-      key: key === 'Space' ? ' ' : key, 
-      code: key, 
-      keyCode: keyCode, 
-      which: keyCode, 
-      bubbles: true, 
-      cancelable: true 
-    };
-
+  /* ─── Phaser Game Nesnesi Bulma ─────────────────────────────── */
+  function _findGame() {
+    /* Yöntem 1: React Fiber aracılığı */
     var canvas = _getCanvas();
-    var targets = [window, document, canvas, document.body];
-    targets.forEach(function(t) {
-      if (t) t.dispatchEvent(new KeyboardEvent(type, opts));
-    });
+    if (!canvas) return null;
+
+    /* canvas ve #phaserGame üzerinde React key ara */
+    var searchTargets = [canvas];
+    var ph = document.getElementById('phaserGame');
+    if (ph) searchTargets.push(ph);
+
+    for (var i = 0; i < searchTargets.length; i++) {
+      var el = searchTargets[i];
+      var rk = Object.keys(el).find(function (k) { return k.startsWith('__reactFiber$'); });
+      if (!rk) continue;
+      var node = el[rk];
+      while (node) {
+        if (node.stateNode && node.stateNode.game) return node.stateNode.game;
+        node = node.return;
+      }
+    }
+
+    /* Yöntem 2: window içinde Phaser.Game örneği ara */
+    if (window.Phaser && window.Phaser.GameObjects) {
+      for (var key in window) {
+        try {
+          var val = window[key];
+          if (val && val.scene && typeof val.scene.getScenes === 'function') return val;
+        } catch(e) {}
+      }
+    }
+
+    return null;
+  }
+
+  /* ─── Aktif Sahneleri Al ────────────────────────────────────── */
+  function _getActiveScene(game) {
+    if (!game || !game.scene) return null;
+
+    /* getScenes() ile aktif olanı bul */
+    if (typeof game.scene.getScenes === 'function') {
+      var all = game.scene.getScenes(true); // true = sadece aktifler
+      if (all && all.length > 0) return all[0];
+    }
+
+    /* scenes dizisiyle bul */
+    if (game.scene.scenes) {
+      var found = null;
+      game.scene.scenes.forEach(function (s) {
+        if (s && s.sys && s.sys.settings && s.sys.settings.active && !found) {
+          found = s;
+        }
+      });
+      if (found) return found;
+    }
+
+    return null;
+  }
+
+  /* ─── Klavye / Fare Simülasyonu ─────────────────────────────── */
+  var _activeKeys = {};
+  function _setKeyState(key, pressed) {
+    if (_activeKeys[key] === pressed) return;
+    _activeKeys[key] = pressed;
+    var codes = { ArrowLeft: 37, ArrowRight: 39, Space: 32 };
+    var kc = codes[key] || 0;
+    var opts = { key: key === 'Space' ? ' ' : key, code: key, keyCode: kc, which: kc, bubbles: true, cancelable: true };
+    var type = pressed ? 'keydown' : 'keyup';
+    var cv = _getCanvas();
+    [window, document, cv, document.body].forEach(function (t) { if (t) t.dispatchEvent(new KeyboardEvent(type, opts)); });
   }
 
   function _pressSpace() {
     _setKeyState('Space', true);
-    setTimeout(function() {
-      _setKeyState('Space', false);
-    }, 30);
+    setTimeout(function () { _setKeyState('Space', false); }, 50);
   }
 
   function _clickCanvas(canvas) {
-    var rect = canvas.getBoundingClientRect();
-    var clientX = rect.left + rect.width / 2;
-    var clientY = rect.top + rect.height / 2;
-    var opts = { bubbles: true, cancelable: true, clientX: clientX, clientY: clientY };
-    canvas.dispatchEvent(new MouseEvent('mousedown', opts));
-    canvas.dispatchEvent(new MouseEvent('mouseup', opts));
-    canvas.dispatchEvent(new MouseEvent('click', opts));
+    var r = canvas.getBoundingClientRect();
+    var cx = r.left + r.width / 2;
+    var cy = r.top + r.height / 2;
+    var opts = { bubbles: true, cancelable: true, clientX: cx, clientY: cy };
+    ['mousedown', 'mouseup', 'click'].forEach(function (t) {
+      canvas.dispatchEvent(new MouseEvent(t, opts));
+    });
   }
 
-  // Phaser Sahnesine sızıp update() metodunu yamalama
+  /* ─── Sahne Yamalama ────────────────────────────────────────── */
   function _patchScene(scene) {
-    if (!scene || scene._rcPatched) return;
-    scene._rcPatched = true;
-    _originalUpdate = scene.update;
-    
+    /* Aynı sahneye iki kez yama yapma */
+    if (!scene || _patchedScene === scene) return;
+
+    /* Önceki yamalı sahneyi geri al */
+    if (_patchedScene && _originalUpdate) {
+      try { _patchedScene.update = _originalUpdate; } catch(e) {}
+    }
+
+    _patchedScene   = scene;
+    _originalUpdate = scene.update || function () {};
+
     scene.update = function (time, delta) {
-      if (_originalUpdate) {
-        try { _originalUpdate.call(scene, time, delta); } catch(e) {}
-      }
-      if (_botActive) {
-        _tickFrame(scene);
-      }
+      try { _originalUpdate.call(scene, time, delta); } catch (e) {}
+      if (_botActive) _tickFrame(scene);
     };
-    console.log('[RC-Cryptonoid] ✅ Sahne update fonksiyonu başarıyla yamandı!');
+
+    console.log('[RC-Cryptonoid] ✅ Phaser scene.update yamalandı → sahne:', (scene.sys && scene.sys.settings && scene.sys.settings.key) || '?');
   }
 
-  // 60 FPS hızında çalışan ana kare döngüsü
+  /* ─── Ana Kare Döngüsü (60 FPS) ────────────────────────────── */
   function _tickFrame(scene) {
     var canvas = _getCanvas();
     if (!canvas) return;
 
     var paddle = scene.platform;
-    var ball = scene.ball;
+    var ball   = scene.ball;
     if (!paddle || !ball) return;
 
-    // 1. Hareket Takibi ve Hız Hesaplama (Fizik motorundan bağımsız)
-    var vy = ball.y - _lastBallY; // Negatifse yükseliyor, pozitifse düşüyor, 0 ise duruyor
-    
-    var isStationary = false;
+    /* === 1. Hız Tespiti (fizik motorundan bağımsız) === */
+    var vy = ball.y - _lastBallY;
+
     if (Math.abs(vy) < 0.05) {
       _ballStationaryCount++;
     } else {
@@ -118,38 +160,34 @@
     }
     _lastBallY = ball.y;
 
-    if (_ballStationaryCount > 15) { // ~250ms boyunca kıpırdamadıysa duruyor kabul et
-      isStationary = true;
-    }
+    var isStationary = _ballStationaryCount > 15;
 
-    // 2. Topu Başlatma Kontrolü (Hareketsizken fırlat)
-    if (isStationary && ball.y >= 755) {
+    /* === 2. Top Fırlatma === */
+    if (isStationary && ball.y >= 740) {
       var now = Date.now();
       if (now - _lastLaunch > 1500) {
         _lastLaunch = now;
-        console.log('[RC-Cryptonoid] 🚀 Topu başlatmak için fırlatma komutu tetiklendi.');
+        console.log('[RC-Cryptonoid] 🚀 Top fırlatılıyor...');
         _pressSpace();
         _clickCanvas(canvas);
       }
     }
 
-    // 3. Hedef Konum Belirleme (Top veya Düşen Bonuslar)
-    var targetX = ball.x;
-
-    // Top yukarı doğru giderken (vy < -0.1) bir sonraki düşüş için açı sekecek yeni offset hazırla
+    /* === 3. Açı Sapma Payı Hazırlama === */
     if (vy < -0.1) {
       if (!_offsetPrepared) {
-        // Raket genişliğine göre: -24px ile +24px arası sapma (ortaya çarpmayı engellemek için min 8px)
-        var direction = Math.random() > 0.5 ? 1 : -1;
-        var amount = Math.floor(Math.random() * 16) + 8;
-        _paddleOffset = direction * amount;
+        var dir  = Math.random() > 0.5 ? 1 : -1;
+        var amt  = Math.floor(Math.random() * 18) + 8;
+        _paddleOffset   = dir * amt;
         _offsetPrepared = true;
       }
     } else if (vy > 0.1) {
-      _offsetPrepared = false; // Top düşerken hazırlığı sıfırla
+      _offsetPrepared = false;
     }
 
-    // 🌟 EĞER TOP YUKARI GİDİYORSA (vy < 0) ve düşen bonus varsa, bonusu yakalamaya çalış!
+    /* === 4. Hedef X Belirleme (Bonus veya Top) === */
+    var targetX = ball.x;
+
     if (vy <= 0 && scene.BonusGroup) {
       var bonuses = [];
       try {
@@ -160,123 +198,115 @@
         }
       } catch (e) {}
 
-      // Aktif ve aşağı süzülen bonusları filtrele (raket seviyesinden yukarıda olanlar)
-      var activeBonuses = bonuses.filter(function (b) {
+      var active = bonuses.filter(function (b) {
         return b && b.active && b.visible && b.y < paddle.y;
       });
 
-      if (activeBonuses.length > 0) {
-        // Rakete en yakın olan (en aşağıda süzülen) bonusu bul
-        activeBonuses.sort(function (a, b) { return b.y - a.y; });
-        var targetBonus = activeBonuses[0];
-        
-        // Bonusu yakalamak için raketi oraya yönlendir
-        targetX = targetBonus.x;
-        _paddleOffset = 0; // Bonusu tam ortalayarak yakala
+      if (active.length > 0) {
+        active.sort(function (a, b) { return b.y - a.y; });
+        targetX       = active[0].x;
+        _paddleOffset = 0;
       }
     }
 
-    // Platform (raket) X koordinatını sapmalı/hedef koordinatla eşitle
-    var finalX = targetX + _paddleOffset;
+    /* === 5. Raket Konumunu Güncelle === */
+    var halfW  = (paddle.width / 2) || 40;
+    var finalX = Math.max(halfW + 10, Math.min(960 - halfW - 10, targetX + _paddleOffset));
 
-    // Raketin ekrandan dışarı taşmasını engelle (RollerCoin oyun genişliği ~960px)
-    var halfW = paddle.width ? (paddle.width / 2) : 40;
-    finalX = Math.max(halfW + 10, Math.min(960 - halfW - 10, finalX));
-
-    // Raket konumunu anında güncelle (sıfır gecikme)
     paddle.x = finalX;
-    if (paddle.body) {
-      paddle.body.x = finalX - halfW;
-    }
+    if (paddle.body) paddle.body.x = finalX - halfW;
 
-    // Phaser fare girdilerini de sapmalı koordinata eşitle (girişlerin ezip raket kaydırmasını önler)
     if (scene.input) {
       scene.input.x = finalX;
-      if (scene.input.activePointer) {
-        scene.input.activePointer.x = finalX;
-      }
-      if (scene.input.mousePointer) {
-        scene.input.mousePointer.x = finalX;
-      }
+      if (scene.input.activePointer) scene.input.activePointer.x = finalX;
+      if (scene.input.mousePointer)  scene.input.mousePointer.x  = finalX;
     }
   }
 
-  // 500ms'lik döngü sadece aktif Phaser sahnesini arayıp yama yapmak içindir
+  /* ─── RAF Fallback: Yamalama başarısız olursa kendin çalıştır ─ */
+  function _rafLoop() {
+    if (!_botActive) return;
+    if (_patchedScene) {
+      _tickFrame(_patchedScene);
+    }
+    _rafId = requestAnimationFrame(_rafLoop);
+  }
+
+  /* ─── Monitor: Her 500ms sahneyi kontrol et ve yamala ───────── */
   function _monitor() {
-    var canvas = _getCanvas();
-    if (!canvas) return;
-
-    // React Fiber ağacından Phaser game nesnesine eriş
-    var reactKey = Object.keys(canvas).find(function(k) {
-      return k.indexOf('__reactFiber$') === 0;
-    });
-    if (!reactKey) {
-      var parent = document.getElementById('phaserGame');
-      if (parent) {
-        reactKey = Object.keys(parent).find(function(k) {
-          return k.indexOf('__reactFiber$') === 0;
-        });
-      }
+    var game = _findGame();
+    if (!game) {
+      console.log('[RC-Cryptonoid] ⚠ Phaser game bulunamadı, bekleniyor...');
+      return;
     }
-    if (!reactKey) return;
 
-    var node = canvas[reactKey] || (document.getElementById('phaserGame') && document.getElementById('phaserGame')[reactKey]);
-    var game = null;
-    while (node) {
-      if (node.stateNode && node.stateNode.game) {
-        game = node.stateNode.game;
-        break;
-      }
-      node = node.return;
+    var scene = _getActiveScene(game);
+    if (!scene) {
+      console.log('[RC-Cryptonoid] ⚠ Aktif sahne bulunamadı...');
+      return;
     }
-    if (!game) return;
 
-    var activeScenes = game.scene.scenes.filter(function(s) {
-      return s.sys && s.sys.settings && s.sys.settings.active;
-    });
-    if (activeScenes.length === 0) return;
-    
-    var scene = activeScenes[0];
-    
-    // Sahneyi yamala
-    _patchScene(scene);
+    /* Sahne değişmiş ya da hiç yamalanmamışsa yamala */
+    if (_patchedScene !== scene) {
+      _patchScene(scene);
+    }
   }
 
-  var _monitorId = null;
-
+  /* ─── Başlatma / Durdurma ───────────────────────────────────── */
   function _start() {
     if (_botActive) return;
-    _botActive = true;
-    try { document.body.setAttribute('data-rc-bot-cryptonoid-active', 'true'); } catch(e) {}
-    console.log('[RC-Cryptonoid] ✅ Cryptonoid bot BAŞLADI (60 FPS Pürüzsüz Takip Modu)');
-    if (window.updateRCStatus) window.updateRCStatus('[RC] 🧱 Cryptonoid Bot aktif');
+    _botActive            = true;
+    _lastBallY            = 0;
+    _ballStationaryCount  = 0;
+    _lastLaunch           = 0;
+    _paddleOffset         = 0;
+    _offsetPrepared       = false;
+
+    try { document.body.setAttribute('data-rc-bot-cryptonoid-active', 'true'); } catch (e) {}
+    console.log('[RC-Cryptonoid] ✅ Bot BAŞLADI');
+    if (window.updateRCStatus)        window.updateRCStatus('[RC] 🧱 Cryptonoid Bot aktif');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
-    
-    // Her 500ms'de bir sahneyi izle ve gerekirse yamala
+
     _monitorId = setInterval(_monitor, 500);
-    _monitor(); // Hemen bir kere çalıştır
+    _monitor(); // Hemen bir kez çalıştır
+
+    /* RAF fallback — sahne yamalanmamış olsa bile çalışır */
+    if (_rafId) cancelAnimationFrame(_rafId);
+    _rafLoop();
   }
 
   function _stop() {
     if (!_botActive) return;
     _botActive = false;
-    try { document.body.setAttribute('data-rc-bot-cryptonoid-active', 'false'); } catch(e) {}
+
     if (_monitorId) { clearInterval(_monitorId); _monitorId = null; }
-    console.log('[RC-Cryptonoid] ⏹ Cryptonoid bot DURDU');
-    if (window.updateRCStatus) window.updateRCStatus('[RC] 🧱 Cryptonoid Bot durdu');
+    if (_rafId)     { cancelAnimationFrame(_rafId); _rafId = null; }
+
+    /* Yamalı sahneyi geri al */
+    if (_patchedScene && _originalUpdate) {
+      try { _patchedScene.update = _originalUpdate; } catch (e) {}
+    }
+    _patchedScene  = null;
+    _originalUpdate = null;
+
+    try { document.body.setAttribute('data-rc-bot-cryptonoid-active', 'false'); } catch (e) {}
+    console.log('[RC-Cryptonoid] ⏹ Bot DURDU');
+    if (window.updateRCStatus)        window.updateRCStatus('[RC] 🧱 Cryptonoid Bot durdu');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
   }
 
+  /* ─── Tam Ekran Dinleyicisi ─────────────────────────────────── */
   document.addEventListener('fullscreenchange', function () {
-    if (!!document.fullscreenElement && _isGame()) _start();
+    if (document.fullscreenElement && _isGame()) _start();
     else if (!document.fullscreenElement) _stop();
   });
 
+  /* ─── Ana İzleme Döngüsü (500ms) ───────────────────────────── */
   setInterval(function () {
     var enabled = document.body.getAttribute('data-rc-bot-cryptonoid-enabled') !== 'false';
-    var active = _isOnPlayPage() && _isGame() && !!_getCanvas() && enabled;
-    if (active && !_botActive)  _start();
-    if (!active && _botActive)  _stop();
+    var shouldRun = _isOnPlayPage() && _isGame() && !!_getCanvas() && enabled;
+    if (shouldRun && !_botActive)  _start();
+    if (!shouldRun && _botActive)  _stop();
   }, 500);
 
   window._rcCryptonoid = { start: _start, stop: _stop, isActive: function () { return _botActive; } };
