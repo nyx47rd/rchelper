@@ -1296,6 +1296,13 @@ function checkGameTransitions() {
 function updatePlayingIndicator(name) {
   const card = document.getElementById('rc-now-playing');
   const nameEl = document.getElementById('rc-now-playing-name');
+  try {
+    if (name) {
+      document.body.setAttribute('data-rc-current-game', name);
+    } else {
+      document.body.removeAttribute('data-rc-current-game');
+    }
+  } catch(e) {}
   if (!card) return;
   if (name) {
     if (nameEl) nameEl.textContent = name;

@@ -11,10 +11,11 @@
   var _activeKeys  = {};    /* Basılı tutulan tuşlar */
 
   function _isGame() {
+    var curGame = (document.body.getAttribute('data-rc-current-game') || '').toLowerCase();
+    if (curGame.includes('token blaster') || curGame.includes('tokenblaster')) {
+      return true;
+    }
     var sources = [
-      (window._activeGame && window._activeGame.name) || '',
-      window.currentPlayingGame || '',
-      window.lastSelectedGame || '',
       document.title || '',
       window.location.href || ''
     ];

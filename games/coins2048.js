@@ -18,10 +18,11 @@
   var _rescueSeq     = [];
 
   function _isGame() {
+    var curGame = (document.body.getAttribute('data-rc-current-game') || '').toLowerCase();
+    if (curGame.includes('2048')) {
+      return true;
+    }
     var sources = [
-      (window._activeGame && window._activeGame.name) || '',
-      window.currentPlayingGame || '',
-      window.lastSelectedGame   || '',
       document.title            || '',
       window.location.href      || ''
     ];
