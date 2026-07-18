@@ -204,7 +204,7 @@ window.nextBreakTime = null;
 var mainTimer = null;
 var breakCheckTimer = null;
 
-chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled', 'botBlasterEnabled'], (data) => {
+chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled', 'botBlasterEnabled', 'botCryptonoidEnabled', 'botCoinFlipEnabled'], (data) => {
   window.autoCollect = data.autoCollect !== false;
   window.autoChoose  = data.autoChoose  !== false;
   window._rcBotEnabled = {
@@ -212,12 +212,14 @@ chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames
     botHamsterEnabled:       data.botHamsterEnabled       !== false,
     bot2048Enabled:          data.bot2048Enabled          !== false,
     botBlasterEnabled:       data.botBlasterEnabled       !== false,
-    botCryptonoidEnabled:     data.botCryptonoidEnabled     !== false
+    botCryptonoidEnabled:    data.botCryptonoidEnabled    !== false,
+    botCoinFlipEnabled:      data.botCoinFlipEnabled      !== false
   };
   try {
     document.body.setAttribute('data-rc-bot-2048-enabled', (data.bot2048Enabled !== false) ? 'true' : 'false');
     document.body.setAttribute('data-rc-bot-blaster-enabled', (data.botBlasterEnabled !== false) ? 'true' : 'false');
     document.body.setAttribute('data-rc-bot-cryptonoid-enabled', (data.botCryptonoidEnabled !== false) ? 'true' : 'false');
+    document.body.setAttribute('data-rc-bot-coinflip-enabled', (data.botCoinFlipEnabled !== false) ? 'true' : 'false');
   } catch(e) {}
   window.breakReminderEnabled = data.breakReminder !== false;
   if (data.breakSessionMin)  window.breakSessionMinutes  = parseFloat(data.breakSessionMin);
@@ -1513,6 +1515,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
       if (msg.bot === 'botCryptonoidEnabled') {
         document.body.setAttribute('data-rc-bot-cryptonoid-enabled', msg.enabled ? 'true' : 'false');
+      }
+      if (msg.bot === 'botCoinFlipEnabled') {
+        document.body.setAttribute('data-rc-bot-coinflip-enabled', msg.enabled ? 'true' : 'false');
       }
     } catch(e) {}
     /* Bot'u direkt durdur/başlat */

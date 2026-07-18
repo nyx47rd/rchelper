@@ -66,16 +66,42 @@
   }
 
   /* ─── Kart Tıklama ──────────────────────────────────────────── */
-  function _clickCard(card, canvas) {
+  function _clickCard(card, canvas, scene) {
     var rect   = canvas.getBoundingClientRect();
     var scaleX = rect.width  / (canvas.width  || 960);
     var scaleY = rect.height / (canvas.height || 828);
+
     /* Kart origin {0,0} → merkeze tıkla */
-    var cx = rect.left + (card.x + (card.width  || 171) / 2) * scaleX;
-    var cy = rect.top  + (card.y + (card.height || 171) / 2) * scaleY;
-    var opts = { bubbles: true, cancelable: true, clientX: cx, clientY: cy };
+    var cardCenterX = card.x + (card.width  || 171) / 2;
+    var cardCenterY = card.y + (card.height || 171) / 2;
+
+    var cx = rect.left + cardCenterX * scaleX;
+    var cy = rect.top  + cardCenterY * scaleY;
+
+    /* Phaser activePointer koordinatlarını manuel güncelle */
+    if (scene && scene.input) {
+      try {
+        if (scene.input.activePointer) {
+          scene.input.activePointer.x = cardCenterX;
+          scene.input.activePointer.y = cardCenterY;
+        }
+        if (scene.input.mousePointer) {
+          scene.input.mousePointer.x = cardCenterX;
+          scene.input.mousePointer.y = cardCenterY;
+        }
+      } catch(e) {}
+    }
+
+    var evOpts = { bubbles: true, cancelable: true, clientX: cx, clientY: cy, isPrimary: true, pointerId: 1 };
+
+    /* 1. Pointer Events */
+    ['pointerdown', 'pointerup'].forEach(function (t) {
+      try { canvas.dispatchEvent(new PointerEvent(t, evOpts)); } catch (e) {}
+    });
+
+    /* 2. Mouse Events */
     ['mousedown', 'mouseup', 'click'].forEach(function (t) {
-      try { canvas.dispatchEvent(new MouseEvent(t, opts)); } catch (e) {}
+      try { canvas.dispatchEvent(new MouseEvent(t, evOpts)); } catch (e) {}
     });
   }
 
@@ -128,12 +154,12 @@
       var c2 = pair[1];
 
       /* İlk kartı tıkla */
-      if (c1.active) _clickCard(c1, canvas);
+      if (c1.active) _clickCard(c1, canvas, scene);
 
       /* Kısa bekleyip 2. kartı tıkla, sonra animasyon için bekle */
       setTimeout(function () {
         if (!_botActive) { _solving = false; return; }
-        if (c2.active) _clickCard(c2, canvas);
+        if (c2.active) _clickCard(c2, canvas, scene);
         setTimeout(clickNext, 850); /* eşleşme animasyonu için bekle */
       }, 550); /* kartın açılma animasyonu için bekle */
     }
