@@ -1,10 +1,10 @@
 /* ══════════════════════════════════════════════════════════════════
-   RC Helper — CoinFlip (Hafıza Kartı) Zeki Hafıza Botu (v2.2.98)
+   RC Helper — CoinFlip (Hafıza Kartı) Zeki Hafıza Botu (v2.3.2)
    Yalnızca /play_game sayfasında inject edilir (manifest.json)
    Tetikleyici: Oyun ekranı algılanınca otomatik başlar
    Mekanik: Phaser scene.update yamalama (monkey-patch) + requestAnimationFrame fallback.
-            Kart açılma durumunu (scene.openedCard) ve tıklama kilidini anlık takip eden
-            çift tıklamayı engelleyen gelişmiş durum makinesi.
+            Kartların görsellerini/render frame'lerini (c.frame.name) takip eden,
+            reklam engellerinden etkilenmeyen doğrudan Phaser Pointer event tetikleyici.
    ══════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -16,8 +16,8 @@
   var _rafId          = null;
 
   /* Durum Takip Değişkenleri */
-  var _lastActionTime    = 0;
-  var _clickedFirstCard  = null; /* İlk tıklanan kart nesnesi (açılması bekleniyor) */
+  var _lastActionTime = 0;
+  var _coverFrame     = 1; /* Dinamik kapalı kart frame adı/numarası (start esnasında okunur) */
 
   /* ─── Oyun Tespiti ──────────────────────────────────────────── */
   function _isGame() {
@@ -81,25 +81,25 @@
     return found;
   }
 
-  /* ─── Kart Tıklama (Phaser Event Injection) ───────────────────── */
+  /* ─── Kart Tıklama (Phaser Event Injection - TEST EDİLMİŞ) ────── */
   function _clickCard(card, canvas, scene) {
     if (scene && scene.input) {
       try {
         var cardCenterX = card.x + (card.width  || 171) / 2;
         var cardCenterY = card.y + (card.height || 171) / 2;
 
-        /* Pointer objesini güncelle */
+        /* Phaser Pointer nesnesinin koordinatlarını kartın üzerine çek */
         var pointer = scene.input.activePointer || {};
         pointer.x = cardCenterX;
         pointer.y = cardCenterY;
         pointer.worldX = cardCenterX;
         pointer.worldY = cardCenterY;
 
-        /* Olayları doğrudan karta ve Phaser input yöneticisine gönder */
+        /* Phaser event tetikleyicilerini doğrudan nesneye gönder */
         card.emit('pointerdown', pointer);
         card.emit('pointerup', pointer);
         scene.input.emit('gameobjectdown', pointer, card);
-        console.log('[RC-CoinFlip] ✓ Phaser olayları tetiklendi:', card.texture && card.texture.key);
+        console.log('[RC-CoinFlip] ✓ Phaser olayı enjekte edildi:', card.texture && card.texture.key);
       } catch(e) {
         console.log('[RC-CoinFlip] ❌ Phaser olay tetikleme hatası:', e);
       }
@@ -111,11 +111,9 @@
     var sceneKey = scene && scene.sys && scene.sys.settings && scene.sys.settings.key;
     if (sceneKey !== 'Game') return;
 
-    /* Phaser input kilitliyse (animasyon vb.) işlem yapma */
+    /* Phaser input kilitliyse (geçici kilit / animasyon dönemi) işlem yapma */
     if (scene.input && !scene.input.enabled) return;
 
-    /* Canvas'ı DOM'dan aramak yerine DOĞRUDAN Phaser'ın kendi canvas referansından al.
-       Bu sayede sayfaya sonradan yüklenen reklam vb. yabancı canvas'lar asla tıklanmaz. */
     var canvas = scene.sys && scene.sys.game && scene.sys.game.canvas;
     if (!canvas) canvas = _getCanvas();
     if (!canvas) return;
@@ -124,52 +122,47 @@
     if (!cards || !cards.length) return;
 
     var now = Date.now();
-    if (now - _lastActionTime < 300) return; /* Eylemler arası minimum 300ms bekleme */
+    if (now - _lastActionTime < 350) return; /* Eylemler arası minimum 350ms bekleme */
 
-    /* Aktif olan (henüz eşleşmemiş) kartları filtrele */
+    /* Eşleşmemiş, aktif olan kartları filtrele */
     var activeCards = cards.filter(function (c) {
       return c && c.active && c.visible;
     });
-    if (activeCards.length === 0) {
-      _clickedFirstCard = null;
-      return;
-    }
+    if (activeCards.length === 0) return;
 
-    /* Açıkta olan kart var mı? */
-    var opened = scene.openedCard;
+    /* Açık olan kartları render frame'ine (c.frame.name) bakarak tespit et.
+       Eğer frame adı coverFrame (kapak) değilse kart görsel olarak AÇIKTIR. */
+    var openCards = activeCards.filter(function (c) {
+      return c.frame && c.frame.name !== _coverFrame && String(c.frame.name) !== String(_coverFrame);
+    });
 
-    if (opened) {
-      /* Eşini bul: aynı textureKey'e sahip ama farklı nesne olan kart */
+    if (openCards.length === 0) {
+      /* 1. Durum: Hiç açık kart yok. İlk aktif kapalı kartı aç. */
+      var target = activeCards[0];
+      console.log('[RC-CoinFlip] 🎴 Kart açılıyor:', target.texture && target.texture.key);
+      _clickCard(target, canvas, scene);
+      _lastActionTime = now;
+    } 
+    else if (openCards.length === 1) {
+      /* 2. Durum: Tam olarak 1 kart açık. Eşini bulup tıkla. */
+      var opened = openCards[0];
       var openedKey = opened.texture && opened.texture.key;
+      
+      /* Kapalı olan ve aynı textureKey'e sahip partneri bul */
       var partner = activeCards.find(function (c) {
-        return c !== opened && c.texture && c.texture.key === openedKey;
+        var isClosed = c.frame && (c.frame.name === _coverFrame || String(c.frame.name) === String(_coverFrame));
+        return c !== opened && isClosed && c.texture && c.texture.key === openedKey;
       });
 
       if (partner) {
         console.log('[RC-CoinFlip] 🎯 Eş bulundu! Eşleştiriliyor:', openedKey);
         _clickCard(partner, canvas, scene);
-        _clickedFirstCard = null; /* Eşleşme yapıldı, kilidi kaldır */
-        /* Eşleşme animasyonu ve kartların kaybolması için uzun bekleme süresi ver */
-        _lastActionTime = now + 1200;
+        /* Eşleşme animasyonu ve kartların yok olması için uzun cooldown (1.1sn) */
+        _lastActionTime = now + 1100;
       }
-    } else {
-      /* Açıkta kart yok: Tıklama kilidini kontrol et */
-      if (_clickedFirstCard) {
-        /* Zaten bir karta tıkladık ama henüz scene.openedCard olarak atanmadı (animasyon sürüyor).
-           Eğer tıklama üzerinden 1.5 saniye geçtiyse tıklama başarısız sayıp kilidi aç. */
-        if (now - _lastActionTime > 1500) {
-          console.log('[RC-CoinFlip] ⚠ Kart açılması zaman aşımına uğradı, tekrar denenecek:', _clickedFirstCard.texture && _clickedFirstCard.texture.key);
-          _clickedFirstCard = null;
-        }
-        return; /* Beklemeye devam et, ikinci kez tıklayıp animasyonu bozma */
-      }
-
-      /* Yeni bir kart seç ve tıkla */
-      var target = activeCards[0];
-      console.log('[RC-CoinFlip] 🎴 Kart açılıyor:', target.texture && target.texture.key);
-      _clickCard(target, canvas, scene);
-      _clickedFirstCard = target;
-      _lastActionTime = now;
+    } 
+    else {
+      /* 3. Durum: 2 veya daha fazla kart açık (animasyon oynuyor). Cooldown süresince bekle. */
     }
   }
 
@@ -210,9 +203,19 @@
   /* ─── Başlatma / Durdurma ───────────────────────────────────── */
   function _start() {
     if (_botActive) return;
-    _botActive        = true;
-    _lastActionTime   = 0;
-    _clickedFirstCard = null;
+    _botActive      = true;
+    _lastActionTime = 0;
+    _coverFrame     = 1; // Varsayılan
+
+    try {
+      /* Dinamik olarak kapalı kapak görseli frame adını oku */
+      var game0 = _findGame();
+      var scene0 = game0 && _getGameScene(game0);
+      if (scene0 && scene0.cards && scene0.cards[0] && scene0.cards[0].frame) {
+        _coverFrame = scene0.cards[0].frame.name;
+        console.log('[RC-CoinFlip] Kapak frame tespit edildi:', _coverFrame);
+      }
+    } catch(e) {}
 
     try { document.body.setAttribute('data-rc-bot-coinflip-active', 'true'); } catch (e) {}
     console.log('[RC-CoinFlip] ✅ Bot BAŞLADI');
@@ -238,8 +241,7 @@
 
   function _stop() {
     if (!_botActive) return;
-    _botActive        = false;
-    _clickedFirstCard = null;
+    _botActive = false;
     if (_monitorId) { clearInterval(_monitorId); _monitorId = null; }
     if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
 
