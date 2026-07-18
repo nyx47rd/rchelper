@@ -217,9 +217,9 @@
     if (paddle.body) paddle.body.x = finalX - halfW;
 
     if (scene.input) {
-      scene.input.x = finalX;
-      if (scene.input.activePointer) scene.input.activePointer.x = finalX;
-      if (scene.input.mousePointer)  scene.input.mousePointer.x  = finalX;
+      /* scene.input.x is a read-only getter — do NOT write it */
+      try { if (scene.input.activePointer) scene.input.activePointer.x = finalX; } catch(e) {}
+      try { if (scene.input.mousePointer)  scene.input.mousePointer.x  = finalX; } catch(e) {}
     }
   }
 
