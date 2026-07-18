@@ -204,63 +204,68 @@ window.nextBreakTime = null;
 var mainTimer = null;
 var breakCheckTimer = null;
 
-chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled', 'botBlasterEnabled', 'botCryptonoidEnabled', 'botCoinFlipEnabled'], (data) => {
-  window.autoCollect = data.autoCollect !== false;
-  window.autoChoose  = data.autoChoose  !== false;
-  window._rcBotEnabled = {
-    botFisherEnabled:        data.botFisherEnabled        !== false,
-    botHamsterEnabled:       data.botHamsterEnabled       !== false,
-    bot2048Enabled:          data.bot2048Enabled          !== false,
-    botBlasterEnabled:       data.botBlasterEnabled       !== false,
-    botCryptonoidEnabled:    data.botCryptonoidEnabled    !== false,
-    botCoinFlipEnabled:      data.botCoinFlipEnabled      !== false
-  };
-  try {
-    document.body.setAttribute('data-rc-bot-2048-enabled', (data.bot2048Enabled !== false) ? 'true' : 'false');
-    document.body.setAttribute('data-rc-bot-blaster-enabled', (data.botBlasterEnabled !== false) ? 'true' : 'false');
-    document.body.setAttribute('data-rc-bot-cryptonoid-enabled', (data.botCryptonoidEnabled !== false) ? 'true' : 'false');
-    document.body.setAttribute('data-rc-bot-coinflip-enabled', (data.botCoinFlipEnabled !== false) ? 'true' : 'false');
-  } catch(e) {}
-  window.breakReminderEnabled = data.breakReminder !== false;
-  if (data.breakSessionMin)  window.breakSessionMinutes  = parseFloat(data.breakSessionMin);
-  if (data.breakDurationMin) window.breakDurationMinutes = parseFloat(data.breakDurationMin);
-  if (data.skippedGames) {
-    window.skippedGames = data.skippedGames;
-    console.log('[RC] Yüklenen skippedGames:', window.skippedGames);
-  }
-  if (data.permanentSkippedGames) {
-    window.permanentSkippedGames = data.permanentSkippedGames;
-    console.log('[RC] Yüklenen permanentSkippedGames:', window.permanentSkippedGames);
-  }
-  if (data.autoPlay) {
-    fetch('https://api.github.com/repos/nyx47rd/rchelper/releases/latest', { cache: 'no-store' })
-      .then(r => r.json())
-      .then(d => {
-        const latest = (d.tag_name || '').replace('v', '');
-        if (!latest) { window.autoPlayActive = true; startAutoPlay(); return; }
-        const cur = RC_VERSION.split('.').map(Number);
-        const lat = latest.split('.').map(Number);
-        let isOld = false;
-        for (let i = 0; i < Math.max(cur.length, lat.length); i++) {
-          if ((lat[i]||0) > (cur[i]||0)) { isOld = true; break; }
-          if ((cur[i]||0) > (lat[i]||0)) break;
-        }
-        if (isOld) {
-          console.warn('[RC] Eski sürüm! Auto-Play engellendi. Güncel sürüm: v' + latest);
-          if (window.updateRCStatus) window.updateRCStatus('\u26a0\ufe0f Güncelleme gerekli! v' + latest + ' müevcut');
-          chrome.storage.local.set({ autoPlay: false });
-        } else {
-          window.autoPlayActive = true;
-          startAutoPlay();
-        }
-      })
-      .catch(() => { window.autoPlayActive = true; startAutoPlay(); });
-  }
-  
-  setTimeout(() => {
-    updateBreakStatusDisplay();
-  }, 2000);
-});
+try {
+  chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled', 'botBlasterEnabled', 'botCryptonoidEnabled', 'botCoinFlipEnabled'], (data) => {
+    if (!data) data = {};
+    window.autoCollect = data.autoCollect !== false;
+    window.autoChoose  = data.autoChoose  !== false;
+    window._rcBotEnabled = {
+      botFisherEnabled:        data.botFisherEnabled        !== false,
+      botHamsterEnabled:       data.botHamsterEnabled       !== false,
+      bot2048Enabled:          data.bot2048Enabled          !== false,
+      botBlasterEnabled:       data.botBlasterEnabled       !== false,
+      botCryptonoidEnabled:    data.botCryptonoidEnabled    !== false,
+      botCoinFlipEnabled:      data.botCoinFlipEnabled      !== false
+    };
+    try {
+      document.body.setAttribute('data-rc-bot-2048-enabled', (data.bot2048Enabled !== false) ? 'true' : 'false');
+      document.body.setAttribute('data-rc-bot-blaster-enabled', (data.botBlasterEnabled !== false) ? 'true' : 'false');
+      document.body.setAttribute('data-rc-bot-cryptonoid-enabled', (data.botCryptonoidEnabled !== false) ? 'true' : 'false');
+      document.body.setAttribute('data-rc-bot-coinflip-enabled', (data.botCoinFlipEnabled !== false) ? 'true' : 'false');
+    } catch(e) {}
+    window.breakReminderEnabled = data.breakReminder !== false;
+    if (data.breakSessionMin)  window.breakSessionMinutes  = parseFloat(data.breakSessionMin);
+    if (data.breakDurationMin) window.breakDurationMinutes = parseFloat(data.breakDurationMin);
+    if (data.skippedGames) {
+      window.skippedGames = data.skippedGames;
+      console.log('[RC] Yüklenen skippedGames:', window.skippedGames);
+    }
+    if (data.permanentSkippedGames) {
+      window.permanentSkippedGames = data.permanentSkippedGames;
+      console.log('[RC] Yüklenen permanentSkippedGames:', window.permanentSkippedGames);
+    }
+    if (data.autoPlay) {
+      fetch('https://api.github.com/repos/nyx47rd/rchelper/releases/latest', { cache: 'no-store' })
+        .then(r => r.json())
+        .then(d => {
+          const latest = (d.tag_name || '').replace('v', '');
+          if (!latest) { window.autoPlayActive = true; startAutoPlay(); return; }
+          const cur = RC_VERSION.split('.').map(Number);
+          const lat = latest.split('.').map(Number);
+          let isOld = false;
+          for (let i = 0; i < Math.max(cur.length, lat.length); i++) {
+            if ((lat[i]||0) > (cur[i]||0)) { isOld = true; break; }
+            if ((cur[i]||0) > (lat[i]||0)) break;
+          }
+          if (isOld) {
+            console.warn('[RC] Eski sürüm! Auto-Play engellendi. Güncel sürüm: v' + latest);
+            if (window.updateRCStatus) window.updateRCStatus('\u26a0\ufe0f Güncelleme gerekli! v' + latest + ' müevcut');
+            try { chrome.storage.local.set({ autoPlay: false }); } catch(e) {}
+          } else {
+            window.autoPlayActive = true;
+            startAutoPlay();
+          }
+        })
+        .catch(() => { window.autoPlayActive = true; startAutoPlay(); });
+    }
+    
+    setTimeout(() => {
+      updateBreakStatusDisplay();
+    }, 2000);
+  });
+} catch(e) {
+  console.error('[RC] Giriş okuma hatası:', e);
+}
 
 function saveState() {
   chrome.storage.local.set({
