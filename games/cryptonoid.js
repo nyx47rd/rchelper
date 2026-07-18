@@ -12,6 +12,7 @@
   var _paddleOffset        = 0;
   var _offsetPrepared      = false;
   var _lastBallY           = 0;
+  var _lastBallX           = 0;
   var _ballStationaryCount = 0;
   var _monitorId           = null;
   var _rafId               = null;
@@ -159,12 +160,14 @@
 
     /* === 1. Hız Tespiti (fizik motorundan bağımsız) === */
     var vy = ball.y - _lastBallY;
+    var vx = ball.x - _lastBallX;
 
-    if (Math.abs(vy) < 0.05) {
+    if (Math.abs(vy) < 0.05 && Math.abs(vx) < 0.05) {
       _ballStationaryCount++;
     } else {
       _ballStationaryCount = 0;
     }
+    _lastBallX = ball.x;
     _lastBallY = ball.y;
 
     var isStationary = _ballStationaryCount > 15;
@@ -176,56 +179,95 @@
         _lastLaunch = now;
         console.log('[RC-Cryptonoid] 🚀 Top fırlatılıyor...');
         _pressSpace();
-        /* Click SADECE Space çalışmadıysa fallback olarak — canvas ortasına değil top konumuna */
         var r2 = canvas.getBoundingClientRect();
-        var scaleX = r2.width / (canvas.width || 960);
+        var scaleX2 = r2.width / (canvas.width || 960);
         var clickOpts = { bubbles: true, cancelable: true,
-          clientX: r2.left + ball.x * scaleX,
+          clientX: r2.left + ball.x * scaleX2,
           clientY: r2.top  + ball.y * (r2.height / (canvas.height || 900)) };
         canvas.dispatchEvent(new MouseEvent('pointerdown', clickOpts));
         canvas.dispatchEvent(new MouseEvent('pointerup',   clickOpts));
       }
     }
 
-    /* === 3. Açı Sapma Payı Hazırlama === */
-    if (vy < -0.1) {
-      if (!_offsetPrepared) {
-        var dir  = Math.random() > 0.5 ? 1 : -1;
-        var amt  = Math.floor(Math.random() * 18) + 8;
-        _paddleOffset   = dir * amt;
-        _offsetPrepared = true;
+    /* === 3. Aktif Karoların Merkezi (scene.Blocks) === */
+    var brickCenterX = 480; // Varsayılan: ekran ortası
+    var brickCount   = 0;
+    if (scene.Blocks) {
+      var allBricks = [];
+      try {
+        if (typeof scene.Blocks.getChildren === 'function') {
+          allBricks = scene.Blocks.getChildren();
+        } else if (scene.Blocks.children && scene.Blocks.children.entries) {
+          allBricks = scene.Blocks.children.entries;
+        }
+      } catch(e) {}
+
+      var sumBX = 0;
+      for (var bi = 0; bi < allBricks.length; bi++) {
+        var bk = allBricks[bi];
+        if (bk && bk.active && bk.visible) {
+          sumBX += bk.x;
+          brickCount++;
+        }
       }
-    } else if (vy > 0.1) {
-      _offsetPrepared = false;
+      if (brickCount > 0) brickCenterX = sumBX / brickCount;
     }
 
-    /* === 4. Hedef X Belirleme (Bonus veya Top) === */
-    var targetX = ball.x;
+    /* === 4. Hedef X Belirleme === */
+    var halfW  = (paddle.width / 2) || 40;
+    var targetX;
 
-    if (vy <= 0 && scene.BonusGroup) {
-      var bonuses = [];
-      try {
-        if (typeof scene.BonusGroup.getChildren === 'function') {
-          bonuses = scene.BonusGroup.getChildren();
-        } else if (scene.BonusGroup.children && scene.BonusGroup.children.entries) {
-          bonuses = scene.BonusGroup.children.entries;
+    if (vy > 0.5) {
+      /*
+       * Top AŞAĞI DÜŞÜYOR → raket topu karşılarken aynı zamanda yön veriyor.
+       *
+       * Phaser Breakout fiziği: top rakete nerede çarparsa o yöne gider.
+       *   ball.x > paddle.x  → top SAĞA gider
+       *   ball.x < paddle.x  → top SOLA gider
+       *
+       * Karo merkezi topun SAĞINDAysa → topu sağa göndermek istiyoruz
+       *   → paddle.x < ball.x (raket topun SOLUNDA olmalı)
+       *   → aimShift negatif
+       *
+       * Karo merkezi topun SOLUNDAysa → topu sola göndermek istiyoruz
+       *   → paddle.x > ball.x (raket topun SAĞINDA olmalı)
+       *   → aimShift pozitif
+       */
+      var brickDelta = brickCenterX - ball.x;           // + = karolar sağda, - = karolar solda
+      var aimShift   = -(brickDelta * 0.55);            // ters yönde kaydır
+      var maxShift   = halfW * 0.75;                    // raket genişliğinin %75'i kadar max kaydır
+      aimShift = Math.max(-maxShift, Math.min(maxShift, aimShift));
+      targetX  = ball.x + aimShift;
+
+    } else {
+      /*
+       * Top YUKARI ÇIKIYOR veya HAREKETSIZ → bonus yakala yoksa topa yakın dur
+       */
+      targetX = ball.x; // varsayılan: topu izle
+
+      if (scene.BonusGroup) {
+        var bonuses = [];
+        try {
+          if (typeof scene.BonusGroup.getChildren === 'function') {
+            bonuses = scene.BonusGroup.getChildren();
+          } else if (scene.BonusGroup.children && scene.BonusGroup.children.entries) {
+            bonuses = scene.BonusGroup.children.entries;
+          }
+        } catch (e) {}
+
+        var activeB = bonuses.filter(function (b) {
+          return b && b.active && b.visible && b.y < paddle.y;
+        });
+
+        if (activeB.length > 0) {
+          activeB.sort(function (a, b) { return b.y - a.y; });
+          targetX = activeB[0].x; // en alttaki bonusu yakala
         }
-      } catch (e) {}
-
-      var active = bonuses.filter(function (b) {
-        return b && b.active && b.visible && b.y < paddle.y;
-      });
-
-      if (active.length > 0) {
-        active.sort(function (a, b) { return b.y - a.y; });
-        targetX       = active[0].x;
-        _paddleOffset = 0;
       }
     }
 
     /* === 5. Raket Konumunu Güncelle === */
-    var halfW  = (paddle.width / 2) || 40;
-    var finalX = Math.max(halfW + 10, Math.min(960 - halfW - 10, targetX + _paddleOffset));
+    var finalX = Math.max(halfW + 10, Math.min(960 - halfW - 10, targetX));
 
     paddle.x = finalX;
     if (paddle.body) paddle.body.x = finalX - halfW;

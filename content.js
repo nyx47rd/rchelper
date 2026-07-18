@@ -1022,7 +1022,10 @@ function getGameNameFromPage() {
 
 function isOnPlayGamePage() {
   const url = window.location.href;
-  const isPlayGame = url.includes('/play_game') || document.querySelector('.game-page, .game-container, [class*="play-game"]');
+  /* SADECE URL'e bak — CSS class kontrolü Cryptonoid gibi SPA oyunlarda
+     DOM elementleri kısa süreliğine kaybolunca false-negative üretip
+     sahte oyun-bitiş sayımına yol açıyordu. */
+  const isPlayGame = url.includes('/play_game');
 
   if (isPlayGame && !window.gameSelectionInProgress) {
     var name = getGameNameFromPage();
@@ -1321,42 +1324,53 @@ function recordGameCompletion(name, durationMs) {
     console.log('[RC] Oyun süresi geçersiz, kaydedilmedi:', name, durationMs);
     return;
   }
-  chrome.storage.local.get(['gameStats'], (data) => {
-    const stats = data.gameStats || {
-      totalGames: 0,
-      totalPlayTimeMs: 0,
-      perGame: {},
-      dailyStats: {},
-      lastGame: null,
-      lastGameAt: null,
-      firstGameAt: null,
-      longestGameMs: 0,
-    };
-    stats.totalGames = (stats.totalGames || 0) + 1;
-    stats.totalPlayTimeMs = (stats.totalPlayTimeMs || 0) + durationMs;
-    const pg = stats.perGame[name] || { plays: 0, totalTimeMs: 0 };
-    pg.plays++;
-    pg.totalTimeMs += durationMs;
-    stats.perGame[name] = pg;
-    const today = new Date().toISOString().slice(0, 10);
-    stats.dailyStats = stats.dailyStats || {};
-    stats.dailyStats[today] = (stats.dailyStats[today] || 0) + 1;
-    stats.lastGame = name;
-    stats.lastGameAt = Date.now();
-    if (!stats.firstGameAt) stats.firstGameAt = Date.now();
-    if (durationMs > (stats.longestGameMs || 0)) stats.longestGameMs = durationMs;
+  // Extension context invalidated hatalarını sessizce yakala
+  try {
+    if (!chrome.runtime || !chrome.runtime.id) return;
+  } catch(e) { return; }
 
-    // 60 günden eski daily kayıtları temizle
-    const cutoff = Date.now() - 60 * 24 * 60 * 60 * 1000;
-    Object.keys(stats.dailyStats).forEach(d => {
-      const t = new Date(d + 'T00:00:00').getTime();
-      if (!isNaN(t) && t < cutoff) delete stats.dailyStats[d];
+  try {
+    chrome.storage.local.get(['gameStats'], (data) => {
+      if (chrome.runtime.lastError) return; // context invalidated
+      const stats = data.gameStats || {
+        totalGames: 0,
+        totalPlayTimeMs: 0,
+        perGame: {},
+        dailyStats: {},
+        lastGame: null,
+        lastGameAt: null,
+        firstGameAt: null,
+        longestGameMs: 0,
+      };
+      stats.totalGames = (stats.totalGames || 0) + 1;
+      stats.totalPlayTimeMs = (stats.totalPlayTimeMs || 0) + durationMs;
+      const pg = stats.perGame[name] || { plays: 0, totalTimeMs: 0 };
+      pg.plays++;
+      pg.totalTimeMs += durationMs;
+      stats.perGame[name] = pg;
+      const today = new Date().toISOString().slice(0, 10);
+      stats.dailyStats = stats.dailyStats || {};
+      stats.dailyStats[today] = (stats.dailyStats[today] || 0) + 1;
+      stats.lastGame = name;
+      stats.lastGameAt = Date.now();
+      if (!stats.firstGameAt) stats.firstGameAt = Date.now();
+      if (durationMs > (stats.longestGameMs || 0)) stats.longestGameMs = durationMs;
+
+      // 60 günden eski daily kayıtları temizle
+      const cutoff = Date.now() - 60 * 24 * 60 * 60 * 1000;
+      Object.keys(stats.dailyStats).forEach(d => {
+        const t = new Date(d + 'T00:00:00').getTime();
+        if (!isNaN(t) && t < cutoff) delete stats.dailyStats[d];
+      });
+
+      try { chrome.storage.local.set({ gameStats: stats }); } catch(e) {}
+      console.log('[RC] ✓ Oyun stats kaydedildi:', name, Math.round(durationMs/1000) + 's');
     });
-
-    chrome.storage.local.set({ gameStats: stats });
-    console.log('[RC] ✓ Oyun stats kaydedildi:', name, Math.round(durationMs/1000) + 's');
-  });
+  } catch(e) {
+    console.log('[RC] Extension context geçersiz, stats kaydedilemedi.');
+  }
 }
+
 
 // Her saniye URL geçişlerini kontrol et (auto-play olmasa bile, manuel oyun da sayılsın)
 setTimeout(() => {
