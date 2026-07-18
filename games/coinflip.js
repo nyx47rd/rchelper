@@ -1,17 +1,21 @@
 /* ══════════════════════════════════════════════════════════════════
-   RC Helper — CoinFlip (Hafıza Kartı) Zeki Hafıza Botu (v2.2.95)
+   RC Helper — CoinFlip (Hafıza Kartı) Zeki Hafıza Botu (v2.2.97)
    Yalnızca /play_game sayfasında inject edilir (manifest.json)
    Tetikleyici: Oyun ekranı algılanınca otomatik başlar
-   Mekanik: Phaser bellekten tüm kart texture'larını okur →
-            çiftleri anında tespit edip tıklar (hafıza gerektirmez)
+   Mekanik: Phaser scene.update yamalama (monkey-patch) + requestAnimationFrame fallback.
+            Kart açılma durumunu (scene.openedCard) anlık takip eden durum makinesi.
    ══════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
 
-  var _botActive   = false;
-  var _solving     = false;
-  var _monitorId   = null;
-  var _lastSolveAt = 0;
+  var _botActive      = false;
+  var _patchedScene   = null;
+  var _originalUpdate = null;
+  var _monitorId      = null;
+  var _rafId          = null;
+
+  /* Durum Takip Değişkenleri */
+  var _lastActionTime = 0;
 
   /* ─── Oyun Tespiti ──────────────────────────────────────────── */
   function _isGame() {
@@ -71,14 +75,13 @@
     var scaleX = rect.width  / (canvas.width  || 960);
     var scaleY = rect.height / (canvas.height || 828);
 
-    /* Kart origin {0,0} → merkeze tıkla */
     var cardCenterX = card.x + (card.width  || 171) / 2;
     var cardCenterY = card.y + (card.height || 171) / 2;
 
     var cx = rect.left + cardCenterX * scaleX;
     var cy = rect.top  + cardCenterY * scaleY;
 
-    /* Phaser activePointer koordinatlarını manuel güncelle */
+    /* Phaser activePointer'ı güncelle */
     if (scene && scene.input) {
       try {
         if (scene.input.activePointer) {
@@ -105,67 +108,69 @@
     });
   }
 
-  /* ─── Çift Çözücü ───────────────────────────────────────────── */
-  function _solvePairs(scene, canvas) {
-    if (_solving) return;
+  /* ─── Ana Karar Döngüsü (60 FPS) ────────────────────────────── */
+  function _tickFrame(scene) {
+    var sceneKey = scene && scene.sys && scene.sys.settings && scene.sys.settings.key;
+    if (sceneKey !== 'Game') return;
+
+    var canvas = _getCanvas();
+    if (!canvas) return;
 
     var cards = scene.cards;
     if (!cards || !cards.length) return;
 
-    /* Texture key'e göre aktif kartları grupla */
-    var groups = {};
-    cards.forEach(function (card) {
-      if (!card || !card.active) return; /* zaten eşleşmiş */
-      var key = card.texture && card.texture.key;
-      if (!key || key === '__DEFAULT' || key === '__MISSING') return;
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(card);
+    var now = Date.now();
+    if (now - _lastActionTime < 500) return; /* Eylemler arası minimum 500ms mola (animasyonlar için) */
+
+    /* Aktif olan (henüz eşleşmemiş) kartları filtrele */
+    var activeCards = cards.filter(function (c) {
+      return c && c.active && c.visible;
     });
+    if (activeCards.length === 0) return;
 
-    /* Tam 2 elemanlı gruplardan çift listesi oluştur */
-    var pairs = [];
-    Object.keys(groups).forEach(function (key) {
-      var g = groups[key];
-      if (g.length >= 2) pairs.push([g[0], g[1]]);
-    });
+    /* Açıkta olan kart var mı? */
+    var opened = scene.openedCard;
 
-    if (!pairs.length) return;
+    if (opened) {
+      /* Eşini bul: aynı textureKey'e sahip ama farklı nesne olan kart */
+      var openedKey = opened.texture && opened.texture.key;
+      var partner = activeCards.find(function (c) {
+        return c !== opened && c.texture && c.texture.key === openedKey;
+      });
 
-    _solving = true;
-    console.log('[RC-CoinFlip] 🃏 ' + pairs.length + ' çift bulundu → anlık çözülüyor!');
-
-    var idx = 0;
-
-    function clickNext() {
-      if (!_botActive) { _solving = false; return; }
-
-      /* Sahne hâlâ Game mi? */
-      var sk = scene.sys && scene.sys.settings && scene.sys.settings.key;
-      if (sk !== 'Game') { _solving = false; return; }
-
-      if (idx >= pairs.length) {
-        _solving = false;
-        console.log('[RC-CoinFlip] ✅ Tüm çiftler tamamlandı!');
-        return;
+      if (partner) {
+        console.log('[RC-CoinFlip] 🎯 Eş bulundu! Eşleştiriliyor:', openedKey);
+        _clickCard(partner, canvas, scene);
+        /* Eşleşme animasyonu ve kartların kaybolması için uzun bekleme süresi ver */
+        _lastActionTime = now + 900;
       }
+    } else {
+      /* Açıkta kart yok: İlk sıradaki aktif kartı aç */
+      var target = activeCards[0];
+      console.log('[RC-CoinFlip] 🎴 Kart açılıyor:', target.texture && target.texture.key);
+      _clickCard(target, canvas, scene);
+      /* Kartın dönme animasyonu için bekleme süresi ver */
+      _lastActionTime = now;
+    }
+  }
 
-      var pair = pairs[idx++];
-      var c1 = pair[0];
-      var c2 = pair[1];
+  /* ─── Sahne Yamalama ────────────────────────────────────────── */
+  function _patchScene(scene) {
+    if (!scene || _patchedScene === scene) return;
 
-      /* İlk kartı tıkla */
-      if (c1.active) _clickCard(c1, canvas, scene);
-
-      /* Kısa bekleyip 2. kartı tıkla, sonra animasyon için bekle */
-      setTimeout(function () {
-        if (!_botActive) { _solving = false; return; }
-        if (c2.active) _clickCard(c2, canvas, scene);
-        setTimeout(clickNext, 850); /* eşleşme animasyonu için bekle */
-      }, 550); /* kartın açılma animasyonu için bekle */
+    if (_patchedScene && _originalUpdate) {
+      try { _patchedScene.update = _originalUpdate; } catch(e) {}
     }
 
-    /* Oyunun hazır olması için küçük bir başlangıç gecikmesi */
-    setTimeout(clickNext, 400);
+    _patchedScene   = scene;
+    _originalUpdate = scene.update || function () {};
+
+    scene.update = function (time, delta) {
+      try { _originalUpdate.call(scene, time, delta); } catch (e) {}
+      if (_botActive) _tickFrame(scene);
+    };
+
+    console.log('[RC-CoinFlip] ✅ scene.update başarıyla yamalandı');
   }
 
   /* ─── Monitor ───────────────────────────────────────────────── */
@@ -178,40 +183,52 @@
     var scene = _getGameScene(game);
     if (!scene) return;
 
-    var sk = scene.sys && scene.sys.settings && scene.sys.settings.key;
-    if (sk !== 'Game') return;
-
-    /* Çözülecek kart varsa ve şu an çözülmüyorsa başlat */
-    if (!_solving && scene.countAlive > 0) {
-      var now = Date.now();
-      if (now - _lastSolveAt > 1500) {
-        _lastSolveAt = now;
-        var canvas = _getCanvas();
-        if (canvas) _solvePairs(scene, canvas);
-      }
+    if (_patchedScene !== scene) {
+      _patchScene(scene);
     }
   }
 
   /* ─── Başlatma / Durdurma ───────────────────────────────────── */
   function _start() {
     if (_botActive) return;
-    _botActive   = true;
-    _solving     = false;
-    _lastSolveAt = 0;
+    _botActive      = true;
+    _lastActionTime = 0;
+
     try { document.body.setAttribute('data-rc-bot-coinflip-active', 'true'); } catch (e) {}
     console.log('[RC-CoinFlip] ✅ Bot BAŞLADI');
     if (window.updateRCStatus)          window.updateRCStatus('[RC] 🃏 CoinFlip Bot aktif');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
 
-    _monitorId = setInterval(_monitor, 1000);
-    _monitor(); /* hemen bir kez çalıştır */
+    _monitorId = setInterval(_monitor, 500);
+    _monitor();
+
+    /* RAF Fallback Loop */
+    if (_rafId) cancelAnimationFrame(_rafId);
+    function _rafLoop() {
+      if (!_botActive) return;
+      var game = _findGame();
+      var scene = game && _getGameScene(game);
+      if (scene && _patchedScene !== scene) {
+        /* Yamalanamadıysa doğrudan döngüden çağır */
+        _tickFrame(scene);
+      }
+      _rafId = requestAnimationFrame(_rafLoop);
+    }
+    _rafId = requestAnimationFrame(_rafLoop);
   }
 
   function _stop() {
     if (!_botActive) return;
     _botActive = false;
-    _solving   = false;
     if (_monitorId) { clearInterval(_monitorId); _monitorId = null; }
+    if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+
+    if (_patchedScene && _originalUpdate) {
+      try { _patchedScene.update = _originalUpdate; } catch(e) {}
+    }
+    _patchedScene   = null;
+    _originalUpdate = null;
+
     try { document.body.setAttribute('data-rc-bot-coinflip-active', 'false'); } catch (e) {}
     console.log('[RC-CoinFlip] ⏹ Bot DURDU');
     if (window.updateRCStatus)          window.updateRCStatus('[RC] 🃏 CoinFlip Bot durdu');
