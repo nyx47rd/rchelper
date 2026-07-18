@@ -17,11 +17,13 @@
   var TARGET_R = 55, TARGET_G = 173, TARGET_B = 67;
 
   function _isGame() {
+    var curGame = (document.body.getAttribute('data-rc-current-game') || '').toLowerCase();
+    if (curGame.includes('hamster climber') || curGame.includes('hamsterclimber')) {
+      return true;
+    }
     var sources = [
-      (window._activeGame && window._activeGame.name) || '',
-      window.currentPlayingGame || '',
-      window.lastSelectedGame || '',
-      document.title || ''
+      document.title || '',
+      window.location.href || ''
     ];
     return sources.some(function(s) {
       var n = s.toLowerCase();
@@ -132,16 +134,22 @@
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
   }
 
+  function _isOnPlayPage() {
+    return window.location.href.includes('/play_game');
+  }
+
+  /* Fullscreen API'yi de dinle (bazı tarayıcılarda çalışır) */
   document.addEventListener('fullscreenchange', function () {
     if (!!document.fullscreenElement && _isGame()) _start();
     else if (!document.fullscreenElement) _stop();
   });
 
+  /* Ana tetikleyici: sayfa ve canvas hazır olduğunda başlat */
   setInterval(function () {
     var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botHamsterEnabled'] === false);
-    var big = _isBigCanvas() && _isGame() && enabled;
-    if (big && !_botActive)  _start();
-    if (!big && _botActive)  _stop();
+    var active = _isOnPlayPage() && _isGame() && !!_getCanvas() && enabled;
+    if (active && !_botActive)  _start();
+    if (!active && _botActive)  _stop();
   }, 500);
 
   window._rcHamsterClimber = { start: _start, stop: _stop, isActive: function () { return _botActive; } };

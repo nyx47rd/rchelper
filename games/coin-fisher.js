@@ -20,11 +20,13 @@
 
   /* Coin Fisher oyununda mıyız? */
   function _isCoinFisher() {
+    var curGame = (document.body.getAttribute('data-rc-current-game') || '').toLowerCase();
+    if (curGame.includes('coin fisher') || curGame.includes('coinfisher')) {
+      return true;
+    }
     var sources = [
-      (window._activeGame && window._activeGame.name) || '',
-      window.currentPlayingGame || '',
-      window.lastSelectedGame || '',
-      document.title || ''
+      document.title || '',
+      window.location.href || ''
     ];
     return sources.some(function(s) {
       var n = s.toLowerCase();
@@ -222,13 +224,8 @@
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
   }
 
-  /* Canvas "büyük" mü? — fullscreen API yerine boyut kontrolü */
-  function _isBigCanvas() {
-    var c = _getCanvas();
-    if (!c) return false;
-    var rect = c.getBoundingClientRect();
-    /* canvas genişliği viewport'un %60'ından büyükse aktif say */
-    return rect.width > window.innerWidth * 0.6;
+  function _isOnPlayPage() {
+    return window.location.href.includes('/play_game');
   }
 
   /* Fullscreen API'yi de dinle (bazı tarayıcılarda çalışır) */
@@ -237,12 +234,12 @@
     else if (!document.fullscreenElement) _cfStop();
   });
 
-  /* Ana tetikleyici: canvas büyüdüğünde başlat, küçüldüğünde durdur */
+  /* Ana tetikleyici: sayfa ve canvas hazır olduğunda başlat */
   setInterval(function () {
     var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botFisherEnabled'] === false);
-    var big = _isBigCanvas() && _isCoinFisher() && enabled;
-    if (big && !_cfBotActive)  _cfStart();
-    if (!big && _cfBotActive)  _cfStop();
+    var active = _isOnPlayPage() && _isCoinFisher() && !!_getCanvas() && enabled;
+    if (active && !_cfBotActive)  _cfStart();
+    if (!active && _cfBotActive)  _cfStop();
   }, 500);
 
   window._rcCoinFisher = {
