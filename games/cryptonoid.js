@@ -127,19 +127,26 @@
       }
     }
 
-    // 2. Raket Takip Kontrolü (Raketi topun tam altına konumlandır)
-    var diff = ball.x - paddle.x;
-    var deadzone = 12; // Raketin titremesini engellemek için ölü bölge hassasiyeti
+    // 2. Raket Takip Kontrolü (Raketi topun tam altına doğrudan konumlandır)
+    try {
+      // Platform (raket) X koordinatını doğrudan topun X koordinatına eşitle
+      paddle.x = ball.x;
+      if (paddle.body) {
+        paddle.body.x = ball.x - (paddle.width / 2);
+      }
 
-    if (diff > deadzone) {
-      _setKeyState('ArrowLeft', false);
-      _setKeyState('ArrowRight', true);
-    } else if (diff < -deadzone) {
-      _setKeyState('ArrowRight', false);
-      _setKeyState('ArrowLeft', true);
-    } else {
-      _setKeyState('ArrowLeft', false);
-      _setKeyState('ArrowRight', false);
+      // Phaser'ın fare/imleç girdilerini de topa eşitle (eğer oyun oradan okuyorsa)
+      if (scene.input) {
+        scene.input.x = ball.x;
+        if (scene.input.activePointer) {
+          scene.input.activePointer.x = ball.x;
+        }
+        if (scene.input.mousePointer) {
+          scene.input.mousePointer.x = ball.x;
+        }
+      }
+    } catch (e) {
+      console.warn('[RC-Cryptonoid] Raket koordinatı eşitlenirken hata oluştu:', e);
     }
   }
 
