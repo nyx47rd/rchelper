@@ -113,6 +113,7 @@ var RC_STRINGS = {
     bot_hamster: 'Hamster Climber',
     bot_2048: '2048 Coins',
     bot_blaster: 'Token Blaster',
+    bot_cryptonoid: 'Cryptonoid',
     bot_active_badge: 'OYNUYOR',
   },
   en: {
@@ -223,6 +224,7 @@ var RC_STRINGS = {
     bot_hamster: 'Hamster Climber',
     bot_2048: '2048 Coins',
     bot_blaster: 'Token Blaster',
+    bot_cryptonoid: 'Cryptonoid',
     bot_active_badge: 'PLAYING',
   },
 };
