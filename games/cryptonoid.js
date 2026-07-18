@@ -1,18 +1,19 @@
 /* ══════════════════════════════════════════════════════════════════
-   RC Helper — Cryptonoid (Breakout) Zeki Hafıza Botu
+   RC Helper — Cryptonoid (Breakout) Zeki Hafıza Botu (v2.2.89)
    Yalnızca /game/play_game sayfasında inject edilir (manifest.json)
    Tetikleyici: Oyun ekranı algılanınca otomatik başlar
-   Mekanik: Topu takip ederek raketi tam topun altına hizalar
+   Mekanik: Topu ve düşen bonusları takip eder, Phaser scene.update
+   metodunu yamalayarak (monkey-patch) 60 FPS pürüzsüz takip sağlar.
    ══════════════════════════════════════════════════════════════════ */
 (function () {
   var _botActive          = false;
-  var _loopId             = null;
   var _lastLaunch         = 0;
   var _activeKeys         = {};    /* Basılı tutulan tuşlar */
   var _paddleOffset       = 0;     /* Topun rakete açı vermesi için kullanılan sapma payı */
   var _offsetPrepared     = false; /* Açı hazırlığı kilidi */
   var _lastBallY          = 0;     /* Son frame'deki top Y koordinatı */
   var _ballStationaryCount= 0;     /* Topun hareketsiz kaldığı frame sayısı */
+  var _originalUpdate     = null;  /* Orijinal scene.update referansı */
 
   function _isGame() {
     var curGame = (document.body.getAttribute('data-rc-current-game') || '').toLowerCase();
@@ -80,8 +81,128 @@
     canvas.dispatchEvent(new MouseEvent('click', opts));
   }
 
-  function _tick() {
-    if (!_botActive) return;
+  // Phaser Sahnesine sızıp update() metodunu yamalama
+  function _patchScene(scene) {
+    if (!scene || scene._rcPatched) return;
+    scene._rcPatched = true;
+    _originalUpdate = scene.update;
+    
+    scene.update = function (time, delta) {
+      if (_originalUpdate) {
+        try { _originalUpdate.call(scene, time, delta); } catch(e) {}
+      }
+      if (_botActive) {
+        _tickFrame(scene);
+      }
+    };
+    console.log('[RC-Cryptonoid] ✅ Sahne update fonksiyonu başarıyla yamandı!');
+  }
+
+  // 60 FPS hızında çalışan ana kare döngüsü
+  function _tickFrame(scene) {
+    var canvas = _getCanvas();
+    if (!canvas) return;
+
+    var paddle = scene.platform;
+    var ball = scene.ball;
+    if (!paddle || !ball) return;
+
+    // 1. Hareket Takibi ve Hız Hesaplama (Fizik motorundan bağımsız)
+    var vy = ball.y - _lastBallY; // Negatifse yükseliyor, pozitifse düşüyor, 0 ise duruyor
+    
+    var isStationary = false;
+    if (Math.abs(vy) < 0.05) {
+      _ballStationaryCount++;
+    } else {
+      _ballStationaryCount = 0;
+    }
+    _lastBallY = ball.y;
+
+    if (_ballStationaryCount > 15) { // ~250ms boyunca kıpırdamadıysa duruyor kabul et
+      isStationary = true;
+    }
+
+    // 2. Topu Başlatma Kontrolü (Hareketsizken fırlat)
+    if (isStationary && ball.y >= 755) {
+      var now = Date.now();
+      if (now - _lastLaunch > 1500) {
+        _lastLaunch = now;
+        console.log('[RC-Cryptonoid] 🚀 Topu başlatmak için fırlatma komutu tetiklendi.');
+        _pressSpace();
+        _clickCanvas(canvas);
+      }
+    }
+
+    // 3. Hedef Konum Belirleme (Top veya Düşen Bonuslar)
+    var targetX = ball.x;
+
+    // Top yukarı doğru giderken (vy < -0.1) bir sonraki düşüş için açı sekecek yeni offset hazırla
+    if (vy < -0.1) {
+      if (!_offsetPrepared) {
+        // Raket genişliğine göre: -24px ile +24px arası sapma (ortaya çarpmayı engellemek için min 8px)
+        var direction = Math.random() > 0.5 ? 1 : -1;
+        var amount = Math.floor(Math.random() * 16) + 8;
+        _paddleOffset = direction * amount;
+        _offsetPrepared = true;
+      }
+    } else if (vy > 0.1) {
+      _offsetPrepared = false; // Top düşerken hazırlığı sıfırla
+    }
+
+    // 🌟 EĞER TOP YUKARI GİDİYORSA (vy < 0) ve düşen bonus varsa, bonusu yakalamaya çalış!
+    if (vy <= 0 && scene.BonusGroup) {
+      var bonuses = [];
+      try {
+        if (typeof scene.BonusGroup.getChildren === 'function') {
+          bonuses = scene.BonusGroup.getChildren();
+        } else if (scene.BonusGroup.children && scene.BonusGroup.children.entries) {
+          bonuses = scene.BonusGroup.children.entries;
+        }
+      } catch (e) {}
+
+      // Aktif ve aşağı süzülen bonusları filtrele (raket seviyesinden yukarıda olanlar)
+      var activeBonuses = bonuses.filter(function (b) {
+        return b && b.active && b.visible && b.y < paddle.y;
+      });
+
+      if (activeBonuses.length > 0) {
+        // Rakete en yakın olan (en aşağıda süzülen) bonusu bul
+        activeBonuses.sort(function (a, b) { return b.y - a.y; });
+        var targetBonus = activeBonuses[0];
+        
+        // Bonusu yakalamak için raketi oraya yönlendir
+        targetX = targetBonus.x;
+        _paddleOffset = 0; // Bonusu tam ortalayarak yakala
+      }
+    }
+
+    // Platform (raket) X koordinatını sapmalı/hedef koordinatla eşitle
+    var finalX = targetX + _paddleOffset;
+
+    // Raketin ekrandan dışarı taşmasını engelle (RollerCoin oyun genişliği ~960px)
+    var halfW = paddle.width ? (paddle.width / 2) : 40;
+    finalX = Math.max(halfW + 10, Math.min(960 - halfW - 10, finalX));
+
+    // Raket konumunu anında güncelle (sıfır gecikme)
+    paddle.x = finalX;
+    if (paddle.body) {
+      paddle.body.x = finalX - halfW;
+    }
+
+    // Phaser fare girdilerini de sapmalı koordinata eşitle (girişlerin ezip raket kaydırmasını önler)
+    if (scene.input) {
+      scene.input.x = finalX;
+      if (scene.input.activePointer) {
+        scene.input.activePointer.x = finalX;
+      }
+      if (scene.input.mousePointer) {
+        scene.input.mousePointer.x = finalX;
+      }
+    }
+  }
+
+  // 500ms'lik döngü sadece aktif Phaser sahnesini arayıp yama yapmak içindir
+  function _monitor() {
     var canvas = _getCanvas();
     if (!canvas) return;
 
@@ -116,97 +237,31 @@
     if (activeScenes.length === 0) return;
     
     var scene = activeScenes[0];
-    var paddle = scene.platform;
-    var ball = scene.ball;
-    if (!paddle || !ball) return;
-
-    // 1. Hareket Takibi ve Hız Hesaplama (Fizik motorundan bağımsız)
-    var vy = ball.y - _lastBallY; // Negatifse yükseliyor, pozitifse düşüyor, 0 ise duruyor
     
-    var isStationary = false;
-    if (Math.abs(vy) < 0.05) {
-      _ballStationaryCount++;
-    } else {
-      _ballStationaryCount = 0;
-    }
-    _lastBallY = ball.y;
-
-    if (_ballStationaryCount > 15) { // ~250ms boyunca kıpırdamadıysa duruyor kabul et
-      isStationary = true;
-    }
-
-    // 2. Topu Başlatma Kontrolü (Top raketin üzerinde hareketsiz bekliyorsa fırlat)
-    if (isStationary && ball.y >= 755) {
-      var now = Date.now();
-      if (now - _lastLaunch > 1500) {
-        _lastLaunch = now;
-        console.log('[RC-Cryptonoid] 🚀 Topu başlatmak için fırlatma komutu tetiklendi.');
-        _pressSpace();
-        _clickCanvas(canvas);
-      }
-    }
-
-    // 3. Raket Takip Kontrolü (Raketi topun altına sapma vererek konumlandır)
-    try {
-      // Top yukarı doğru giderken (vy < -0.1) bir sonraki düşüş için açı verecek yeni bir offset hazırla
-      if (vy < -0.1) {
-        if (!_offsetPrepared) {
-          // Raketin genişliğine göre güvenli bir sapma: -20px ile +20px arası (ortaya çarpmaması için min genlik 8px)
-          var direction = Math.random() > 0.5 ? 1 : -1;
-          var amount = Math.floor(Math.random() * 12) + 8; // 8 ila 20 piksel arası sapma
-          _paddleOffset = direction * amount;
-          _offsetPrepared = true;
-          console.log('[RC-Cryptonoid] 🧭 Yeni sapma açısı belirlendi:', _paddleOffset, 'px');
-        }
-      } else if (vy > 0.1) {
-        _offsetPrepared = false; // Top düşerken hazırlığı sıfırla ki bir sonraki yükselişte yeni açı alsın
-      }
-
-      // Platform (raket) X koordinatını topun X koordinatına ek olarak sapma payıyla eşitle
-      var targetX = ball.x + _paddleOffset;
-
-      // Raketin ekrandan dışarı taşmasını engelle (RollerCoin oyun genişliği ~960px)
-      var halfW = paddle.width ? (paddle.width / 2) : 40;
-      targetX = Math.max(halfW + 10, Math.min(960 - halfW - 10, targetX));
-
-      paddle.x = targetX;
-      if (paddle.body) {
-        paddle.body.x = targetX - halfW;
-      }
-
-      // Phaser'ın fare/imleç girdilerini de sapmalı koordinata eşitle (eğer oyun oradan okuyorsa)
-      if (scene.input) {
-        scene.input.x = targetX;
-        if (scene.input.activePointer) {
-          scene.input.activePointer.x = targetX;
-        }
-        if (scene.input.mousePointer) {
-          scene.input.mousePointer.x = targetX;
-        }
-      }
-    } catch (e) {
-      console.warn('[RC-Cryptonoid] Raket koordinatı eşitlenirken hata oluştu:', e);
-    }
+    // Sahneyi yamala
+    _patchScene(scene);
   }
+
+  var _monitorId = null;
 
   function _start() {
     if (_botActive) return;
     _botActive = true;
     try { document.body.setAttribute('data-rc-bot-cryptonoid-active', 'true'); } catch(e) {}
-    console.log('[RC-Cryptonoid] ✅ Cryptonoid bot BAŞLADI (Hafıza Modu)');
+    console.log('[RC-Cryptonoid] ✅ Cryptonoid bot BAŞLADI (60 FPS Pürüzsüz Takip Modu)');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🧱 Cryptonoid Bot aktif');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
-    _loopId = setInterval(_tick, 16); // ~60 FPS buttery smooth takip
+    
+    // Her 500ms'de bir sahneyi izle ve gerekirse yamala
+    _monitorId = setInterval(_monitor, 500);
+    _monitor(); // Hemen bir kere çalıştır
   }
 
   function _stop() {
     if (!_botActive) return;
     _botActive = false;
     try { document.body.setAttribute('data-rc-bot-cryptonoid-active', 'false'); } catch(e) {}
-    if (_loopId) { clearInterval(_loopId); _loopId = null; }
-    _setKeyState('ArrowLeft', false);
-    _setKeyState('ArrowRight', false);
-    _setKeyState('Space', false);
+    if (_monitorId) { clearInterval(_monitorId); _monitorId = null; }
     console.log('[RC-Cryptonoid] ⏹ Cryptonoid bot DURDU');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🧱 Cryptonoid Bot durdu');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
