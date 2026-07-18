@@ -5,10 +5,12 @@
    Mekanik: Topu takip ederek raketi tam topun altına hizalar
    ══════════════════════════════════════════════════════════════════ */
 (function () {
-  var _botActive   = false;
-  var _loopId      = null;
-  var _lastLaunch  = 0;
-  var _activeKeys  = {};    /* Basılı tutulan tuşlar */
+  var _botActive       = false;
+  var _loopId          = null;
+  var _lastLaunch      = 0;
+  var _activeKeys      = {};    /* Basılı tutulan tuşlar */
+  var _paddleOffset    = 0;     /* Topun rakete açı vermesi için kullanılan sapma payı */
+  var _offsetPrepared  = false; /* Açı hazırlığı kilidi */
 
   function _isGame() {
     var curGame = (document.body.getAttribute('data-rc-current-game') || '').toLowerCase();
@@ -117,7 +119,10 @@
     if (!paddle || !ball) return;
 
     // 1. Topu Başlatma Kontrolü (Top raketin üzerinde hareketsiz bekliyorsa fırlat)
-    if (ball.y >= 755) {
+    var vx = (ball.body && ball.body.velocity) ? ball.body.velocity.x : 0;
+    var vy = (ball.body && ball.body.velocity) ? ball.body.velocity.y : 0;
+
+    if (vx === 0 && vy === 0 && ball.y >= 755) {
       var now = Date.now();
       if (now - _lastLaunch > 1500) {
         _lastLaunch = now;
@@ -127,22 +132,42 @@
       }
     }
 
-    // 2. Raket Takip Kontrolü (Raketi topun tam altına doğrudan konumlandır)
+    // 2. Raket Takip Kontrolü (Raketi topun altına sapma vererek konumlandır)
     try {
-      // Platform (raket) X koordinatını doğrudan topun X koordinatına eşitle
-      paddle.x = ball.x;
-      if (paddle.body) {
-        paddle.body.x = ball.x - (paddle.width / 2);
+      // Top yukarı doğru giderken (vy < 0) bir sonraki düşüş için açı verecek yeni bir offset hazırla
+      if (vy < 0) {
+        if (!_offsetPrepared) {
+          // Raketin genişliğine göre güvenli bir sapma: -20px ile +20px arası (ortaya çarpmaması için min genlik 8px)
+          var direction = Math.random() > 0.5 ? 1 : -1;
+          var amount = Math.floor(Math.random() * 12) + 8; // 8 ila 20 piksel arası sapma
+          _paddleOffset = direction * amount;
+          _offsetPrepared = true;
+          console.log('[RC-Cryptonoid] 🧭 Yeni sapma açısı belirlendi:', _paddleOffset, 'px');
+        }
+      } else if (vy > 0) {
+        _offsetPrepared = false; // Top düşerken hazırlığı sıfırla ki bir sonraki yükselişte yeni açı alsın
       }
 
-      // Phaser'ın fare/imleç girdilerini de topa eşitle (eğer oyun oradan okuyorsa)
+      // Platform (raket) X koordinatını topun X koordinatına ek olarak sapma payıyla eşitle
+      var targetX = ball.x + _paddleOffset;
+
+      // Raketin ekrandan dışarı taşmasını engelle (RollerCoin oyun genişliği ~960px)
+      var halfW = paddle.width ? (paddle.width / 2) : 40;
+      targetX = Math.max(halfW + 10, Math.min(960 - halfW - 10, targetX));
+
+      paddle.x = targetX;
+      if (paddle.body) {
+        paddle.body.x = targetX - halfW;
+      }
+
+      // Phaser'ın fare/imleç girdilerini de sapmalı koordinata eşitle (eğer oyun oradan okuyorsa)
       if (scene.input) {
-        scene.input.x = ball.x;
+        scene.input.x = targetX;
         if (scene.input.activePointer) {
-          scene.input.activePointer.x = ball.x;
+          scene.input.activePointer.x = targetX;
         }
         if (scene.input.mousePointer) {
-          scene.input.mousePointer.x = ball.x;
+          scene.input.mousePointer.x = targetX;
         }
       }
     } catch (e) {
