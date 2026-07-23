@@ -86,27 +86,35 @@
     if (now - _lastFlapTime < 80) return; /* Aşırı hızlı flap spamlama engeli */
     _lastFlapTime = now;
 
-    // 1. Klavye Space Olayı
+    /* 1. Klavye Space Olayı — pencere / doküman / canvas hedeflerine gönder */
     var opts = { bubbles: true, cancelable: true, keyCode: 32, which: 32, key: ' ', code: 'Space' };
     [window, document, document.body].forEach(function (t) {
       if (t) {
         try { t.dispatchEvent(new KeyboardEvent('keydown', opts)); } catch(e) {}
-        try { t.dispatchEvent(new KeyboardEvent('keyup', opts)); } catch(e) {}
+        try { t.dispatchEvent(new KeyboardEvent('keyup',  opts)); } catch(e) {}
       }
     });
 
-    // 2. Phaser Pointer Tıklama Olayı (Bypass)
+    /* 2. Phaser Canvas Pointer Tıklaması */
     var canvas = scene.sys && scene.sys.game && scene.sys.game.canvas;
     if (!canvas) canvas = _getCanvas();
     if (canvas) {
       var r = canvas.getBoundingClientRect();
       var evOpts = { bubbles: true, cancelable: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 };
       try { canvas.dispatchEvent(new PointerEvent('pointerdown', evOpts)); } catch (e) {}
-      try { canvas.dispatchEvent(new PointerEvent('pointerup', evOpts)); } catch (e) {}
+      try { canvas.dispatchEvent(new PointerEvent('pointerup',   evOpts)); } catch (e) {}
     }
+
+    /* 3. Yedek: Phaser fizik gövdesine doğrudan yukarı hız ver */
+    try {
+      if (scene.player && scene.player.body && scene.player.body.velocity) {
+        var flapForce = scene.BIRD_FLAP || 550;
+        scene.player.body.setVelocityY(-flapForce);
+      }
+    } catch(e) {}
   }
 
-  /* ─── Ana Karar Döngüsü (60 FPS) ────────────────────────────── */
+  /* ─── Ana Karar Döngüsü ─────────────────────────────────────── */
   function _tickFrame(scene) {
     var sceneKey = scene && scene.sys && scene.sys.settings && scene.sys.settings.key;
     if (sceneKey !== 'Game') return;
@@ -119,42 +127,35 @@
     /* Önümüzdeki en yakın aktif boruları (pipesGroup) analiz et */
     if (scene.pipesGroup && typeof scene.pipesGroup.getChildren === 'function') {
       var activePipes = scene.pipesGroup.getChildren().filter(function (c) {
-        return c && c.active && c.visible && c.x > 140; /* Roket x=200 civarındadır */
+        return c && c.active && c.visible && c.x > player.x - 20;
       });
 
       if (activePipes.length > 0) {
-        /* Aynı X koordinatına sahip boruları grupla (boru çiftleri) */
+        /* Boru çiftlerini X konumuna göre grupla */
         var pipesByX = {};
         activePipes.forEach(function (c) {
-          var px = Math.round(c.x);
+          var px = Math.round(c.x / 5) * 5; /* 5px hassasiyetle yuvarla */
           if (!pipesByX[px]) pipesByX[px] = [];
           pipesByX[px].push(c);
         });
 
-        /* Roketin sağındaki en yakın X koordinatını bul */
+        /* Roketin sağındaki en yakın boru çiftini bul */
         var sortedXs = Object.keys(pipesByX).map(Number).sort(function (a, b) { return a - b; });
-        var px = player.x || 200;
-        var pw = player.width || 80;
-        var minX = px - pw / 2 + 10; /* Roket merkezinden biraz marj bırak */
-
-        var closestX = sortedXs.find(function (x) { return x > minX; });
+        var closestX = sortedXs.find(function (x) { return x > player.x; });
         if (closestX !== undefined) {
           var pair = pipesByX[closestX];
-          var yTop = null;
-          var yBottom = null;
+          var yTop    = null; /* originY=1 → üst borunun ALT kenarı */
+          var yBottom = null; /* originY=0 → alt borunun ÜST kenarı */
 
           pair.forEach(function (c) {
-            if (c.originY === 1) yTop = c.y;    /* Üst borunun alt sınırı */
-            if (c.originY === 0) yBottom = c.y; /* Alt borunun üst sınırı */
+            if (c.originY === 1) yTop    = c.y;
+            if (c.originY === 0) yBottom = c.y;
           });
 
           if (yTop !== null && yBottom !== null) {
-            targetY = (yTop + yBottom) / 2;
-          } else if (yTop !== null) {
-            targetY = yTop + 160; /* Yalnızca üst boru varsa 160px aşağıyı hedefle */
-          } else if (yBottom !== null) {
-            targetY = yBottom - 160; /* Yalnızca alt boru varsa 160px yukarıyı hedefle */
-          }
+            targetY = (yTop + yBottom) / 2; /* Boşluk merkezi */
+          } else if (yTop    !== null) { targetY = yTop    + 120; }
+            else if (yBottom !== null) { targetY = yBottom - 120; }
         }
       }
     }
@@ -162,9 +163,9 @@
     var py = player.y;
     var vy = player.body.velocity ? player.body.velocity.y : 0;
 
-    /* Otopilot zıplama kriteri:
-       Eğer roket hedef yüksekliğin altındaysa ve aşağı düşmeye başladıysa (veya hızı yavaşsa) zıplat */
-    if (py > targetY + 15 && vy >= -50) {
+    /* Zıplama Kriteri:
+       Roket hedefin altına indiğinde VE hala hızla yukarı çıkmıyorsa zıplat */
+    if (py > targetY + 10 && vy >= -80) {
       _flap(scene);
     }
   }
@@ -217,13 +218,16 @@
     _monitorId = setInterval(_monitor, 500);
     _monitor();
 
-    /* RAF Fallback Loop */
+    /* RAF Ana Döngüsü — her frame'de _tickFrame'i çağır */
     if (_rafId) cancelAnimationFrame(_rafId);
     function _rafLoop() {
       if (!_botActive) return;
-      var game = _findGame();
+      var game  = _findGame();
       var scene = game && _getGameScene(game);
-      if (scene && _patchedScene !== scene) {
+      if (scene) {
+        /* Sahne yamalı değilse yamala */
+        if (_patchedScene !== scene) _patchScene(scene);
+        /* Her halükarda doğrudan da tetikle (scene.update yaması yedek olarak çalışsın) */
         _tickFrame(scene);
       }
       _rafId = requestAnimationFrame(_rafLoop);
