@@ -60,10 +60,18 @@ ZIPNAME="rchelper-${NEXT}.zip"
 rm -f rchelper.zip "$ZIPNAME"
 mkdir -p _ziptmp/rchelper
 
-# Versiyonu manifest.json ve popup.js içine otomatik senkronize et
+# Versiyonu manifest.json ve popup.js içine otomatik senkronize et ve git'e işle
 CLEAN_VER="${NEXT#v}"
 sed -i "s/\"version\": \".*\"/\"version\": \"${CLEAN_VER}\"/" manifest.json
 sed -i "s/var CURRENT_VERSION = '.*'/var CURRENT_VERSION = '${CLEAN_VER}'/" popup.js
+
+if ! git diff --quiet manifest.json popup.js; then
+  git add manifest.json popup.js
+  git commit -m "chore(release): bump version to ${CLEAN_VER} [skip release]" || true
+  if [ -n "$PAT" ]; then
+    git push "https://${PAT}@github.com/${REPO}.git" master || true
+  fi
+fi
 
 # Eklenti dosyalarını kopyala
 cp manifest.json content.js popup.html popup.js background.js \
