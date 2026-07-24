@@ -60,6 +60,11 @@ ZIPNAME="rchelper-${NEXT}.zip"
 rm -f rchelper.zip "$ZIPNAME"
 mkdir -p _ziptmp/rchelper
 
+# Versiyonu manifest.json ve popup.js içine otomatik senkronize et
+CLEAN_VER="${NEXT#v}"
+sed -i "s/\"version\": \".*\"/\"version\": \"${CLEAN_VER}\"/" manifest.json
+sed -i "s/var CURRENT_VERSION = '.*'/var CURRENT_VERSION = '${CLEAN_VER}'/" popup.js
+
 # Eklenti dosyalarını kopyala
 cp manifest.json content.js popup.html popup.js background.js \
    i18n.js tutorial.js tutorial.css \

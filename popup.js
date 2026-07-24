@@ -1,6 +1,6 @@
 var autoPlayState = false;
 var loadSkippedGames = null;
-var CURRENT_VERSION = '2.3.7';
+var CURRENT_VERSION = '2.3.8';
 var updateAvailable = false;
 var latestReleaseUrl = 'https://github.com/nyx47rd/rchelper/releases/latest';
 
