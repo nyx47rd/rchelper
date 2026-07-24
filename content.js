@@ -1568,6 +1568,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     window.botOnlyMode = !!msg.enabled;
     console.log('[RC] Bot-Only Mode:', window.botOnlyMode ? 'AKTİF' : 'KAPALI');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🤖 Bot-Only: ' + (window.botOnlyMode ? 'Açık' : 'Kapalı'));
+    if (window.botOnlyMode && window.autoPlayActive && isOnChooseGamePage()) {
+      setTimeout(pickAndPlay, 200);
+    }
     sendResponse({ ok: true });
     return true;
   }

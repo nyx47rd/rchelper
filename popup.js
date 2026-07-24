@@ -169,6 +169,12 @@ document.addEventListener('DOMContentLoaded', function() {
       var enabled = chkBotOnly.checked;
       chrome.storage.local.set({ botOnlyMode: enabled });
       sendMessage({ action: 'setBotOnlyMode', enabled: enabled });
+      if (enabled && !autoPlayState) {
+        autoPlayState = true;
+        updateAutoBtn(true);
+        chrome.storage.local.set({ autoPlay: true });
+        sendMessage({ action: 'toggleAuto', on: true });
+      }
     });
   }
 
