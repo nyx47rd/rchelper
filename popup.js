@@ -1,6 +1,6 @@
 var autoPlayState = false;
 var loadSkippedGames = null;
-var CURRENT_VERSION = '2.5.01';
+var CURRENT_VERSION = '2.3.7';
 var updateAvailable = false;
 var latestReleaseUrl = 'https://github.com/nyx47rd/rchelper/releases/latest';
 
@@ -157,6 +157,19 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateAutoBtn(state) {
     btnAuto.querySelector('#auto-play-lbl,span') ? (btnAuto.querySelector('[data-i18n]').setAttribute('data-i18n', state ? 'auto_on' : 'auto_off'), btnAuto.querySelector('[data-i18n]').textContent = t(state ? 'auto_on' : 'auto_off')) : (btnAuto.textContent = t(state ? 'auto_on' : 'auto_off'));
     btnAuto.classList.toggle('active', state);
+  }
+
+  /* ── Bot-Only Auto Play Toggle ── */
+  var chkBotOnly = document.getElementById('chk-bot-only');
+  if (chkBotOnly) {
+    chrome.storage.local.get(['botOnlyMode'], function(data) {
+      chkBotOnly.checked = !!data.botOnlyMode;
+    });
+    chkBotOnly.addEventListener('change', function() {
+      var enabled = chkBotOnly.checked;
+      chrome.storage.local.set({ botOnlyMode: enabled });
+      sendMessage({ action: 'setBotOnlyMode', enabled: enabled });
+    });
   }
 
   /* ── Bot toggle yönetimi ── */
