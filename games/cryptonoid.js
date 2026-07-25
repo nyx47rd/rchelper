@@ -237,17 +237,13 @@
        *   → paddle.x > ball.x (raket topun SAĞINDA olmalı)
        *   → aimShift pozitif
        */
-      var brickDelta = brickCenterX - ball.x;           // + = karolar sağda, - = karolar solda
-      var aimShift   = -(brickDelta * 0.55);            // ters yönde kaydır
-      var maxShift   = halfW * 0.75;                    // raket genişliğinin %75'i kadar max kaydır
-      aimShift = Math.max(-maxShift, Math.min(maxShift, aimShift));
+      var brickDelta = brickCenterX - ball.x;
+      var aimShift   = Math.max(-10, Math.min(10, -(brickDelta * 0.06)));
       targetX  = ball.x + aimShift;
 
     } else {
-      /*
-       * Top YUKARI ÇIKIYOR veya HAREKETSIZ → bonus yakala yoksa topa yakın dur
-       */
-      targetX = ball.x; // varsayılan: topu izle
+      /* Top YUKARI ÇIKIYOR veya HAREKETSIZ → topu izle */
+      targetX = ball.x;
 
       if (scene.BonusGroup) {
         var bonuses = [];

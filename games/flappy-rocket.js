@@ -83,33 +83,17 @@
   /* ─── Uçuş Tetikleme (Flap) ──────────────────────────────────── */
   function _flap(scene) {
     var now = Date.now();
-    if (now - _lastFlapTime < 80) return; /* Aşırı hızlı flap spamlama engeli */
+    if (now - _lastFlapTime < 130) return; /* Dengeli zıplama için bekleme */
     _lastFlapTime = now;
 
-    /* 1. Klavye Space Olayı — pencere / doküman / canvas hedeflerine gönder */
-    var opts = { bubbles: true, cancelable: true, keyCode: 32, which: 32, key: ' ', code: 'Space' };
-    [window, document, document.body].forEach(function (t) {
-      if (t) {
-        try { t.dispatchEvent(new KeyboardEvent('keydown', opts)); } catch(e) {}
-        try { t.dispatchEvent(new KeyboardEvent('keyup',  opts)); } catch(e) {}
-      }
-    });
-
-    /* 2. Phaser Canvas Pointer Tıklaması */
-    var canvas = scene.sys && scene.sys.game && scene.sys.game.canvas;
-    if (!canvas) canvas = _getCanvas();
-    if (canvas) {
-      var r = canvas.getBoundingClientRect();
-      var evOpts = { bubbles: true, cancelable: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 };
-      try { canvas.dispatchEvent(new PointerEvent('pointerdown', evOpts)); } catch (e) {}
-      try { canvas.dispatchEvent(new PointerEvent('pointerup',   evOpts)); } catch (e) {}
-    }
-
-    /* 3. Yedek: Phaser fizik gövdesine doğrudan yukarı hız ver */
     try {
-      if (scene.player && scene.player.body && scene.player.body.velocity) {
+      if (scene.player && scene.player.body && typeof scene.player.body.setVelocityY === 'function') {
         var flapForce = scene.BIRD_FLAP || 550;
         scene.player.body.setVelocityY(-flapForce);
+      } else {
+        var opts = { bubbles: true, cancelable: true, keyCode: 32, which: 32, key: ' ', code: 'Space' };
+        window.dispatchEvent(new KeyboardEvent('keydown', opts));
+        window.dispatchEvent(new KeyboardEvent('keyup',   opts));
       }
     } catch(e) {}
   }
@@ -127,7 +111,7 @@
     /* Önümüzdeki en yakın aktif boruları (pipesGroup) analiz et */
     if (scene.pipesGroup && typeof scene.pipesGroup.getChildren === 'function') {
       var activePipes = scene.pipesGroup.getChildren().filter(function (c) {
-        return c && c.active && c.visible && c.x > player.x - 20;
+        return c && c.active && c.visible && c.x > player.x - 50;
       });
 
       if (activePipes.length > 0) {
@@ -139,9 +123,9 @@
           pipesByX[px].push(c);
         });
 
-        /* Roketin sağındaki en yakın boru çiftini bul */
+        /* Roketin sağındaki veya henüz geçmekte olduğu boru çiftini bul (50px marj) */
         var sortedXs = Object.keys(pipesByX).map(Number).sort(function (a, b) { return a - b; });
-        var closestX = sortedXs.find(function (x) { return x > player.x; });
+        var closestX = sortedXs.find(function (x) { return x > player.x - 50; });
         if (closestX !== undefined) {
           var pair = pipesByX[closestX];
           var yTop    = null; /* originY=1 → üst borunun ALT kenarı */
@@ -163,9 +147,8 @@
     var py = player.y;
     var vy = player.body.velocity ? player.body.velocity.y : 0;
 
-    /* Zıplama Kriteri:
-       Roket hedefin altına indiğinde VE hala hızla yukarı çıkmıyorsa zıplat */
-    if (py > targetY + 10 && vy >= -80) {
+    /* Zıplama Kriteri: hedefin biraz altına indiğinde ve yukarı ivmesi yetersizse */
+    if (py > targetY + 6 && vy >= -50) {
       _flap(scene);
     }
   }

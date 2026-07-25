@@ -1554,18 +1554,6 @@ setInterval(() => {
     }
   }
 
-  if (!clicksThisRound && !window.gameSelectionInProgress) {
-    const startBtn = document.querySelector('button[class*="start"], button[class*="play"], button:not([class*="skip"]):not([class*="cancel"]):not([class*="close"])');
-    if (startBtn) {
-      const text = startBtn.innerText?.toUpperCase() || '';
-      const isActionBtn = text.includes('START') || text.includes('PLAY') || text.includes('CLAIM');
-      const style = window.getComputedStyle(startBtn);
-      if (isActionBtn && startBtn.offsetParent !== null && style.display !== 'none' && style.opacity !== '0') {
-        startBtn.click();
-        clicksThisRound++;
-      }
-    }
-  }
 
   if (window.autoChoose) {
     const chooseBtn = document.querySelector('a.btn-cyan[href="/game/choose_game"]');
