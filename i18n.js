@@ -116,8 +116,6 @@ var RC_STRINGS = {
     bot_cryptonoid: 'Cryptonoid',
     bot_rocket: 'Flappy Rocket',
     bot_active_badge: 'OYNUYOR',
-    bot_only_mode: 'Sadece Bot Oyunlarını Oyna',
-    bot_only_hint: 'Fisher, Hamster, 2048, Blaster, Cryptonoid, Rocket',
   },
   en: {
     auto_off: 'Auto-Play: OFF',
@@ -230,8 +228,6 @@ var RC_STRINGS = {
     bot_cryptonoid: 'Cryptonoid',
     bot_rocket: 'Flappy Rocket',
     bot_active_badge: 'PLAYING',
-    bot_only_mode: 'Play Bot Games Only',
-    bot_only_hint: 'Fisher, Hamster, 2048, Blaster, Cryptonoid, Rocket',
   },
 };
 

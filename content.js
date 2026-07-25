@@ -204,31 +204,11 @@ window.nextBreakTime = null;
 var mainTimer = null;
 var breakCheckTimer = null;
 
-/* Bot-Only Auto Play modu: sadece bot destekli oyunlar seçilir */
-window.botOnlyMode = false;
-
-/* Bot destekli oyunların RollerCoin'deki tam oyun isimleri (küçük harf, kısmi eşleşme) */
-var BOT_SUPPORTED_GAMES = [
-  'coin fisher',
-  'hamster climber',
-  '2048 coins',
-  'token blaster',
-  'cryptonoid',
-  'flappy rocket'
-];
-
-function isBotSupportedGame(gameName) {
-  if (!gameName) return false;
-  var lower = gameName.toLowerCase();
-  return BOT_SUPPORTED_GAMES.some(function(g) { return lower.includes(g); });
-}
-
 try {
-  chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled', 'botBlasterEnabled', 'botCryptonoidEnabled', 'botRocketEnabled', 'botOnlyMode'], (data) => {
+  chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled', 'botBlasterEnabled', 'botCryptonoidEnabled', 'botRocketEnabled'], (data) => {
     if (!data) data = {};
     window.autoCollect = data.autoCollect !== false;
     window.autoChoose  = data.autoChoose  !== false;
-    window.botOnlyMode = !!data.botOnlyMode;
     window._rcBotEnabled = {
       botFisherEnabled:        data.botFisherEnabled        !== false,
       botHamsterEnabled:       data.botHamsterEnabled       !== false,
@@ -1162,29 +1142,20 @@ function pickAndPlay() {
     const btn = item.querySelector('button, a, [class*="btn"], [role="button"]');
     const btnText = btn?.innerText || btn?.textContent || '';
     const isWait = btn && (btn.disabled || btnText.toUpperCase().includes('WAIT'));
-
-    /* Bot-Only Mode filtresi: sadece bot destekli oyunlar */
-    if (window.botOnlyMode && !isBotSupportedGame(gameName)) return false;
     
     return !isSkipped && !isComingSoon && !isWait;
   });
   
-  const botOnlyTag = window.botOnlyMode ? ' [BOT-ONLY]' : '';
-  console.log('[RC' + botOnlyTag + '] Bulunan:', items.length, '| Pas geçilen:', Object.keys(window.skippedGames), '| Permanent:', Object.keys(window.permanentSkippedGames), '| Geçerli:', validItems.length);
+  console.log('[RC] Bulunan:', items.length, '| Pas geçilen:', Object.keys(window.skippedGames), '| Permanent:', Object.keys(window.permanentSkippedGames), '| Geçerli:', validItems.length);
   
   if (validItems.length === 0) {
-    if (window.botOnlyMode) {
-      console.log('[RC] ⏳ Bot destekli tüm oyunlar WAIT durumunda veya mevcut değil, 15sn bekleniyor...');
-      if (window.updateRCStatus) window.updateRCStatus('[RC] ⏳ Bot oyunu bekleniyor...');
-    } else {
-      console.log('[RC] ⚠ Tüm oyunlar wait veya pas geçilmiş, oyun seçilmiyor');
-    }
+    console.log('[RC] ⚠ Tüm oyunlar wait veya pas geçilmiş, oyun seçilmiyor');
     window.pickAndPlayRunning = false;
     setTimeout(() => {
       if (!window.gameSelectionInProgress && window.autoPlayActive) {
         pickAndPlay();
       }
-    }, window.botOnlyMode ? 15000 : 5000);
+    }, 5000);
     return;
   }
   
@@ -1561,16 +1532,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.bot === 'botBlasterEnabled'       && window._rcTokenBlaster)  { if (!msg.enabled) window._rcTokenBlaster.stop(); }
     if (msg.bot === 'botCryptonoidEnabled'    && window._rcCryptonoid)    { if (!msg.enabled) window._rcCryptonoid.stop(); }
     if (msg.bot === 'botRocketEnabled'        && window._rcFlappyRocket)  { if (!msg.enabled) window._rcFlappyRocket.stop(); }
-    sendResponse({ ok: true });
-    return true;
-  }
-  else if (msg.action === 'setBotOnlyMode') {
-    window.botOnlyMode = !!msg.enabled;
-    console.log('[RC] Bot-Only Mode:', window.botOnlyMode ? 'AKTİF' : 'KAPALI');
-    if (window.updateRCStatus) window.updateRCStatus('[RC] 🤖 Bot-Only: ' + (window.botOnlyMode ? 'Açık' : 'Kapalı'));
-    if (window.botOnlyMode && window.autoPlayActive && isOnChooseGamePage()) {
-      setTimeout(pickAndPlay, 200);
-    }
     sendResponse({ ok: true });
     return true;
   }

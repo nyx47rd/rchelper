@@ -159,25 +159,6 @@ document.addEventListener('DOMContentLoaded', function() {
     btnAuto.classList.toggle('active', state);
   }
 
-  /* ── Bot-Only Auto Play Toggle ── */
-  var chkBotOnly = document.getElementById('chk-bot-only');
-  if (chkBotOnly) {
-    chrome.storage.local.get(['botOnlyMode'], function(data) {
-      chkBotOnly.checked = !!data.botOnlyMode;
-    });
-    chkBotOnly.addEventListener('change', function() {
-      var enabled = chkBotOnly.checked;
-      chrome.storage.local.set({ botOnlyMode: enabled });
-      sendMessage({ action: 'setBotOnlyMode', enabled: enabled });
-      if (enabled && !autoPlayState) {
-        autoPlayState = true;
-        updateAutoBtn(true);
-        chrome.storage.local.set({ autoPlay: true });
-        sendMessage({ action: 'toggleAuto', on: true });
-      }
-    });
-  }
-
   /* ── Bot toggle yönetimi ── */
   var BOT_KEYS = {
     'chk-bot-fisher':         'botFisherEnabled',
