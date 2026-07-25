@@ -83,12 +83,12 @@
   /* ─── Uçuş Tetikleme (Flap) ──────────────────────────────────── */
   function _flap(scene) {
     var now = Date.now();
-    if (now - _lastFlapTime < 130) return; /* Dengeli zıplama için bekleme */
+    if (now - _lastFlapTime < 220) return; /* Yumuşak ve doğal süzülme için 220ms bekleme */
     _lastFlapTime = now;
 
     try {
       if (scene.player && scene.player.body && typeof scene.player.body.setVelocityY === 'function') {
-        var flapForce = scene.BIRD_FLAP || 550;
+        var flapForce = scene.BIRD_FLAP || 500;
         scene.player.body.setVelocityY(-flapForce);
       } else {
         var opts = { bubbles: true, cancelable: true, keyCode: 32, which: 32, key: ' ', code: 'Space' };
@@ -107,6 +107,7 @@
     if (!player || !player.active || !player.body) return;
 
     var targetY = 414; /* Varsayılan: Ekranın dikey ortası (828 / 2) */
+    var hasPipes = false;
 
     /* Önümüzdeki en yakın aktif boruları (pipesGroup) analiz et */
     if (scene.pipesGroup && typeof scene.pipesGroup.getChildren === 'function') {
@@ -127,6 +128,7 @@
         var sortedXs = Object.keys(pipesByX).map(Number).sort(function (a, b) { return a - b; });
         var closestX = sortedXs.find(function (x) { return x > player.x - 50; });
         if (closestX !== undefined) {
+          hasPipes = true;
           var pair = pipesByX[closestX];
           var yTop    = null; /* originY=1 → üst borunun ALT kenarı */
           var yBottom = null; /* originY=0 → alt borunun ÜST kenarı */
@@ -147,9 +149,24 @@
     var py = player.y;
     var vy = player.body.velocity ? player.body.velocity.y : 0;
 
-    /* Zıplama Kriteri: hedefin biraz altına indiğinde ve yukarı ivmesi yetersizse */
-    if (py > targetY + 6 && vy >= -50) {
-      _flap(scene);
+    /* Roketin eğikliğini düzelt (hıza göre yumuşak açı ver) */
+    try {
+      var smoothAngle = Math.min(20, Math.max(-20, vy * 0.05));
+      if (typeof player.setAngle === 'function') player.setAngle(smoothAngle);
+      else if (player.angle !== undefined) player.angle = smoothAngle;
+    } catch(e) {}
+
+    /* Zıplama Kriteri:
+       - Henüz boru yoksa (başlangıçta) sadece yumuşakça 460px altında zıpla.
+       - Boru varken hedefin biraz altına indiğinde ve yukarı ivmesi azaldığında zıpla. */
+    if (!hasPipes) {
+      if (py > 460 && vy > 20) {
+        _flap(scene);
+      }
+    } else {
+      if (py > targetY + 8 && vy >= -30) {
+        _flap(scene);
+      }
     }
   }
 
