@@ -166,7 +166,8 @@ document.addEventListener('DOMContentLoaded', function() {
     'chk-bot-2048':           'bot2048Enabled',
     'chk-bot-blaster':        'botBlasterEnabled',
     'chk-bot-cryptonoid':     'botCryptonoidEnabled',
-    'chk-bot-rocket':         'botRocketEnabled'
+    'chk-bot-rocket':         'botRocketEnabled',
+    'chk-bot-surfer':         'botSurferEnabled'
   };
 
   chrome.storage.local.get(Object.values(BOT_KEYS), function(data) {
