@@ -238,7 +238,9 @@
        *   → aimShift pozitif
        */
       var brickDelta = brickCenterX - ball.x;
-      var aimShift   = Math.max(-10, Math.min(10, -(brickDelta * 0.06)));
+      /* Blok kümesine göre topa açı ver (max 22px offset).
+         Bloklar sağdaysa aimShift negatif olur → raket sola kayar → top raketin SAĞINA çarpar ve SAĞA fırlatılır! */
+      var aimShift   = Math.max(-22, Math.min(22, -(brickDelta * 0.25)));
       targetX  = ball.x + aimShift;
 
     } else {
