@@ -1,0 +1,258 @@
+/* ══════════════════════════════════════════════════════════════════
+   RC Helper — Coin Flip (Hafıza Kartı) Akıllı Bot
+   Phaser scene.cards üzerinden tüm çiftleri önceden okur,
+   sıfır hata ile eşleştirir.
+   ══════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var _botActive      = false;
+  var _monitorId      = null;
+  var _patchedScene   = null;
+  var _originalUpdate = null;
+  var _pairMap        = {};   /* texture_key → [card1, card2] */
+  var _pairQueue      = [];   /* [{c1, c2}, ...] sırayla tıklanacaklar */
+  var _clickedFirst   = false;
+  var _waitUntil      = 0;
+  var _clickDelay     = 500;  /* İki kart arası ms */
+  var _pairDelay      = 900;  /* Çift tamamlandıktan sonra ms */
+
+  /* ── Oyun tespiti ── */
+  function _isGame() {
+    var cur = (document.body.getAttribute('data-rc-current-game') || '').toLowerCase();
+    if (cur.indexOf('coin-flip') !== -1 || cur.indexOf('coin flip') !== -1 || cur.indexOf('coinflip') !== -1) return true;
+    return false;
+  }
+
+  function _getCanvas() {
+    return document.querySelector('#phaserGame canvas') || document.querySelector('canvas');
+  }
+
+  /* ── Phaser game/scene bulucular ── */
+  function _findGame() {
+    var canvas = _getCanvas();
+    if (!canvas) return null;
+    var targets = [canvas];
+    var ph = document.getElementById('phaserGame');
+    if (ph) targets.push(ph);
+    for (var i = 0; i < targets.length; i++) {
+      var el = targets[i];
+      var keys = Object.keys(el);
+      for (var j = 0; j < keys.length; j++) {
+        if (keys[j].indexOf('__reactFiber$') === 0) {
+          var node = el[keys[j]];
+          while (node) {
+            if (node.stateNode && node.stateNode.game) return node.stateNode.game;
+            node = node.return;
+          }
+        }
+      }
+    }
+    if (window.game && window.game.scene) return window.game;
+    return null;
+  }
+
+  function _getActiveScene(game) {
+    if (!game || !game.scene || !game.scene.scenes) return null;
+    for (var i = 0; i < game.scene.scenes.length; i++) {
+      var s = game.scene.scenes[i];
+      if (s.sys && s.sys.settings && s.sys.settings.active && s.sys.settings.key === 'Game') return s;
+    }
+    for (var i2 = 0; i2 < game.scene.scenes.length; i2++) {
+      if (game.scene.scenes[i2].sys.settings.active) return game.scene.scenes[i2];
+    }
+    return null;
+  }
+
+  /* ── Kartları oku ve çiftleri eşleştir ── */
+  function _buildPairMap(scene) {
+    _pairMap  = {};
+    _pairQueue = [];
+
+    var cards = scene.cards;
+    if (!cards || !cards.length) return;
+
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      if (!card || !card.active) continue;
+      var key = card.texture ? String(card.texture.key).toLowerCase() : 'unknown_' + i;
+      if (!_pairMap[key]) _pairMap[key] = [];
+      _pairMap[key].push(card);
+    }
+
+    /* Çiftleri kuyruğa al */
+    for (var tex in _pairMap) {
+      var pair = _pairMap[tex];
+      if (pair.length >= 2) {
+        _pairQueue.push({ c1: pair[0], c2: pair[1] });
+      }
+    }
+
+    console.log('[RC-CoinFlip] 🃏 ' + _pairQueue.length + ' çift bulundu:', Object.keys(_pairMap));
+  }
+
+  /* ── Canvas'a tıklama ── */
+  function _clickCard(scene, card) {
+    var canvas = _getCanvas();
+    if (!canvas || !card || !card.active) return;
+
+    var camera = scene.cameras && scene.cameras.main;
+    var scrollX = camera ? camera.scrollX : 0;
+    var scrollY = camera ? camera.scrollY : 0;
+    var zoom    = camera ? camera.zoom : 1;
+    var offX    = camera ? (camera.x || 0) : 0;
+    var offY    = camera ? (camera.y || 0) : 0;
+
+    var canvasX = (card.x - scrollX) * zoom + offX;
+    var canvasY = (card.y - scrollY) * zoom + offY;
+
+    var rect   = canvas.getBoundingClientRect();
+    var scaleX = rect.width  / canvas.width;
+    var scaleY = rect.height / canvas.height;
+
+    var clientX = rect.left + canvasX * scaleX;
+    var clientY = rect.top  + canvasY * scaleY;
+
+    var opts = {
+      bubbles: true, cancelable: true, composed: true,
+      clientX: clientX, clientY: clientY,
+      button: 0, buttons: 1,
+      pointerId: 1, pointerType: 'mouse', isPrimary: true
+    };
+
+    try { canvas.dispatchEvent(new PointerEvent('pointermove',  opts)); } catch(e) {}
+    try { canvas.dispatchEvent(new PointerEvent('pointerdown',  opts)); } catch(e) {}
+    try { canvas.dispatchEvent(new PointerEvent('pointerup',    opts)); } catch(e) {}
+    canvas.dispatchEvent(new MouseEvent('mousedown', opts));
+    canvas.dispatchEvent(new MouseEvent('mouseup',   opts));
+    canvas.dispatchEvent(new MouseEvent('click',     opts));
+  }
+
+  /* ── Ana tick ── */
+  var _step = 0; /* 0=bekle, 1=ilk kart tıkla, 2=ikinci kart tıkla, 3=pair arası bekle */
+  var _curPair = null;
+
+  function _tickFrame(scene) {
+    if (!_botActive || !scene) return;
+    var now = Date.now();
+    if (now < _waitUntil) return;
+
+    /* Kart yoksa veya hepsi eşleşti ise çıkış */
+    if (!scene.cards || !scene.cards.length) return;
+
+    /* Sıra boşsa veya harita boşsa yeniden oku */
+    if (_pairQueue.length === 0) {
+      _buildPairMap(scene);
+      if (_pairQueue.length === 0) return;
+      _step = 0;
+    }
+
+    /* Oyun hâlâ animasyon yapıyorsa bekle (openedCard varsa ikinci tıklamayı yap) */
+    if (_step === 0) {
+      /* Kullanılmış / eşleşmiş çiftleri kuyruktan temizle */
+      _pairQueue = _pairQueue.filter(function(p) {
+        return p.c1.active && p.c2.active;
+      });
+      if (_pairQueue.length === 0) return;
+
+      _curPair = _pairQueue.shift();
+      _step = 1;
+    }
+
+    if (_step === 1) {
+      /* İlk kartı tıkla */
+      if (!_curPair.c1.active) { _step = 0; return; }
+      _clickCard(scene, _curPair.c1);
+      _waitUntil = now + _clickDelay;
+      _step = 2;
+      return;
+    }
+
+    if (_step === 2) {
+      /* İkinci kartı tıkla */
+      if (!_curPair.c2.active) { _step = 0; return; }
+      _clickCard(scene, _curPair.c2);
+      _waitUntil = now + _pairDelay;
+      _step = 0;
+      return;
+    }
+  }
+
+  /* ── Sahne yamalama ── */
+  function _unpatchScene() {
+    if (_patchedScene && _originalUpdate) {
+      try { _patchedScene.update = _originalUpdate; } catch(e) {}
+    }
+    _patchedScene   = null;
+    _originalUpdate = null;
+  }
+
+  function _patchScene(scene) {
+    if (!scene || _patchedScene === scene) return;
+    _unpatchScene();
+    _patchedScene   = scene;
+    _originalUpdate = scene.update || function () {};
+    scene.update = function (time, delta) {
+      try { _originalUpdate.call(scene, time, delta); } catch(e) {}
+      if (_botActive) _tickFrame(scene);
+    };
+    /* Çiftleri hemen oku */
+    _buildPairMap(scene);
+    _step      = 0;
+    _waitUntil = Date.now() + 800; /* Oyunun açılış animasyonu bitmesi için kısa bekleme */
+    console.log('[RC-CoinFlip] ✅ Sahne yamalandı');
+  }
+
+  function _monitor() {
+    if (!_botActive) return;
+    var game = _findGame();
+    if (!game) return;
+    var scene = _getActiveScene(game);
+    if (!scene) return;
+    if (_patchedScene !== scene) _patchScene(scene);
+  }
+
+  /* ── Başlat / Durdur ── */
+  function _start() {
+    if (_botActive) return;
+    _botActive  = true;
+    _pairMap    = {};
+    _pairQueue  = [];
+    _step       = 0;
+    _waitUntil  = 0;
+
+    try { document.body.setAttribute('data-rc-bot-coinflip-active', 'true'); } catch(e) {}
+    console.log('[RC-CoinFlip] ✅ Bot BAŞLADI');
+    if (window.updateRCStatus)        window.updateRCStatus('[RC] 🪙 Coin Flip Bot aktif');
+    if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
+
+    _monitorId = setInterval(_monitor, 500);
+    _monitor();
+  }
+
+  function _stop() {
+    if (!_botActive) return;
+    _botActive = false;
+    if (_monitorId) { clearInterval(_monitorId); _monitorId = null; }
+    _unpatchScene();
+
+    try { document.body.removeAttribute('data-rc-bot-coinflip-active'); } catch(e) {}
+    console.log('[RC-CoinFlip] 🛑 Bot DURDURULDU');
+    if (window.updateRCStatus)        window.updateRCStatus('[RC] 🪙 Coin Flip Bot durdu');
+    if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
+  }
+
+  /* ── Otomatik başlatma ── */
+  setInterval(function () {
+    var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botCoinFlipEnabled'] === false);
+    var active  = _isGame() && !!_getCanvas() && enabled;
+    if (active  && !_botActive) _start();
+    if (!active &&  _botActive) _stop();
+  }, 500);
+
+  window._rcCoinFlip = {
+    start:    _start,
+    stop:     _stop,
+    isActive: function () { return _botActive; }
+  };
+})();
