@@ -116,6 +116,7 @@ var RC_STRINGS = {
     bot_cryptonoid: 'Cryptonoid',
     bot_rocket: 'Flappy Rocket',
     bot_coinflip: 'Coin Flip',
+    bot_lambo: 'Lambo Rider',
 
     bot_active_badge: 'OYNUYOR',
   },
@@ -230,6 +231,7 @@ var RC_STRINGS = {
     bot_cryptonoid: 'Cryptonoid',
     bot_rocket: 'Flappy Rocket',
     bot_coinflip: 'Coin Flip',
+    bot_lambo: 'Lambo Rider',
 
     bot_active_badge: 'PLAYING',
   },

@@ -205,7 +205,7 @@ var mainTimer = null;
 var breakCheckTimer = null;
 
 try {
-  chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled', 'botBlasterEnabled', 'botCryptonoidEnabled', 'botRocketEnabled', 'botCoinFlipEnabled'], (data) => {
+  chrome.storage.local.get(['autoPlay', 'autoChoose', 'autoCollect', 'skippedGames', 'permanentSkippedGames', 'breakReminder', 'breakSessionMin', 'breakDurationMin', 'sessionGamesPlayed', 'sessionStartTime', 'sessionGameTimes', 'sessionBreakCycle', 'sessionIsOnBreak', 'sessionNextBreak', 'botFisherEnabled', 'botHamsterEnabled', 'bot2048Enabled', 'botBlasterEnabled', 'botCryptonoidEnabled', 'botRocketEnabled', 'botCoinFlipEnabled', 'botLamboEnabled'], (data) => {
     if (!data) data = {};
     window.autoCollect = data.autoCollect !== false;
     window.autoChoose  = data.autoChoose  !== false;
@@ -216,7 +216,8 @@ try {
       botBlasterEnabled:       data.botBlasterEnabled       !== false,
       botCryptonoidEnabled:    data.botCryptonoidEnabled    !== false,
       botRocketEnabled:        data.botRocketEnabled        !== false,
-      botCoinFlipEnabled:      data.botCoinFlipEnabled      !== false
+      botCoinFlipEnabled:      data.botCoinFlipEnabled      !== false,
+      botLamboEnabled:         data.botLamboEnabled         !== false
     };
     try {
       document.body.setAttribute('data-rc-bot-2048-enabled', (data.bot2048Enabled !== false) ? 'true' : 'false');
@@ -224,6 +225,7 @@ try {
       document.body.setAttribute('data-rc-bot-cryptonoid-enabled', (data.botCryptonoidEnabled !== false) ? 'true' : 'false');
       document.body.setAttribute('data-rc-bot-rocket-enabled',    (data.botRocketEnabled    !== false) ? 'true' : 'false');
       document.body.setAttribute('data-rc-bot-coinflip-enabled',  (data.botCoinFlipEnabled  !== false) ? 'true' : 'false');
+      document.body.setAttribute('data-rc-bot-lambo-enabled',     (data.botLamboEnabled     !== false) ? 'true' : 'false');
     } catch(e) {}
     window.breakReminderEnabled = data.breakReminder !== false;
     if (data.breakSessionMin)  window.breakSessionMinutes  = parseFloat(data.breakSessionMin);
@@ -1529,6 +1531,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (msg.bot === 'botCoinFlipEnabled') {
         document.body.setAttribute('data-rc-bot-coinflip-enabled', msg.enabled ? 'true' : 'false');
       }
+      if (msg.bot === 'botLamboEnabled') {
+        document.body.setAttribute('data-rc-bot-lambo-enabled', msg.enabled ? 'true' : 'false');
+      }
 
     } catch(e) {}
     /* Bot'u direkt durdur/başlat */
@@ -1539,6 +1544,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.bot === 'botCryptonoidEnabled'    && window._rcCryptonoid)    { if (!msg.enabled) window._rcCryptonoid.stop(); }
     if (msg.bot === 'botRocketEnabled'        && window._rcFlappyRocket)  { if (!msg.enabled) window._rcFlappyRocket.stop(); }
     if (msg.bot === 'botCoinFlipEnabled'      && window._rcCoinFlip)      { if (!msg.enabled) window._rcCoinFlip.stop(); }
+    if (msg.bot === 'botLamboEnabled'         && window._rcLamboRider)    { if (!msg.enabled) window._rcLamboRider.stop(); }
 
     sendResponse({ ok: true });
     return true;
