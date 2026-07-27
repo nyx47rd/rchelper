@@ -60,6 +60,10 @@
     return false;
   }
 
+  function _getCanvas() {
+    return (state.game && state.game.canvas) || document.querySelector('#phaserGame canvas') || document.querySelector('canvas');
+  }
+
   /* ======================= PHASER GAME / SCENE BULMA ======================= */
   function _findGame() {
     var i, k, g;
