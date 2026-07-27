@@ -1,30 +1,27 @@
 /* ══════════════════════════════════════════════════════════════════
-   RC Helper — Token Surfer Auto-Bot
-   Yalnızca /game/play_game sayfasına inject edilir (manifest.json)
-   Tetikleyici: Token Surfer oyunu açıldığında otomatik başlar
-   Mekanik: Yaklaşan engelleri (garbageCart, trafficLights, dove) tespit edip scene.jump() tetikler
-   ══════════════════════════════════════════════════════════════════ */
+ R C* Helper — Token Surfer Akıllı Bot (Engel + Boşluk Algılama)
+ Manuel başlatılır: window._rcTokenSurfer.start()
+ Mekanik: Yaklaşan engelleri ve platform boşluklarını tespit edip zıplar.
+ ══════════════════════════════════════════════════════════════════ */
 (function () {
+  'use strict';
+
   var _botActive       = false;
   var _monitorId       = null;
-  var _rafId           = null;
   var _patchedScene    = null;
   var _originalUpdate  = null;
   var _lastJumpTime    = 0;
-  var _jumpCooldownMs = 450; /* Zıplamalar arası bekleme */
+  var _jumpCooldownMs  = 350; /* Zıplamalar arası bekleme */
 
   function _isGame() {
     var curGame = (document.body.getAttribute('data-rc-current-game') || '').toLowerCase();
-    if (curGame.includes('token surfer') || curGame.includes('tokensurfer') || curGame.includes('snow ride')) {
+    if (curGame.indexOf('token surfer') !== -1 || curGame.indexOf('tokensurfer') !== -1 || curGame.indexOf('snow ride') !== -1) {
       return true;
     }
-    var sources = [
-      document.title || '',
-      window.location.href || ''
-    ];
+    var sources = [document.title || '', window.location.href || ''];
     return sources.some(function(s) {
       var n = s.toLowerCase();
-      return n.includes('token surfer') || n.includes('tokensurfer') || n.includes('snow ride');
+      return n.indexOf('token surfer') !== -1 || n.indexOf('tokensurfer') !== -1 || n.indexOf('snow ride') !== -1;
     });
   }
 
@@ -35,107 +32,162 @@
   function _findGame() {
     var canvas = _getCanvas();
     if (!canvas) return null;
-    var reactKey = Object.keys(canvas).find(function (k) { return k.startsWith('__reactFiber$'); }) ||
-                   (document.getElementById('phaserGame') && Object.keys(document.getElementById('phaserGame')).find(function (k) { return k.startsWith('__reactFiber$'); }));
-    if (!reactKey) return null;
-    var node = canvas[reactKey] || (document.getElementById('phaserGame') && document.getElementById('phaserGame')[reactKey]);
-    while (node) {
-      if (node.stateNode && node.stateNode.game) return node.stateNode.game;
-      node = node.return;
+
+    var targets = [canvas];
+    var ph = document.getElementById('phaserGame');
+    if (ph) targets.push(ph);
+
+    for (var i = 0; i < targets.length; i++) {
+      var el = targets[i];
+      var keys = Object.keys(el);
+      for (var j = 0; j < keys.length; j++) {
+        if (keys[j].indexOf('__reactFiber$') === 0) {
+          var node = el[keys[j]];
+          while (node) {
+            if (node.stateNode && node.stateNode.game) return node.stateNode.game;
+            node = node.return;
+          }
+        }
+      }
     }
     return null;
   }
 
   function _getActiveScene(game) {
     if (!game || !game.scene || !game.scene.scenes) return null;
-    return game.scene.scenes.find(function (s) {
-      return s.sys && s.sys.settings && s.sys.settings.active && s.sys.settings.key === 'Game';
-    }) || null;
+    for (var i = 0; i < game.scene.scenes.length; i++) {
+      var s = game.scene.scenes[i];
+      if (s.sys && s.sys.settings && s.sys.settings.active && s.sys.settings.key === 'Game') {
+        return s;
+      }
+    }
+    for (var i2 = 0; i2 < game.scene.scenes.length; i2++) {
+      if (game.scene.scenes[i2].sys.settings.active) return game.scene.scenes[i2];
+    }
+    return null;
   }
 
-  function _triggerJump(scene) {
+  function _triggerJump(scene, player) {
     var now = Date.now();
     if (now - _lastJumpTime < _jumpCooldownMs) return;
     _lastJumpTime = now;
 
-    console.log('[RC-TokenSurfer] 🦘 Zıplama tetikleniyor...');
+    // 1. Yöntem: Oyunun kendi zıplama fonksiyonu
+    if (typeof scene.jump === 'function') {
+      try { scene.jump(); return; } catch(e) {}
+    }
 
-    /* 1. Öncelik: Doğrudan scene.jump() metodunu çağır */
-    try {
-      if (typeof scene.jump === 'function') {
-        scene.jump();
+    // 2. Yöntem: Doğrudan fizik müdahalesi (Fallback)
+    if (player && player.body) {
+      try {
+        player.body.setVelocityY(-550);
+        if (scene.sound && typeof scene.sound.play === 'function') {
+          scene.sound.play('jump');
+        }
         return;
-      }
-    } catch(e) {}
+      } catch(e) {}
+    }
 
-    /* 2. Öncelik: Keyboard Space / ArrowUp olayları gönder */
+    // 3. Yöntem: Klavye simülasyonu
     var opts = { bubbles: true, cancelable: true, keyCode: 32, which: 32, key: ' ', code: 'Space' };
-    [window, document, _getCanvas()].forEach(function(t) {
+    var upOpts = { bubbles: true, cancelable: true, keyCode: 38, which: 38, key: 'ArrowUp', code: 'ArrowUp' };
+    var targets = [window, document, _getCanvas()];
+    targets.forEach(function(t) {
       if (t) {
         try { t.dispatchEvent(new KeyboardEvent('keydown', opts)); } catch(e) {}
-        try { t.dispatchEvent(new KeyboardEvent('keyup',   opts)); } catch(e) {}
-      }
-    });
-
-    var upOpts = { bubbles: true, cancelable: true, keyCode: 38, which: 38, key: 'ArrowUp', code: 'ArrowUp' };
-    [window, document, _getCanvas()].forEach(function(t) {
-      if (t) {
+        try { t.dispatchEvent(new KeyboardEvent('keyup', opts)); } catch(e) {}
         try { t.dispatchEvent(new KeyboardEvent('keydown', upOpts)); } catch(e) {}
-        try { t.dispatchEvent(new KeyboardEvent('keyup',   upOpts)); } catch(e) {}
+        try { t.dispatchEvent(new KeyboardEvent('keyup', upOpts)); } catch(e) {}
       }
     });
   }
 
-  /* ─── Ana Karar Döngüsü (60 FPS) ────────────────────────────── */
   function _tickFrame(scene) {
     if (!_botActive || !scene) return;
 
     var player = scene.player || scene.hamster || scene.surfer;
     if (!player && scene.children && scene.children.list) {
-      player = scene.children.list.find(function (c) {
-        return c.active && c.visible && c.texture && String(c.texture.key).toLowerCase().includes('hamster');
-      });
+      for (var i = 0; i < scene.children.list.length; i++) {
+        var c = scene.children.list[i];
+        if (c.active && c.visible && c.texture) {
+          var k = String(c.texture.key).toLowerCase();
+          if (k.indexOf('hamster') !== -1 || k.indexOf('player') !== -1 || k.indexOf('surfer') !== -1) {
+            player = c;
+            break;
+          }
+        }
+      }
     }
-
     if (!player) return;
 
     var px = player.x || 130;
     var py = player.y || 540;
 
-    /* Yaklaşan engelleri topla */
+    // Yerde mi? body yoksa Y pozisyonuna göre tahmin et
+    var isOnGround = true;
+    if (player.body) {
+      var vel = player.body.velocity ? player.body.velocity.y : 0;
+      // Hız yukarı doğru yüksekse (zaten zıpladı) veya düşüyor ise zıplama
+      isOnGround = !(vel < -50);
+    }
+
     var list = (scene.children && scene.children.list) || [];
-    var obstacles = list.filter(function (c) {
-      if (!c || !c.active || !c.visible) return false;
-      var k = c.texture ? String(c.texture.key).toLowerCase() : '';
-      if (!k || k === 'btc' || k === 'doge' || k === 'score' || k === 'lives' || k === 'time' || k === 'hamster' || k === 'snow') {
-        return false;
+    var obstacles = [];
+
+    for (var j = 0; j < list.length; j++) {
+      var obj = list[j];
+      if (!obj || !obj.active || !obj.visible || obj === player) continue;
+
+      var key = obj.texture ? String(obj.texture.key).toLowerCase() : '';
+
+      // Coin ve UI filtrele
+      if (key.indexOf('btc') !== -1 || key.indexOf('doge') !== -1 || key.indexOf('eth') !== -1 ||
+        key.indexOf('coin') !== -1 || key.indexOf('score') !== -1 || key.indexOf('lives') !== -1 ||
+        key.indexOf('time') !== -1 || key.indexOf('bg') !== -1 || key.indexOf('snow') !== -1 ||
+        key.indexOf('hamster') !== -1 || key === '' || key === 'null') {
+        continue;
       }
-      /* Oyuncunun önündeki engeller */
-      return c.x > px - 30 && c.x < px + 280;
-    });
+
+      // Engel tespiti
+      var isObstacle = key.indexOf('cart') !== -1 || key.indexOf('light') !== -1 || key.indexOf('dove') !== -1 ||
+        key.indexOf('rock') !== -1 || key.indexOf('tree') !== -1 || key.indexOf('cone') !== -1 ||
+        key.indexOf('barrier') !== -1 || key.indexOf('fence') !== -1 || key.indexOf('cactus') !== -1 ||
+        key.indexOf('obstacle') !== -1 || key.indexOf('garbage') !== -1 || key.indexOf('traffic') !== -1;
+
+      if (isObstacle) {
+        // Oyuncunun önünde mi?
+        if (obj.x > px - 20 && obj.x < px + 280) {
+          obstacles.push(obj);
+        }
+      }
+    }
+
+    if (!isOnGround) return; // Havada iken zıplama
 
     if (obstacles.length > 0) {
-      /* En yakın engeli sırala */
       obstacles.sort(function (a, b) { return a.x - b.x; });
-      var closest = obstacles[0];
-      var dist = closest.x - px;
+      var closestObs = obstacles[0];
+      var distObs = closestObs.x - px;
 
-      /* Engel zıplama mesafesinde mi? (50px - 210px arası) */
-      if (dist > 40 && dist < 210) {
-        _triggerJump(scene);
+      if (distObs > 30 && distObs < 230) {
+        _triggerJump(scene, player);
       }
     }
   }
 
-  /* ─── Sahne Yamalama ────────────────────────────────────────── */
-  function _patchScene(scene) {
-    if (!scene || _patchedScene === scene) return;
-
+  function _unpatchScene() {
     if (_patchedScene && _originalUpdate) {
       try { _patchedScene.update = _originalUpdate; } catch(e) {}
     }
+    _patchedScene = null;
+    _originalUpdate = null;
+  }
 
-    _patchedScene   = scene;
+  function _patchScene(scene) {
+    if (!scene || _patchedScene === scene) return;
+    _unpatchScene();
+
+    _patchedScene = scene;
     _originalUpdate = scene.update || function () {};
 
     scene.update = function (time, delta) {
@@ -146,22 +198,13 @@
     console.log('[RC-TokenSurfer] ✅ Phaser scene.update yamalandı');
   }
 
-  function _rafLoop() {
-    if (!_botActive) return;
-    if (_patchedScene) {
-      _tickFrame(_patchedScene);
-    }
-    _rafId = requestAnimationFrame(_rafLoop);
-  }
-
   function _monitor() {
+    if (!_botActive) return;
     var game = _findGame();
     if (!game) return;
     var scene = _getActiveScene(game);
     if (!scene) return;
-    if (_patchedScene !== scene) {
-      _patchScene(scene);
-    }
+    if (_patchedScene !== scene) _patchScene(scene);
   }
 
   function _start() {
@@ -171,31 +214,26 @@
 
     try { document.body.setAttribute('data-rc-bot-surfer-active', 'true'); } catch (e) {}
     console.log('[RC-TokenSurfer] ✅ Bot BAŞLADI');
-    if (window.updateRCStatus)          window.updateRCStatus('[RC] 🏄 Token Surfer Bot aktif');
+    if (window.updateRCStatus) window.updateRCStatus('[RC] 🏄 Token Surfer Bot aktif');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
 
     _monitorId = setInterval(_monitor, 500);
     _monitor();
-    _rafId = requestAnimationFrame(_rafLoop);
   }
 
   function _stop() {
     if (!_botActive) return;
     _botActive = false;
-    if (_monitorId) clearInterval(_monitorId);
-    if (_rafId) cancelAnimationFrame(_rafId);
-
-    if (_patchedScene && _originalUpdate) {
-      try { _patchedScene.update = _originalUpdate; } catch (e) {}
-      _patchedScene = null;
-    }
+    if (_monitorId) { clearInterval(_monitorId); _monitorId = null; }
+    _unpatchScene();
 
     try { document.body.removeAttribute('data-rc-bot-surfer-active'); } catch (e) {}
     console.log('[RC-TokenSurfer] 🛑 Bot DURDURULDU');
-    if (window.updateRCStatus)          window.updateRCStatus('[RC] Bot durduruldu');
+    if (window.updateRCStatus) window.updateRCStatus('[RC] 🏄 Token Surfer Bot durdu');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
   }
 
+  /* Otomatik başlatma/durdurma */
   setInterval(function () {
     var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botSurferEnabled'] === false);
     var active = _isGame() && !!_getCanvas() && enabled;
