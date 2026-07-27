@@ -167,8 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
     'chk-bot-blaster':        'botBlasterEnabled',
     'chk-bot-cryptonoid':     'botCryptonoidEnabled',
     'chk-bot-rocket':         'botRocketEnabled',
-    'chk-bot-coinflip':       'botCoinFlipEnabled',
-    'chk-bot-lambo':          'botLamboEnabled'
+    'chk-bot-coinflip':       'botCoinFlipEnabled'
   };
 
   chrome.storage.local.get(Object.values(BOT_KEYS), function(data) {
