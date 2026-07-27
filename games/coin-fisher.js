@@ -274,9 +274,17 @@
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
   }
 
+  /* Otomatik başlatma/durdurma — oyun açıldığında başlar */
+  setInterval(function () {
+    var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botFisherEnabled'] === false);
+    var active = _isCoinFisher() && !!_getCanvas() && enabled;
+    if (active && !_cfBotActive)  _cfStart();
+    if (!active && _cfBotActive)  _cfStop();
+  }, 500);
+
   window._rcCoinFisher = {
     start:    _cfStart,
- stop:     _cfStop,
- isActive: function () { return _cfBotActive; }
+    stop:     _cfStop,
+    isActive: function () { return _cfBotActive; }
   };
 })();

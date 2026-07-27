@@ -403,12 +403,8 @@
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
   }
 
-  document.addEventListener('fullscreenchange', function () {
-    if (document.fullscreenElement && _isGame()) _start();
-    else if (!document.fullscreenElement) _stop();
-  });
 
-    setInterval(function () {
+  setInterval(function () {
       var enabled = document.body.getAttribute('data-rc-bot-cryptonoid-enabled') !== 'false';
       var shouldRun = _isOnPlayPage() && _isGame() && !!_getCanvas() && enabled;
       if (shouldRun && !_botActive) _start();

@@ -138,11 +138,7 @@
     return window.location.href.includes('/play_game');
   }
 
-  /* Fullscreen API'yi de dinle (bazı tarayıcılarda çalışır) */
-  document.addEventListener('fullscreenchange', function () {
-    if (!!document.fullscreenElement && _isGame()) _start();
-    else if (!document.fullscreenElement) _stop();
-  });
+
 
   /* Ana tetikleyici: sayfa ve canvas hazır olduğunda başlat */
   setInterval(function () {

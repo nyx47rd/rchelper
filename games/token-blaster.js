@@ -304,12 +304,8 @@
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
   }
 
-  document.addEventListener('fullscreenchange', function () {
-    if (!!document.fullscreenElement && _isGame()) _start();
-    else if (!document.fullscreenElement) _stop();
-  });
 
-    setInterval(function () {
+  setInterval(function () {
       var enabled = document.body.getAttribute('data-rc-bot-blaster-enabled') !== 'false';
       var active = _isOnPlayPage() && _isGame() && !!_getCanvas() && enabled;
       if (active && !_botActive)  _start();
