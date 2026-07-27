@@ -122,63 +122,59 @@
     console.log('[RC-CoinFlip] 🃏 ' + _pairQueue.length + ' çift bulundu:', Object.keys(_pairMap));
   }
 
-  /* ── Karta tıkla — Phaser input → canvas fallback ── */
+  /* ── Karta tıkla: Phaser pointer pipeline'ını simüle et ── */
   function _clickCard(scene, card) {
     if (!card || !card.active) return;
 
-    /* 1. Yöntem: Phaser'ın kendi input event sistemi */
+    /* Yöntem 1: Phaser'ın activePointer'ını karta konumlandır ve input pipeline'ı tetikle */
     try {
-      var pointer = scene.input && scene.input.activePointer;
-      if (pointer) {
-        pointer.x = card.x;
-        pointer.y = card.y;
-      }
-      if (card.input) {
-        card.emit('pointerdown', pointer, scene.cameras.main, card);
-        card.emit('pointerup',   pointer, scene.cameras.main, card);
-        return;
+      var inp = scene.input;
+      var ptr = inp && inp.activePointer;
+      if (ptr && inp) {
+        /* Pointer'ı kart merkezine taşı */
+        ptr.x       = card.x;
+        ptr.y       = card.y;
+        ptr.worldX  = card.x;
+        ptr.worldY  = card.y;
+        ptr.downX   = card.x;
+        ptr.downY   = card.y;
+        ptr.isDown  = true;
+        ptr.button  = 0;
+
+        /* Kartın input handler'larını direkt çağır */
+        if (card.input) {
+          inp.emit('gameobjectdown', ptr, card, ptr);
+          card.emit('pointerdown',   ptr, card.x, card.y, ptr);
+          ptr.isDown = false;
+          inp.emit('gameobjectup',   ptr, card, ptr);
+          card.emit('pointerup',     ptr, card.x, card.y, ptr);
+          return;
+        }
       }
     } catch(e) {}
 
-    /* 2. Yöntem: scene.input.emit */
+    /* Yöntem 2: Ham canvas olayı */
     try {
-      var ptr2 = scene.input && scene.input.activePointer;
-      scene.input.emit('gameobjectdown', ptr2, card);
-      scene.input.emit('gameobjectup',   ptr2, card);
-      return;
+      var canvas = _getCanvas();
+      if (!canvas) return;
+      var camera = scene.cameras && scene.cameras.main;
+      var zoom   = camera ? camera.zoom : 1;
+      var cX     = card.x * zoom;
+      var cY     = card.y * zoom;
+      var rect   = canvas.getBoundingClientRect();
+      var sx     = rect.width  / canvas.width;
+      var sy     = rect.height / canvas.height;
+      var opts   = {
+        bubbles: true, cancelable: true, composed: true,
+        clientX: rect.left + cX * sx,
+        clientY: rect.top  + cY * sy,
+        button: 0, buttons: 1,
+        pointerId: 1, pointerType: 'mouse', isPrimary: true
+      };
+      canvas.dispatchEvent(new PointerEvent('pointermove',  opts));
+      canvas.dispatchEvent(new PointerEvent('pointerdown',  opts));
+      canvas.dispatchEvent(new PointerEvent('pointerup',    opts));
     } catch(e) {}
-
-    /* 3. Yöntem: Canvas pointer events */
-    var canvas = _getCanvas();
-    if (!canvas) return;
-
-    var camera = scene.cameras && scene.cameras.main;
-    var scrollX = camera ? camera.scrollX : 0;
-    var scrollY = camera ? camera.scrollY : 0;
-    var zoom    = camera ? camera.zoom : 1;
-    var offX    = camera ? (camera.x || 0) : 0;
-    var offY    = camera ? (camera.y || 0) : 0;
-
-    var canvasX = (card.x - scrollX) * zoom + offX;
-    var canvasY = (card.y - scrollY) * zoom + offY;
-
-    var rect   = canvas.getBoundingClientRect();
-    var scaleX = rect.width  / canvas.width;
-    var scaleY = rect.height / canvas.height;
-    var clientX = rect.left + canvasX * scaleX;
-    var clientY = rect.top  + canvasY * scaleY;
-
-    var opts = {
-      bubbles: true, cancelable: true, composed: true,
-      clientX: clientX, clientY: clientY,
-      button: 0, buttons: 1,
-      pointerId: 1, pointerType: 'mouse', isPrimary: true
-    };
-
-    try { canvas.dispatchEvent(new PointerEvent('pointermove',  opts)); } catch(e) {}
-    try { canvas.dispatchEvent(new PointerEvent('pointerdown',  opts)); } catch(e) {}
-    try { canvas.dispatchEvent(new PointerEvent('pointerup',    opts)); } catch(e) {}
-    canvas.dispatchEvent(new MouseEvent('click', opts));
   }
 
   /* ── Ana tick ── */
@@ -190,10 +186,7 @@
     var now = Date.now();
     if (now < _waitUntil) return;
 
-    /* Kart yoksa veya hepsi eşleşti ise çıkış */
-    if (!scene.cards || !scene.cards.length) return;
-
-    /* Sıra boşsa veya harita boşsa yeniden oku */
+    /* Sıra boşsa yeniden oku (cards.length yerine _pairQueue'yu esas al) */
     if (_pairQueue.length === 0) {
       _buildPairMap(scene);
       if (_pairQueue.length === 0) return;
