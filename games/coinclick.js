@@ -392,18 +392,17 @@
   /* ======================= 3) START / STOP ======================= */
   function _start() {
     if (state.running) return true;
-
-    _acquire();
-    if (!state.game || !state.scene) {
-      _log('game/scene henüz bulunamadı, bir sonraki tespitte tekrar denenecek');
-      return false;
-    }
-
     state.running = true;
     state.clicked = new WeakMap();
     state.lastClickAt = 0;
-    _startFallbackScan();
+
+    try { document.body.setAttribute('data-rc-bot-coinclick-active', 'true'); } catch (e) {}
     _log('BOT BAŞLADI');
+    if (window.updateRCStatus) window.updateRCStatus('[RC] 🎯 Coin Click Bot aktif');
+    if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
+
+    _acquire();
+    _startFallbackScan();
     return true;
   }
 
@@ -414,7 +413,11 @@
     _stopFallbackScan();
     state.scene = null;
     state.game = null;
+
+    try { document.body.removeAttribute('data-rc-bot-coinclick-active'); } catch (e) {}
     _log('BOT DURDURULDU');
+    if (window.updateRCStatus) window.updateRCStatus('[RC] 🎯 Coin Click Bot durdu');
+    if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
   }
 
   /* ======================= 7) DIŞA AKTARMA ======================= */
@@ -425,15 +428,12 @@
   };
 
   /* ======================= OTOMATİK BAŞLATMA DÖNGÜSÜ ======================= */
-  state.detectorTimer = setInterval(function () {
+  setInterval(function () {
     var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botCoinClickEnabled'] === false);
-    var inGame = _isGame() && enabled;
-    if (inGame && !state.running) {
-      _start();
-    } else if (!inGame && state.running) {
-      _stop();
-    }
-  }, CONFIG.detectorIntervalMs);
+    var active = _isGame() && !!_getCanvas() && enabled;
+    if (active && !state.running)  _start();
+    if (!active && state.running)  _stop();
+  }, 500);
 
   _log('modül yüklendi, dedektör aktif');
 })();
