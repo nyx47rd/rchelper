@@ -198,58 +198,68 @@
   /* ======================= 5) TIKLAMA MEKANİZMASI ======================= */
   function _clickItem(scene, item) {
     var input = scene.input;
-    if (!input) return;
 
-    // Gerçek aktif pointer'ı kullan; yoksa minimal sahte pointer
-    var pointer = input.activePointer || {
-      x: 0, y: 0, worldX: 0, worldY: 0,
-      isDown: false, buttons: 0, button: 0,
-      primaryDown: false, wasTouch: false
-    };
-
-    // Kamera düzeltmesi (scroll/zoom varsa worldX/worldY doğru kalsın)
-    var wx = item.x, wy = item.y;
-    try {
-      var cam = scene.cameras && scene.cameras.main;
-      if (cam) {
-        wx = cam.scrollX + (item.x - cam.x) / (cam.zoom || 1);
-        wy = cam.scrollY + (item.y - cam.y) / (cam.zoom || 1);
-      }
-    } catch (e) {}
-
-    try {
-      pointer.x = item.x;
-      pointer.y = item.y;
-      pointer.worldX = wx;
-      pointer.worldY = wy;
-
-      // ---- POINTER DOWN ----
-      pointer.isDown = true;
-      pointer.primaryDown = true;
-      pointer.buttons = 1;
-
-      input.emit('gameobjectdown', pointer, item, pointer);
-      if (item.emit) item.emit('pointerdown', pointer, item.x, item.y, pointer);
-
-      // ---- POINTER UP ----
-      pointer.isDown = false;
-      pointer.primaryDown = false;
-      pointer.buttons = 0;
-
-      input.emit('gameobjectup', pointer, item, pointer);
-      if (item.emit) item.emit('pointerup', pointer, item.x, item.y, pointer);
-    } catch (e) {
-      _log('emit hatası:', e);
+    // 1. Oyunun kendi tıklama dinleyicisi varsa (listenerClickMouse)
+    if (scene && typeof scene.listenerClickMouse === 'function') {
+      try {
+        var ptr = (input && input.activePointer) || { x: item.x, y: item.y };
+        scene.listenerClickMouse(ptr, item);
+      } catch (e) {}
+      try { scene.listenerClickMouse(item); } catch (e) {}
     }
 
-    // ---- FALLBACK: Canvas PointerEvent ----
+    if (input) {
+      var pointer = input.activePointer || {
+        x: item.x, y: item.y, worldX: item.x, worldY: item.y,
+        isDown: false, buttons: 0, button: 0,
+        primaryDown: false, wasTouch: false
+      };
+
+      var wx = item.x, wy = item.y;
+      try {
+        var cam = scene.cameras && scene.cameras.main;
+        if (cam) {
+          wx = cam.scrollX + (item.x - cam.x) / (cam.zoom || 1);
+          wy = cam.scrollY + (item.y - cam.y) / (cam.zoom || 1);
+        }
+      } catch (e) {}
+
+      try {
+        pointer.x = item.x;
+        pointer.y = item.y;
+        pointer.worldX = wx;
+        pointer.worldY = wy;
+
+        // POINTER DOWN
+        pointer.isDown = true;
+        pointer.primaryDown = true;
+        pointer.buttons = 1;
+
+        input.emit('gameobjectdown', pointer, item, pointer);
+        if (item.emit) item.emit('pointerdown', pointer, item.x, item.y, pointer);
+
+        // POINTER UP
+        pointer.isDown = false;
+        pointer.primaryDown = false;
+        pointer.buttons = 0;
+
+        input.emit('gameobjectup', pointer, item, pointer);
+        if (item.emit) item.emit('pointerup', pointer, item.x, item.y, pointer);
+      } catch (e) {
+        _log('emit hatası:', e);
+      }
+    }
+
+    // Canvas Pointer & Mouse Events Fallback
     _dispatchCanvasPointer(scene, item);
   }
 
   function _dispatchCanvasPointer(scene, item) {
     try {
-      var canvas = (scene.sys && scene.sys.game && scene.sys.game.canvas) ||
-                   (state.game && state.game.canvas);
+      var canvas = (scene && scene.sys && scene.sys.game && scene.sys.game.canvas) ||
+                   (state.game && state.game.canvas) ||
+                   document.querySelector('#phaserGame canvas') ||
+                   document.querySelector('canvas');
       if (!canvas || !canvas.dispatchEvent) return;
 
       var rect = canvas.getBoundingClientRect();
@@ -267,15 +277,19 @@
         button: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true
       };
 
+      var moveOpts = _extend(base, { buttons: 0 });
       var downOpts = _extend(base, { buttons: 1 });
-      var upOpts = _extend(base, { buttons: 0 });
+      var upOpts   = _extend(base, { buttons: 0 });
 
       if (typeof window.PointerEvent === 'function') {
+        canvas.dispatchEvent(new PointerEvent('pointermove', moveOpts));
         canvas.dispatchEvent(new PointerEvent('pointerdown', downOpts));
         canvas.dispatchEvent(new PointerEvent('pointerup', upOpts));
       }
+      canvas.dispatchEvent(new MouseEvent('mousemove', moveOpts));
       canvas.dispatchEvent(new MouseEvent('mousedown', downOpts));
       canvas.dispatchEvent(new MouseEvent('mouseup', upOpts));
+      canvas.dispatchEvent(new MouseEvent('click', upOpts));
     } catch (e) {
       _log('canvas fallback hatası:', e);
     }
