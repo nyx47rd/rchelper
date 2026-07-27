@@ -115,7 +115,7 @@ var RC_STRINGS = {
     bot_blaster: 'Token Blaster',
     bot_cryptonoid: 'Cryptonoid',
     bot_rocket: 'Flappy Rocket',
-    bot_surfer: 'Token Surfer',
+
     bot_active_badge: 'OYNUYOR',
   },
   en: {
@@ -228,7 +228,7 @@ var RC_STRINGS = {
     bot_blaster: 'Token Blaster',
     bot_cryptonoid: 'Cryptonoid',
     bot_rocket: 'Flappy Rocket',
-    bot_surfer: 'Token Surfer',
+
     bot_active_badge: 'PLAYING',
   },
 };
