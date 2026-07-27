@@ -21,6 +21,12 @@
   function _isGame() {
     var cur = (document.body.getAttribute('data-rc-current-game') || '').toLowerCase();
     if (cur.indexOf('coin-flip') !== -1 || cur.indexOf('coin flip') !== -1 || cur.indexOf('coinflip') !== -1) return true;
+    /* URL / title fallback */
+    var href = window.location.href.toLowerCase();
+    var title = document.title.toLowerCase();
+    if (href.indexOf('/play_game') !== -1) {
+      if (title.indexOf('coin flip') !== -1 || title.indexOf('coin-flip') !== -1) return true;
+    }
     return false;
   }
 
@@ -65,15 +71,40 @@
   }
 
   /* ── Kartları oku ve çiftleri eşleştir ── */
+  function _getCardList(scene) {
+    var cards = scene.cards;
+    if (!cards) return [];
+    /* Phaser Group */
+    if (typeof cards.getChildren === 'function') return cards.getChildren();
+    /* Phaser Group via .children.entries */
+    if (cards.children && Array.isArray(cards.children.entries)) return cards.children.entries;
+    /* Plain array */
+    if (Array.isArray(cards)) return cards;
+    return [];
+  }
+
   function _buildPairMap(scene) {
     _pairMap  = {};
     _pairQueue = [];
 
-    var cards = scene.cards;
-    if (!cards || !cards.length) return;
+    var list = _getCardList(scene);
 
-    for (var i = 0; i < cards.length; i++) {
-      var card = cards[i];
+    /* Fallback: children.list içinden de ara */
+    if (!list.length && scene.children && scene.children.list) {
+      list = scene.children.list.filter(function(c) {
+        if (!c || !c.texture || !c.input) return false;
+        var k = String(c.texture.key).toLowerCase();
+        return k !== 'null' && k !== '' && k.indexOf('shell') === -1 &&
+               k.indexOf('header') === -1 && k.indexOf('score') === -1 &&
+               k.indexOf('time') === -1 && k.indexOf('main') === -1 &&
+               k.indexOf('bg') === -1;
+      });
+    }
+
+    if (!list.length) { console.log('[RC-CoinFlip] ⚠️ Kart listesi boş!'); return; }
+
+    for (var i = 0; i < list.length; i++) {
+      var card = list[i];
       if (!card || !card.active) continue;
       var key = card.texture ? String(card.texture.key).toLowerCase() : 'unknown_' + i;
       if (!_pairMap[key]) _pairMap[key] = [];
@@ -91,10 +122,35 @@
     console.log('[RC-CoinFlip] 🃏 ' + _pairQueue.length + ' çift bulundu:', Object.keys(_pairMap));
   }
 
-  /* ── Canvas'a tıklama ── */
+  /* ── Karta tıkla — Phaser input → canvas fallback ── */
   function _clickCard(scene, card) {
+    if (!card || !card.active) return;
+
+    /* 1. Yöntem: Phaser'ın kendi input event sistemi */
+    try {
+      var pointer = scene.input && scene.input.activePointer;
+      if (pointer) {
+        pointer.x = card.x;
+        pointer.y = card.y;
+      }
+      if (card.input) {
+        card.emit('pointerdown', pointer, scene.cameras.main, card);
+        card.emit('pointerup',   pointer, scene.cameras.main, card);
+        return;
+      }
+    } catch(e) {}
+
+    /* 2. Yöntem: scene.input.emit */
+    try {
+      var ptr2 = scene.input && scene.input.activePointer;
+      scene.input.emit('gameobjectdown', ptr2, card);
+      scene.input.emit('gameobjectup',   ptr2, card);
+      return;
+    } catch(e) {}
+
+    /* 3. Yöntem: Canvas pointer events */
     var canvas = _getCanvas();
-    if (!canvas || !card || !card.active) return;
+    if (!canvas) return;
 
     var camera = scene.cameras && scene.cameras.main;
     var scrollX = camera ? camera.scrollX : 0;
@@ -109,7 +165,6 @@
     var rect   = canvas.getBoundingClientRect();
     var scaleX = rect.width  / canvas.width;
     var scaleY = rect.height / canvas.height;
-
     var clientX = rect.left + canvasX * scaleX;
     var clientY = rect.top  + canvasY * scaleY;
 
@@ -123,9 +178,7 @@
     try { canvas.dispatchEvent(new PointerEvent('pointermove',  opts)); } catch(e) {}
     try { canvas.dispatchEvent(new PointerEvent('pointerdown',  opts)); } catch(e) {}
     try { canvas.dispatchEvent(new PointerEvent('pointerup',    opts)); } catch(e) {}
-    canvas.dispatchEvent(new MouseEvent('mousedown', opts));
-    canvas.dispatchEvent(new MouseEvent('mouseup',   opts));
-    canvas.dispatchEvent(new MouseEvent('click',     opts));
+    canvas.dispatchEvent(new MouseEvent('click', opts));
   }
 
   /* ── Ana tick ── */
