@@ -8,10 +8,10 @@
   var CONFIG = {
     detectorIntervalMs: 500,
     fallbackScanMs: 120,
-    clickCooldownMs: 900,
-    maxClicksPerTick: 6,
-    minClickGapMs: 30,
-    debug: false
+    clickCooldownMs: 400,     // Aynı coin için tekrar tıklama kilidi (ms)
+    maxClicksPerTick: 8,      // Tek taramada max tıklama
+    minClickGapMs: 20,        // İki tıklama arası min süre
+    debug: true               // Console debug logları aktif
   };
   var COIN_KEYS = [
     'bitcoin', 'dogecoin', 'etherium', 'ethereum', 'lightcoin', 'litecoin',
@@ -36,19 +36,19 @@
     lastClickAt: 0
   };
   function _log() {
-    if (CONFIG.debug && window.console) {
-      console.log.apply(console, ['[rcCoinClick]'].concat([].slice.call(arguments)));
+    if (window.console) {
+      console.log.apply(console, ['[RC-CoinClick]'].concat([].slice.call(arguments)));
     }
   }
   /* ======================= 2) OYUN TESPİTİ (_isGame) ======================= */
   function _isGame() {
     try {
       var attr = (document.body && document.body.getAttribute('data-rc-current-game')) || '';
-      if (attr.toLowerCase().indexOf('coinclick') !== -1) return true;
+      if (attr.toLowerCase().indexOf('coinclick') !== -1 || attr.toLowerCase().indexOf('coin-click') !== -1) return true;
       var href = String(location.href || '').toLowerCase();
-      if (href.indexOf('coinclick') !== -1) return true;
+      if (href.indexOf('coinclick') !== -1 || href.indexOf('coin-click') !== -1) return true;
       var title = String(document.title || '').toLowerCase();
-      if (title.indexOf('coinclick') !== -1) return true;
+      if (title.indexOf('coinclick') !== -1 || title.indexOf('coin-click') !== -1 || title.indexOf('coin click') !== -1) return true;
     } catch (e) {}
     return false;
   }
@@ -74,11 +74,19 @@
       } catch (e) {}
     }
     try {
-      for (k in window) {
-        try {
-          g = window[k];
-          if (g && g.isBooted === true && g.scene && g.canvas && g.loop) return g;
-        } catch (e) {}
+      // React Fiber üzerinden derin arama
+      var canvas = document.querySelector('#phaserGame canvas') || document.querySelector('canvas');
+      if (canvas) {
+        var keys = Object.keys(canvas);
+        for (i = 0; i < keys.length; i++) {
+          if (keys[i].indexOf('__reactFiber$') === 0) {
+            var node = canvas[keys[i]];
+            while (node) {
+              if (node.stateNode && node.stateNode.game) return node.stateNode.game;
+              node = node.return;
+            }
+          }
+        }
       }
     } catch (e) {}
     return null;
@@ -112,7 +120,7 @@
   function _isCoin(item, fromGroup) {
     var key = _textureKey(item).toLowerCase();
     if (!key) return false;
-    if (key.indexOf('bomb') !== -1) return false;
+    if (key.indexOf('bomb') !== -1) return false; // KESİNLİKLE BOMBA DEĞİL
     if (IGNORE_KEYS[key]) return false;
     for (var i = 0; i < COIN_KEYS.length; i++) {
       if (key.indexOf(COIN_KEYS[i]) !== -1) return true;
@@ -162,67 +170,57 @@
     state.clicked.set(item, now);
     state.lastClickAt = now;
   }
-  /* ======================= 5) TIKLAMA MEKANİZMASI (DÜZENLENDİ) ======================= */
+  /* ======================= 5) TIKLAMA MEKANİZMASI ======================= */
+  function _extend(a, b) {
+    var o = {}, k;
+    for (k in a) o[k] = a[k];
+    for (k in b) o[k] = b[k];
+    return o;
+  }
   function _clickItem(scene, item) {
     var input = scene.input;
     if (!input || !input.activePointer) return;
 
     var pointer = input.activePointer;
     
-    // Mevcut pointer durumu yedeği (işlem bitince geri alacağız)
     var prevX = pointer.x, prevY = pointer.y;
     var prevWX = pointer.worldX, prevWY = pointer.worldY;
     var prevIsDown = pointer.isDown;
-
-    // Kamera zoom ve scroll matematikhesabı
+    
     var cam = scene.cameras && scene.cameras.main;
-    var zoom = cam ? (cam.zoom || 1) : 1;
+    var scrollX = cam ? cam.scrollX : 0;
+    var scrollY = cam ? cam.scrollY : 0;
     
-    var targetX = item.x;
-    var targetY = item.y;
-    
-    // Pointer ekran koordinatlarını ayarla
-    pointer.x = targetX - (cam ? cam.scrollX : 0);
-    pointer.y = targetY - (cam ? cam.scrollY : 0);
-    pointer.worldX = targetX;
-    pointer.worldY = targetY;
-    
+    pointer.x = item.x - scrollX;
+    pointer.y = item.y - scrollY;
+    pointer.worldX = item.x;
+    pointer.worldY = item.y;
     pointer.isDown = true;
     pointer.primaryDown = true;
 
-    // 1. Oyunun custom tıklama dinleyicisi varsa doğrudan ve doğru context ile çağır
+    // 1. Oyunun Custom Tıklama Fonksiyonu (listenerClickMouse)
     if (scene && typeof scene.listenerClickMouse === 'function') {
       try {
-        scene.listenerClickMouse.call(scene, pointer, item); // this=scene bağlandı
+        scene.listenerClickMouse.call(scene, pointer);
       } catch (e) { _log('listenerClickMouse hatası:', e); }
     }
 
-    // 2. Phaser Input Plugin - Global pointerdown (Oyun hitTest kullanıyorsa diye)
+    // 2. Phaser Input Plugin Global pointerdown
+    try { input.emit('pointerdown', pointer); } catch (e) {}
+
+    // 3. Phaser Input Plugin Obje pointerdown
+    try { input.emit('gameobjectdown', pointer, item); } catch (e) {}
     try {
-      input.emit('pointerdown', pointer);
+      if (item.input) item.emit('pointerdown', pointer, item.input.localX, item.input.localY);
     } catch (e) {}
 
-    // 3. Phaser Input Plugin - Direkt Obje Eventleri
-    try {
-      input.emit('gameobjectdown', pointer, item);
-    } catch (e) {}
-    
-    try {
-      if (item.input) {
-        item.emit('pointerdown', pointer, item.input.localX, item.input.localY, null);
-      }
-    } catch (e) {}
-
-    // Pointer up aşaması
+    // Up Aşaması
     pointer.isDown = false;
     pointer.primaryDown = false;
-
     try { input.emit('pointerup', pointer); } catch (e) {}
     try { input.emit('gameobjectup', pointer, item); } catch (e) {}
     try {
-      if (item.input) {
-        item.emit('pointerup', pointer, item.input.localX, item.input.localY, null);
-      }
+      if (item.input) item.emit('pointerup', pointer, item.input.localX, item.input.localY);
     } catch (e) {}
 
     // Pointer'ı eski haline getir
@@ -232,17 +230,14 @@
     pointer.worldY = prevWY;
     pointer.isDown = prevIsDown;
 
-    // Canvas DOM Fallback (Sadece Phaser içi işe yaramazsa devreye girer, site crash riski yoktur)
+    // 4. DOM Event Fallback
     _dispatchCanvasPointer(scene, item);
   }
   
   function _dispatchCanvasPointer(scene, item) {
     try {
-      var canvas = (scene && scene.sys && scene.sys.game && scene.sys.game.canvas) ||
-                   (state.game && state.game.canvas) ||
-                   document.querySelector('#phaserGame canvas') ||
-                   document.querySelector('canvas');
-      if (!canvas || !canvas.dispatchEvent) return;
+      var canvas = _getCanvas();
+      if (!canvas) return;
       var rect = canvas.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
       var scaleX = rect.width / canvas.width;
@@ -255,29 +250,18 @@
         screenX: clientX, screenY: clientY,
         button: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true
       };
-      var moveOpts = _extend(base, { buttons: 0 });
       var downOpts = _extend(base, { buttons: 1 });
       var upOpts   = _extend(base, { buttons: 0 });
       
-      if (typeof window.PointerEvent === 'function') {
-        canvas.dispatchEvent(new PointerEvent('pointermove', moveOpts));
-        canvas.dispatchEvent(new PointerEvent('pointerdown', downOpts));
-        canvas.dispatchEvent(new PointerEvent('pointerup', upOpts));
-      }
-      canvas.dispatchEvent(new MouseEvent('mousemove', moveOpts));
-      canvas.dispatchEvent(new MouseEvent('mousedown', downOpts));
-      canvas.dispatchEvent(new MouseEvent('mouseup', upOpts));
-      canvas.dispatchEvent(new MouseEvent('click', upOpts));
-    } catch (e) {
-      _log('canvas fallback hatası:', e);
-    }
-  }
-  
-  function _extend(a, b) {
-    var o = {}, k;
-    for (k in a) o[k] = a[k];
-    for (k in b) o[k] = b[k];
-    return o;
+      var targets = [canvas, window];
+      targets.forEach(function(t) {
+        try { t.dispatchEvent(new PointerEvent('pointerdown', downOpts)); } catch(e) {}
+        try { t.dispatchEvent(new MouseEvent('mousedown', downOpts)); } catch(e) {}
+        try { t.dispatchEvent(new PointerEvent('pointerup', upOpts)); } catch(e) {}
+        try { t.dispatchEvent(new MouseEvent('mouseup', upOpts)); } catch(e) {}
+        try { t.dispatchEvent(new MouseEvent('click', upOpts)); } catch(e) {}
+      });
+    } catch (e) {}
   }
   /* ======================= 4) TARAMA / TICK ======================= */
   function _tick() {
@@ -303,7 +287,7 @@
       _markClicked(item, now);
       _clickItem(scene, item);
       clicks++;
-      _log('coin tıklandı:', _textureKey(item));
+      _log('🪙 Coin tıklandı:', _textureKey(item));
     }
   }
   function _acquire() {
@@ -323,11 +307,11 @@
     scene.update = function (time, delta) {
       if (state.originalUpdate) {
         try { state.originalUpdate.call(this, time, delta); }
-        catch (e) { _log('orijinal update hatası:', e); }
+        catch (e) {}
       }
       _tick();
     };
-    _log('scene.update yamalandı');
+    _log('✅ Sahne yamalandı');
   }
   function _unpatchScene() {
     var s = state.patchedScene;
@@ -369,7 +353,7 @@
     state.clicked = new WeakMap();
     state.lastClickAt = 0;
     try { document.body.setAttribute('data-rc-bot-coinclick-active', 'true'); } catch (e) {}
-    _log('BOT BAŞLADI');
+    _log('✅ Bot BAŞLADI');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🎯 Coin Click Bot aktif');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
     _acquire();
@@ -384,7 +368,7 @@
     state.scene = null;
     state.game = null;
     try { document.body.removeAttribute('data-rc-bot-coinclick-active'); } catch (e) {}
-    _log('BOT DURDURULDU');
+    _log('🛑 Bot DURDURULDU');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🎯 Coin Click Bot durdu');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
   }
@@ -401,5 +385,5 @@
     if (active && !state.running)  _start();
     if (!active && state.running)  _stop();
   }, 500);
-  _log('modül yüklendi, dedektör aktif');
+  _log('🤖 Modül yüklendi, otomatik başlatma aktif');
 })();
