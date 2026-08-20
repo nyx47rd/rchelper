@@ -1,8 +1,9 @@
 /* ══════════════════════════════════════════════════════════════════
    RC Helper — Cryptonoid Altın Standart Bot (Phaser 3 Engine)
-   - Canlı ve ayrıntılı debug logları (Console'da her adımı gösterir)
-   - Çok kanallı kontrol: Pointer + Fizik + DOM Mouse/Keyboard + Phaser Cursors
-   - Duvar yansıma ve tuğla hedefleme matematiği
+   - Sahne Değişkenleri: platform, ball, Blocks, ballOnPlatform, mouseCursor
+   - 60 FPS scene.update ile sıfır gecikmeli fizik öngörüsü (Raycast)
+   - Otomatik ve kesin fırlatma (ballOnPlatform çözücü)
+   - Stratejik açılandırma (scene.Blocks hedefleme)
    ══════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -17,10 +18,7 @@
   var _lastBallY           = 0;
   var _lastBallVX          = 0;
   var _lastBallVY          = 0;
-  var _stationaryFrames    = 0;
   var _lastLaunchTime      = 0;
-  var _consecutiveBounces  = 0;
-  var _lastVYSign          = 1;
   var _activeKeys          = {};
   var _debugFrameCounter   = 0;
 
@@ -89,11 +87,8 @@
     for (var i = 0; i < scenes.length; i++) {
       var s = scenes[i];
       if (!s || !s.sys || !s.sys.settings) continue;
-      if (s.sys.settings.active && s.sys.settings.key === 'Game') return s;
-    }
-    for (var j = 0; j < scenes.length; j++) {
-      var sc = scenes[j];
-      if (sc && sc.sys && sc.sys.settings && sc.sys.settings.active) return sc;
+      // Asıl oyun sahnesinde 'platform' ve 'ball' bulunur
+      if (s.sys.settings.active && (s.platform || s.ball || s.Blocks)) return s;
     }
     return null;
   }
@@ -132,17 +127,24 @@
 
     try { canvas.dispatchEvent(new PointerEvent('pointermove', opts)); } catch (e) {}
     try { canvas.dispatchEvent(new MouseEvent('mousemove', opts)); } catch (e) {}
-    try { window.dispatchEvent(new MouseEvent('mousemove', opts)); } catch (e) {}
   }
 
-  function _launchBall() {
+  function _launchBall(scene) {
     var now = Date.now();
-    if (now - _lastLaunchTime < 500) return;
+    if (now - _lastLaunchTime < 250) return;
     _lastLaunchTime = now;
-    _log('🚀 Top fırlatılıyor (Space + Click)...');
+    _log('🚀 Top fırlatılıyor (Space + Click + Phaser Event)...');
 
+    // 1. Phaser Input Emit
+    if (scene && scene.input) {
+      var ptr = scene.input.activePointer || { x: scene.platform ? scene.platform.x : 480, y: PADDLE_Y };
+      try { scene.input.emit('pointerdown', ptr); } catch (e) {}
+      try { scene.input.emit('pointerup', ptr); } catch (e) {}
+    }
+
+    // 2. DOM Space ve Click
     _setKey('Space', true);
-    setTimeout(function () { _setKey('Space', false); }, 80);
+    setTimeout(function () { _setKey('Space', false); }, 50);
 
     var canvas = _getCanvas();
     if (canvas) {
@@ -177,9 +179,10 @@
   /* ── Kalan Tuğlaların Ağırlık Merkezini Bulma (Stratejik Açı) ── */
   function _getTargetBrickBias(scene) {
     var bricks = [];
-    if (scene.bricksGroup) {
-      if (typeof scene.bricksGroup.getChildren === 'function') bricks = scene.bricksGroup.getChildren();
-      else if (scene.bricksGroup.children && scene.bricksGroup.children.entries) bricks = scene.bricksGroup.children.entries;
+    if (scene.Blocks) {
+      if (typeof scene.Blocks.getChildren === 'function') bricks = scene.Blocks.getChildren();
+      else if (scene.Blocks.children && scene.Blocks.children.entries) bricks = scene.Blocks.children.entries;
+      else if (Array.isArray(scene.Blocks)) bricks = scene.Blocks;
     }
     if (!bricks.length && scene.children && scene.children.list) {
       bricks = scene.children.list.filter(function (c) {
@@ -189,7 +192,7 @@
       });
     }
 
-    var activeBricks = bricks.filter(function (b) { return b.active && b.visible; });
+    var activeBricks = bricks.filter(function (b) { return b.active !== false && b.visible !== false; });
     if (!activeBricks.length) return 0;
 
     var sumX = 0;
@@ -203,62 +206,20 @@
     return Math.max(-28, Math.min(28, bias));
   }
 
-  /* ── Top ve Palet Nesnesi Bulucu ── */
-  function _findEntities(scene) {
-    var paddle = scene.platform || scene.paddle || scene.player || null;
-    var ball   = scene.ball || null;
-
-    if (scene.ballsGroup) {
-      var bList = typeof scene.ballsGroup.getChildren === 'function' ? scene.ballsGroup.getChildren() : (scene.ballsGroup.children && scene.ballsGroup.children.entries);
-      if (bList && bList.length > 0) {
-        ball = bList.find(function (b) { return b.active && b.visible; }) || bList[0];
-      }
-    }
-
-    if ((!paddle || !ball) && scene.children && scene.children.list) {
-      var list = scene.children.list;
-      for (var i = 0; i < list.length; i++) {
-        var obj = list[i];
-        if (!obj || !obj.texture) continue;
-        var k = String(obj.texture.key).toLowerCase();
-        if (!paddle && (k.indexOf('platform') !== -1 || k.indexOf('paddle') !== -1 || k.indexOf('player') !== -1)) {
-          paddle = obj;
-        }
-        if (!ball && (k.indexOf('ball') !== -1 || k.indexOf('orb') !== -1)) {
-          ball = obj;
-        }
-      }
-    }
-    return { paddle: paddle, ball: ball };
-  }
-
   /* ── 60 FPS Sahne Çerçeve Motoru ── */
   function _tickFrame(scene, time, delta) {
     if (!_botActive || !scene) return;
     _debugFrameCounter++;
 
-    var entities = _findEntities(scene);
-    var paddle = entities.paddle;
-    var ball   = entities.ball;
+    var paddle = scene.platform;
+    var ball   = scene.ball;
 
-    // Periyodik Debug Bilgisi (Her 60 karede ~1 saniye)
-    if (_debugFrameCounter % 60 === 0) {
-      if (!paddle || !ball) {
-        _log('⚠️ Nesne Arama Uyarısı:', {
-          paddle: paddle ? 'BULUNDU (' + Math.round(paddle.x) + ',' + Math.round(paddle.y) + ')' : 'YOK!',
-          ball: ball ? 'BULUNDU (' + Math.round(ball.x) + ',' + Math.round(ball.y) + ')' : 'YOK!',
-          childCount: scene.children ? scene.children.list.length : 0
-        });
-      } else {
-        _log('🎾 Canlı Durum:', {
-          top: '(' + Math.round(ball.x) + ', ' + Math.round(ball.y) + ')',
-          hız: '(' + Math.round(_lastBallVX) + ', ' + Math.round(_lastBallVY) + ')',
-          palet: Math.round(paddle.x)
-        });
+    if (!paddle || !ball) {
+      if (_debugFrameCounter % 60 === 0) {
+        _log('⚠️ Platform veya Ball henüz hazır değil');
       }
+      return;
     }
-
-    if (!paddle) return;
 
     // Alan boyutlarını dinamik güncelle
     if (paddle.y) PADDLE_Y = paddle.y;
@@ -266,9 +227,9 @@
     if (scene.scale && scene.scale.height) GAME_HEIGHT = scene.scale.height;
     WALL_RIGHT = GAME_WIDTH - 15;
 
-    // Top yoksa veya hazır değilse paleti ortala
-    if (!ball || !ball.active) {
-      _launchBall();
+    // 1. Top fırlatılmadıysa (ballOnPlatform === true veya hareketsiz)
+    if (scene.ballOnPlatform === true || (Math.abs(ball.y - paddle.y) < 55 && Math.abs(ball.x - paddle.x) < 40)) {
+      _launchBall(scene);
       return;
     }
 
@@ -291,17 +252,6 @@
     _lastBallVX = vx;
     _lastBallVY = vy;
 
-    // 1. Top fırlatma kontrolü
-    var speedSq = vx * vx + vy * vy;
-    if (speedSq < 4 || Math.abs(ball.y - paddle.y) < 55) {
-      _stationaryFrames++;
-      if (_stationaryFrames > 15) {
-        _launchBall();
-      }
-    } else {
-      _stationaryFrames = 0;
-    }
-
     // 2. Hedef X Hesaplama (Raycasting)
     var targetLandingX = _predictLandingX(ball.x, ball.y, vx, vy, PADDLE_Y - 15);
     var desiredPaddleX = targetLandingX;
@@ -316,7 +266,17 @@
     var halfPaddle = (paddle.displayWidth || paddle.width || 100) / 2;
     desiredPaddleX = Math.max(WALL_LEFT + halfPaddle, Math.min(WALL_RIGHT - halfPaddle, desiredPaddleX));
 
-    // 3. Çok Kanallı Palet Yönlendirme (Pointer + Klavye + Fizik Body + Cursors)
+    // Periyodik Canlı Log
+    if (_debugFrameCounter % 60 === 0) {
+      _log('🎾 Canlı Takip:', {
+        top: '(' + Math.round(ball.x) + ',' + Math.round(ball.y) + ')',
+        hız: '(' + Math.round(vx) + ',' + Math.round(vy) + ')',
+        palet: Math.round(paddle.x),
+        hedefX: Math.round(desiredPaddleX)
+      });
+    }
+
+    // 3. Çok Kanallı Palet Yönlendirme
     var diff = desiredPaddleX - paddle.x;
 
     // Kanal 1: DOM Klavye
@@ -342,14 +302,12 @@
     // Kanal 3: Phaser Input Pointer
     if (scene.input) {
       try {
+        scene.input.x = desiredPaddleX;
+        scene.input.y = PADDLE_Y;
         if (scene.input.activePointer) {
           scene.input.activePointer.x = desiredPaddleX;
           scene.input.activePointer.worldX = desiredPaddleX;
           scene.input.activePointer.y = PADDLE_Y;
-        }
-        if (scene.input.mousePointer) {
-          scene.input.mousePointer.x = desiredPaddleX;
-          scene.input.mousePointer.worldX = desiredPaddleX;
         }
       } catch (e) {}
     }
@@ -357,16 +315,12 @@
     // Kanal 4: DOM Mouse / PointerMove Event
     _dispatchPointerMove(desiredPaddleX, PADDLE_Y);
 
-    // Kanal 5: Doğrudan Sprite & Body Koordinatı
-    if (Math.abs(diff) > 2) {
-      var maxStep = (1500 * (delta || 16.6)) / 1000;
-      var step = Math.max(-maxStep, Math.min(maxStep, diff * 0.8));
-      paddle.x += step;
-      if (paddle.body) {
-        paddle.body.x = paddle.x - (paddle.body.halfWidth || halfPaddle);
-        if (typeof paddle.body.setVelocityX === 'function') {
-          paddle.body.setVelocityX(diff * 10);
-        }
+    // Kanal 5: Doğrudan Sprite Koordinatı
+    paddle.x = desiredPaddleX;
+    if (paddle.body) {
+      paddle.body.x = desiredPaddleX - (paddle.body.halfWidth || halfPaddle);
+      if (typeof paddle.body.setVelocityX === 'function') {
+        paddle.body.setVelocityX(diff * 10);
       }
     }
   }
@@ -395,9 +349,6 @@
     };
 
     _log('✅ Sahne 60 FPS update motoru yamalandı.');
-    _log('📦 Sahne custom keys:', Object.keys(scene).filter(function (k) {
-      return !['sys','anims','cache','plugins','registry','scale','sound','textures','events','cameras','make','add','scene','children','time','data','input','load','tweens','lights','physics'].includes(k);
-    }));
   }
 
   function _monitor() {
@@ -416,17 +367,16 @@
     _lastBallY = 0;
     _lastBallVX = 0;
     _lastBallVY = 0;
-    _stationaryFrames = 0;
-    _consecutiveBounces = 0;
+    _lastLaunchTime = 0;
     _debugFrameCounter = 0;
     _activeKeys = {};
 
     try { document.body.setAttribute('data-rc-bot-cryptonoid-active', 'true'); } catch (e) {}
-    _log('🚀 Cryptonoid Altın Standart Bot BAŞLADI (Canlı Debug Modu Aktif)');
+    _log('🚀 Cryptonoid Altın Standart Bot BAŞLADI');
     if (window.updateRCStatus) window.updateRCStatus('[RC] 🧱 Cryptonoid Bot aktif');
     if (window._updateBotPlayingWidget) window._updateBotPlayingWidget();
 
-    _monitorId = setInterval(_monitor, 500);
+    _monitorId = setInterval(_monitor, 300);
     _monitor();
   }
 
@@ -452,7 +402,7 @@
     var active  = _isGame() && !!_getCanvas() && enabled;
     if (active && !_botActive) _start();
     if (!active && _botActive) _stop();
-  }, 500);
+  }, 400);
 
   window._rcCryptonoid = {
     start: _start,
