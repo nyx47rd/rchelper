@@ -21,12 +21,12 @@
   "content_scripts": [
     {
       "matches": ["*://*.rollercoin.com/*", "*://rollercoin.com/*"],
-      "js": ["content.js", "games/coin-fisher.js", "games/hamster-climber.js"],
+      "js": ["content.js", "games/hamster-climber.js"],
       "run_at": "document_end"
     },
     {
       "matches": ["*://*.rollercoin.com/*", "*://rollercoin.com/*"],
-      "js": ["games/coins2048.js", "games/token-blaster.js", "games/cryptonoid.js", "games/flappy-rocket.js", "games/coin-flip.js", "games/coinclick.js"],
+      "js": ["games/coins2048.js", "games/token-blaster.js", "games/cryptonoid.js", "games/flappy-rocket.js", "games/coin-flip.js", "games/coinclick.js", "games/coin-fisher.js"],
       "run_at": "document_end",
       "world": "MAIN"
     }

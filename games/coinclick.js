@@ -380,10 +380,10 @@
   };
   /* ======================= OTOMATİK BAŞLATMA DÖNGÜSÜ ======================= */
   setInterval(function () {
-    var enabled = !(window._rcBotEnabled && window._rcBotEnabled['botCoinClickEnabled'] === false);
+    var enabled = document.body.getAttribute('data-rc-bot-coinclick-enabled') !== 'false';
     var active = _isGame() && !!_getCanvas() && enabled;
     if (active && !state.running)  _start();
     if (!active && state.running)  _stop();
-  }, 500);
+  }, 400);
   _log('🤖 Modül yüklendi, otomatik başlatma aktif');
 })();
