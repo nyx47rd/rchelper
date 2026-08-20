@@ -9,7 +9,11 @@ cd "$DIR"
 
 # Uzak etiketleri yerelle eşitle (Changelog'un doğru hesaplanması için)
 echo "→ Uzak etiketler güncelleniyor..."
-git fetch --tags origin 2>/dev/null || true
+if [ -n "$PAT" ]; then
+  git fetch --tags "https://${PAT}@github.com/${REPO}.git" 2>/dev/null || true
+else
+  git fetch --tags origin 2>/dev/null || true
+fi
 
 # Versiyon hesapla
 LAST=$(git tag --sort=-version:refname | grep '^v' | head -1)
@@ -40,7 +44,12 @@ fi
 echo "→ Versiyon: $NEXT"
 
 # Mevcut tag kontrolü — aynıysa patch'i bir daha artır
-while git ls-remote --tags origin | grep -q "refs/tags/$NEXT$"; do
+REMOTE_URL="origin"
+if [ -n "$PAT" ]; then
+  REMOTE_URL="https://${PAT}@github.com/${REPO}.git"
+fi
+
+while git ls-remote --tags "$REMOTE_URL" 2>/dev/null | grep -q "refs/tags/$NEXT$"; do
   PATCH=$((PATCH + 1))
   NEXT="v${MAJOR}.${MINOR}.${PATCH}"
 done
